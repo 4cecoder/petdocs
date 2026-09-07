@@ -209,4 +209,55 @@ export default defineSchema({
     .index("by_token", ["token"])
     .index("by_petId", ["petId"])
     .index("by_ownerId", ["ownerId"]),
+
+  magicTokens: defineTable({
+    email: v.string(),
+    tokenHash: v.string(),
+    expiresAt: v.number(),
+    usedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  }).index("by_email", ["email"]),
+
+  ownershipClaims: defineTable({
+    petId: v.id("pets"),
+    claimantOwnerId: v.id("owners"),
+    method: v.union(
+      v.literal("microchip"),
+      v.literal("vet_record"),
+      v.literal("transfer_code"),
+    ),
+    evidence: v.string(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("approved"),
+      v.literal("rejected"),
+    ),
+    reviewedBy: v.optional(v.id("owners")),
+    createdAt: v.number(),
+  })
+    .index("by_petId", ["petId"])
+    .index("by_status", ["status"]),
+
+  transfers: defineTable({
+    petId: v.id("pets"),
+    fromOwnerId: v.id("owners"),
+    code: v.string(),
+    claimedBy: v.optional(v.id("owners")),
+    expiresAt: v.number(),
+    createdAt: v.number(),
+  }).index("by_code", ["code"]),
+
+  staff: defineTable({
+    email: v.string(),
+    name: v.string(),
+    role: v.union(
+      v.literal("owner"),
+      v.literal("manager"),
+      v.literal("support"),
+      v.literal("auditor"),
+    ),
+    active: v.boolean(),
+    invitedBy: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("by_email", ["email"]),
 });

@@ -1,5 +1,24 @@
 # 10 — Resend Setup (magic links + reminders)
 
+## For Agnela (product owner, no code needed)
+
+You own two things. Engineering owns the rest.
+
+1. A free Resend account at resend.com. Copy the API key (starts with
+   `re_`) and send it to engineering over a private channel. That alone
+   unlocks test mode: magic links reach your own inbox in about 30 seconds,
+   so you can feel the whole flow today.
+2. The sending domain. In Resend, add the domain petdocs sends from, add the
+   DNS records Resend shows (whoever holds the domain DNS can do this in
+   about 15 minutes), press Verify. Then tell engineering which address to
+   send from, like `PetDocs <hello@yourdomain.com>`.
+
+How you know it works: the admin dashboard shows a green
+"Sending as ..." card. If it says no key yet, magic links silently do
+nothing, which is expected until step 1 is done.
+
+## Technical detail
+
 petdocs sends two emails through Resend, both via the shared sender
 `convex/resend.ts` (`sendEmail` internal action):
 

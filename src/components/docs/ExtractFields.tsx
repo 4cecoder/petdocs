@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import { Check, ScanLine } from "lucide-react";
 import { parseCertText } from "@/lib/parsers";
+import { suggestCategory } from "@/lib/classify";
 
 export interface SmartFillFields {
   vaccineName?: string;
@@ -29,13 +30,20 @@ const COMMON_VACCINES = [
 export function ExtractFields({
   onApply,
   compact = false,
+  onCategorySuggest,
 }: {
   onApply: (fields: SmartFillFields) => void;
   compact?: boolean;
+  onCategorySuggest?: (c: string) => void;
 }) {
   const [raw, setRaw] = useState("");
   const [hasParsed, setHasParsed] = useState(false);
   const [confidence, setConfidence] = useState<"high" | "medium" | "low">("low");
+  const [suggested, setSuggested] = useState<{
+    category: string;
+    confidence: "high" | "medium" | "low";
+    reason: string;
+  } | null>(null);
   const [vaccineName, setVaccineName] = useState("");
   const [administeredAt, setAdministeredAt] = useState("");
   const [provider, setProvider] = useState("");
@@ -50,6 +58,13 @@ export function ExtractFields({
     setAdministeredAt(findings.administeredAt ?? "");
     setProvider(findings.provider ?? "");
     setHasParsed(true);
+    try {
+      // Filename is unknown in this component, so classify from pasted text only.
+      const s = suggestCategory({ filename: "", mime: "", textHint: text });
+      setSuggested(s);
+    } catch {
+      setSuggested(null);
+    }
   }
 
   function handleApply() {
@@ -68,6 +83,7 @@ export function ExtractFields({
     setRaw("");
     setHasParsed(false);
     setConfidence("low");
+    setSuggested(null);
     setVaccineName("");
     setAdministeredAt("");
     setProvider("");
@@ -81,6 +97,12 @@ export function ExtractFields({
         : "Low confidence. Confirm every field before applying.";
 
   const pad = compact ? "px-2" : "px-3";
+
+  const showSuggest =
+    hasParsed &&
+    suggested &&
+    (suggested.confidence === "high" || suggested.confidence === "medium") &&
+    onCategorySuggest;
 
   return (
     <details
@@ -160,6 +182,16 @@ export function ExtractFields({
             >
               {confidenceNote}
             </p>
+            {showSuggest ? (
+              <button
+                type="button"
+                onClick={() => onCategorySuggest?.(suggested.category)}
+                title={suggested.reason}
+                className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-ink/15 bg-cream px-4 text-sm font-semibold hover:bg-cream/70"
+              >
+                Looks like {suggested.category.replace(/_/g, " ")}. Use it?
+              </button>
+            ) : null}
             <div className="flex flex-col gap-2 sm:flex-row">
               <button
                 type="button"

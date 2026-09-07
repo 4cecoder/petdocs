@@ -6,8 +6,16 @@ import { Lock } from "lucide-react";
 import { convexMutation, convexQuery } from "@/lib/convexHttp";
 import { getSessionEmail } from "@/lib/api";
 import { ROUTES } from "@/lib/routes";
+import StaffManager from "@/components/staff/StaffManager";
 
 type Role = "owner" | "support" | "admin";
+
+type StaffRoleName = "owner" | "manager" | "support" | "auditor";
+
+interface StaffRoleInfo {
+  role: StaffRoleName;
+  active: boolean;
+}
 
 interface Me {
   _id: string;
@@ -56,6 +64,12 @@ interface AuditRow {
   createdAt: number;
 }
 
+interface EmailStatus {
+  keySet: boolean;
+  fromSet: boolean;
+  from?: string;
+}
+
 function formatDate(ts: number): string {
   const d = new Date(ts);
   if (Number.isNaN(d.getTime())) return "Unknown";
@@ -69,11 +83,13 @@ function formatDate(ts: number): string {
 export default function AdminPage() {
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
   const [me, setMe] = useState<Me | null>(null);
+  const [staffRole, setStaffRole] = useState<StaffRoleInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<Stats | null>(null);
   const [owners, setOwners] = useState<OwnerRow[]>([]);
   const [links, setLinks] = useState<AdminLink[]>([]);
   const [audit, setAudit] = useState<AuditRow[]>([]);
+  const [mail, setMail] = useState<EmailStatus | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [petIdInput, setPetIdInput] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
@@ -88,36 +104,59 @@ export default function AdminPage() {
     let cancelled = false;
     (async () => {
       try {
-        const profile = await convexQuery<Me | null>("admin:getMe", { email });
+        const [profile, staff] = await Promise.all([
+          convexQuery<Me | null>("admin:getMe", { email }),
+          convexQuery<StaffRoleInfo | null>("staff:myStaffRole", {
+            email,
+          }).catch(() => null),
+        ]);
         if (cancelled) return;
         setMe(profile);
+        setStaffRole(staff && staff.active ? staff : null);
+        const staffOk =
+          !!staff &&
+          !!staff.active &&
+          (staff.role === "owner" ||
+            staff.role === "manager" ||
+            staff.role === "support" ||
+            staff.role === "auditor");
         if (
-          profile &&
-          (profile.role === "support" || profile.role === "admin")
+          (profile &&
+            (profile.role === "support" || profile.role === "admin")) ||
+          staffOk
         ) {
-          const [s, o, l, a] = await Promise.all([
-            convexQuery<Stats>("admin:stats", { adminEmail: email }),
-            convexQuery<OwnerRow[]>("admin:recentOwners", {
-              adminEmail: email,
-              limit: 20,
-            }),
-            convexQuery<AdminLink[]>("admin:listLinks", {
-              adminEmail: email,
-              limit: 20,
-            }),
-            convexQuery<AuditRow[]>("admin:auditLog", {
-              adminEmail: email,
-              limit: 20,
-            }),
-          ]);
-          if (cancelled) return;
-          setStats(s);
-          setOwners(o);
-          setLinks(l);
-          setAudit(a);
+          try {
+            const [s, o, l, a, m] = await Promise.all([
+              convexQuery<Stats>("admin:stats", { adminEmail: email }),
+              convexQuery<OwnerRow[]>("admin:recentOwners", {
+                adminEmail: email,
+                limit: 20,
+              }),
+              convexQuery<AdminLink[]>("admin:listLinks", {
+                adminEmail: email,
+                limit: 20,
+              }),
+              convexQuery<AuditRow[]>("admin:auditLog", {
+                adminEmail: email,
+                limit: 20,
+              }),
+              convexQuery<EmailStatus>("resend:status", {}),
+            ]);
+            if (cancelled) return;
+            setStats(s);
+            setOwners(o);
+            setLinks(l);
+            setAudit(a);
+            setMail(m);
+          } catch {
+            /* keep prior lists, staff section still renders */
+          }
         }
       } catch {
-        if (!cancelled) setMe(null);
+        if (!cancelled) {
+          setMe(null);
+          setStaffRole(null);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -215,7 +254,19 @@ export default function AdminPage() {
     );
   }
 
-  if (!me || (me.role !== "support" && me.role !== "admin")) {
+  const effRole: StaffRoleName | Role | null = staffRole
+    ? staffRole.role
+    : (me?.role ?? null);
+  const canViewAdmin =
+    (!!me && (me.role === "support" || me.role === "admin")) || !!staffRole;
+  const isStaffOwner = effRole === "admin" || effRole === "owner";
+  const showStaffSection =
+    effRole === "admin" ||
+    effRole === "owner" ||
+    effRole === "manager" ||
+    effRole === "support";
+
+  if (!canViewAdmin) {
     return (
       <div className="flex flex-col gap-4">
         <section
@@ -242,7 +293,7 @@ export default function AdminPage() {
     );
   }
 
-  const isAdmin = me.role === "admin";
+  const isAdmin = me?.role === "admin";
 
   return (
     <div className="flex flex-col gap-4">
@@ -277,6 +328,38 @@ export default function AdminPage() {
             <p className="text-xs text-ink-soft">{s.label}</p>
           </div>
         ))}
+      </section>
+
+      <section
+        aria-label="Email sending"
+        className="rounded-2xl border border-ink/10 bg-white p-4"
+      >
+        <h2 className="font-display font-bold">Email sending</h2>
+        {mail == null ? (
+          <p className="mt-1 text-sm text-ink-soft">Checking email setup...</p>
+        ) : mail.keySet && mail.fromSet ? (
+          <p className="mt-1 text-sm text-ink-soft">
+            Sending as {mail.from}. Magic links and reminders are live.
+          </p>
+        ) : (
+          <div className="mt-1 text-sm text-ink-soft">
+            <p className="font-semibold text-ink">
+              {!mail.keySet
+                ? "No email key yet. Magic links will not arrive."
+                : "Key is set. Sender address is missing."}
+            </p>
+            <ol className="mt-2 list-decimal pl-5">
+              <li>Product owner: create a free Resend account.</li>
+              <li>
+                Engineering runs: bunx convex env set RESEND_API_KEY re_...
+              </li>
+              <li>
+                Verify the sending domain in Resend, then set RESEND_FROM.
+                Until then, mail only reaches the Resend account email.
+              </li>
+            </ol>
+          </div>
+        )}
       </section>
 
       <section
@@ -437,6 +520,21 @@ export default function AdminPage() {
           </ul>
         )}
       </section>
+
+      {showStaffSection && adminEmail ? (
+        <section
+          aria-label="Team access"
+          className="rounded-2xl border border-ink/10 bg-white p-4"
+        >
+          <h2 className="font-display font-bold">Team access</h2>
+          <p className="mt-1 text-sm text-ink-soft">
+            Angela&apos;s employees. Least privilege, always.
+          </p>
+          <div className="mt-3">
+            <StaffManager adminEmail={adminEmail} isOwner={isStaffOwner} />
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

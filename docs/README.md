@@ -10,6 +10,9 @@
 | [06-roadmap.md](06-roadmap.md) | Build order, phases v0.1→v1.0. |
 | [07-feature-parity.md](07-feature-parity.md) | Web ↔ Android ↔ backend parity, pains, model, steal-list. |
 | [11-ai-ocr.md](11-ai-ocr.md) | OCR/AI use-case catalog UC-1..UC-10, determinism ladder, privacy. |
+| [12-demo-day.md](12-demo-day.md) | 5-min demo script, pain receipts, objections, ask for Angela. |
+| [15-trust.md](15-trust.md) | KYC, AI disclosure, retention, audit, minors, disclaimer, incidents. |
+| [16-team-access.md](16-team-access.md) | Team access playbook, roles matrix, invite and offboarding. |
 
 ## How docs map to GitHub issues
 

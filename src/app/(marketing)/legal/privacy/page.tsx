@@ -69,6 +69,24 @@ export default function PrivacyPage() {
               within 2 business days.
             </p>
           </section>
+
+          <section
+            id="data-rights"
+            className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm"
+          >
+            <h2 className="font-display font-bold">Your rights</h2>
+            <p className="mt-2 text-sm text-ink-soft">
+              Your records stay yours. Manage them anytime from dashboard
+              settings, no email needed.
+            </p>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-ink-soft">
+              <li>Export anytime: download all pets, documents, and history as JSON.</li>
+              <li>Delete anytime: remove your account and all data after email confirm.</li>
+              <li>Trash safety: deleted documents stay restorable for 30 days, then purge.</li>
+              <li>Share control: revoke any passport or vault link in one tap.</li>
+              <li>Help: contact support@petdocs.app for corrections or questions.</li>
+            </ul>
+          </section>
         </div>
 
         <nav

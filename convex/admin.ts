@@ -4,7 +4,13 @@
  * Server-only (never import from src/). Every query/mutation takes
  * { adminEmail } and verifies server-side. Never trust client role.
  *
- * Roles: owner < support < admin.
+ * Staff roles (staff table, least privilege):
+ * auditor (stats + audit read only) < support (stats, owners, links,
+ * revoke, claims, audit) < manager (all support powers plus setRole
+ * on owners plus claim review, no staff ops, no pet lock) < owner
+ * (everything including staff manage).
+ * Legacy owners table roles (owner < support < admin) still resolve
+ * when no active staff row exists. Legacy admin maps to owner rank.
  * Bootstrap: Convex env ADMIN_EMAILS (comma-separated) counts as admin
  * even when the owner row role is unset.
  */
@@ -17,9 +23,30 @@ const adminRole = v.union(
   v.literal("admin"),
 );
 
-type Role = "owner" | "support" | "admin";
+export const staffRoleValidator = v.union(
+  v.literal("owner"),
+  v.literal("manager"),
+  v.literal("support"),
+  v.literal("auditor"),
+);
 
-const RANK: Record<Role, number> = { owner: 0, support: 1, admin: 2 };
+export type StaffRole = "owner" | "manager" | "support" | "auditor";
+export type LegacyRole = "owner" | "support" | "admin";
+export type Role = StaffRole | LegacyRole;
+
+export const RANK: Record<Role, number> = {
+  auditor: 1,
+  support: 2,
+  manager: 3,
+  owner: 4,
+  admin: 4,
+};
+
+const LEGACY_RANK: Record<LegacyRole, number> = {
+  owner: 0,
+  support: 2,
+  admin: 4,
+};
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -46,19 +73,41 @@ function effectiveRole(
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function requireRole(ctx: any, email: string, minRole: Role) {
+export async function requireRole(ctx: any, email: string, minRole: Role) {
   const normalized = normalizeEmail(email);
+  const minRank = RANK[minRole];
+  if (minRank === undefined) throw new Error("Not authorized");
+  // Staff first: an active staff row decides the role.
+  const staff = await ctx.db
+    .query("staff")
+    .withIndex("by_email", (q: any) => q.eq("email", normalized))
+    .first();
+  if (staff && staff.active) {
+    const staffRole = staff.role as StaffRole;
+    const rank = RANK[staffRole];
+    if (rank === undefined) throw new Error("Not authorized");
+    if (rank < minRank) throw new Error("Not authorized");
+    const owner = await ctx.db
+      .query("owners")
+      .withIndex("by_email", (q: any) => q.eq("email", normalized))
+      .first();
+    if (!owner) throw new Error("Not authorized");
+    return { owner, role: staffRole as Role, staff };
+  }
+  // No active staff: fall back to owners row plus bootstrap.
   const owner = await ctx.db
     .query("owners")
     .withIndex("by_email", (q: any) => q.eq("email", normalized))
     .first();
   if (!owner) throw new Error("Not authorized");
-  const role = effectiveRole(
-    (owner.role as Role | undefined) ?? undefined,
-    normalized,
-  );
-  if (RANK[role] < RANK[minRole]) throw new Error("Not authorized");
-  return { owner, role };
+  if (isBootstrapAdmin(normalized)) {
+    if (RANK["admin"] < minRank) throw new Error("Not authorized");
+    return { owner, role: "admin" as Role };
+  }
+  const stored = (owner.role as LegacyRole | undefined) ?? "owner";
+  const rank = LEGACY_RANK[stored] ?? 0;
+  if (rank < minRank) throw new Error("Not authorized");
+  return { owner, role: stored as Role };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -99,11 +148,11 @@ export const getMe = query({
   },
 });
 
-/** Counts for the admin overview. Admin + support. */
+/** Counts for the admin overview. Auditor and above. */
 export const stats = query({
   args: { adminEmail: v.string() },
   handler: async (ctx, args) => {
-    await requireRole(ctx, args.adminEmail, "support");
+    await requireRole(ctx, args.adminEmail, "auditor");
     const [owners, pets, documents, links, reminders] = await Promise.all([
       ctx.db.query("owners").collect(),
       ctx.db.query("pets").collect(),
@@ -183,7 +232,7 @@ export const listLinks = query({
   },
 });
 
-/** Set an owner role. Admin only. Audited. */
+/** Set an owner role. Owner and manager. Audited. */
 export const setRole = mutation({
   args: {
     adminEmail: v.string(),
@@ -191,7 +240,7 @@ export const setRole = mutation({
     role: adminRole,
   },
   handler: async (ctx, args) => {
-    const { owner: actor } = await requireRole(ctx, args.adminEmail, "admin");
+    const { owner: actor } = await requireRole(ctx, args.adminEmail, "manager");
     const target = await ctx.db.get(args.targetOwnerId);
     if (!target) throw new Error("Owner not found");
     await ctx.db.patch(target._id, { role: args.role });
@@ -244,11 +293,11 @@ export const lockPet = mutation({
   },
 });
 
-/** Recent audit entries, newest first. Admin + support. */
+/** Recent audit entries, newest first. Auditor and above. */
 export const auditLog = query({
   args: { adminEmail: v.string(), limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    await requireRole(ctx, args.adminEmail, "support");
+    await requireRole(ctx, args.adminEmail, "auditor");
     const limit = Math.min(Math.max(args.limit ?? 20, 1), 100);
     const rows = await ctx.db.query("adminAudit").order("desc").take(limit);
     return await Promise.all(

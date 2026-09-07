@@ -6,7 +6,7 @@
  * fails — never throws for missing config, so login must not crash.
  * Zero console.* calls by design: a secret must never reach logs.
  */
-import { internalAction } from "./_generated/server";
+import { internalAction, query } from "./_generated/server";
 import { v } from "convex/values";
 
 const RESEND_API = "https://api.resend.com/emails";
@@ -94,5 +94,26 @@ export const sendEmail = internalAction({
     } catch {
       return { ok: false, error: "Failed to send the email." };
     }
+  },
+});
+
+/**
+ * Integration status for the admin dashboard. Returns booleans plus the
+ * public sender address only. Never returns keys or secrets.
+ */
+export const status = query({
+  args: {},
+  returns: v.object({
+    keySet: v.boolean(),
+    fromSet: v.boolean(),
+    from: v.optional(v.string()),
+  }),
+  handler: async () => {
+    const from = process.env.RESEND_FROM?.trim() || "";
+    return {
+      keySet: (process.env.RESEND_API_KEY?.trim() || "") !== "",
+      fromSet: from !== "",
+      from: from || undefined,
+    };
   },
 });

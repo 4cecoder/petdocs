@@ -4,6 +4,7 @@ import { use, useEffect, useState } from "react";
 import { PetArt } from "@/components/art/PetArt";
 import { DocList, type VaultDoc as VaultDocRow } from "@/components/docs/DocList";
 import { DocUploader } from "@/components/docs/DocUploader";
+import { OwnershipClaim } from "@/components/pets/OwnershipClaim";
 import { PetTimeline, type TimelineEvent } from "@/components/pets/PetTimeline";
 import { ShareButton } from "@/components/share/ShareButton";
 import {
@@ -253,6 +254,14 @@ export default function PetDetailPage({
           <ShareButton petId={petId} petName={pet.name} />
         </div>
       </div>
+
+      <section aria-label="Ownership">
+        <OwnershipClaim
+          petId={petId}
+          petName={pet.name}
+          microchipKnown={!!pet.microchipId}
+        />
+      </section>
 
       <section aria-label="Upload">
         <h2 className="mb-2 font-display text-lg font-bold">Add a document</h2>

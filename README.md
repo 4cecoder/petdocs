@@ -56,3 +56,15 @@ schema/functions + magic-link auth + seed + CI. Next: `android-app/` +
 codegen wiring (`convex/_generated/` + `magicTokens` table).
 
 Flow-by-flow parity (web ↔ Android ↔ backend): [docs/07-feature-parity.md](docs/07-feature-parity.md).
+
+## Deploy
+
+Standard Next.js 16 app, deployable to Netlify and Vercel with zero code changes. Full guide: [docs/14-deploy-netlify-vercel.md](docs/14-deploy-netlify-vercel.md).
+
+```bash
+bun install --frozen-lockfile
+bunx convex dev  # first terminal, creates dev deployment
+NEXT_PUBLIC_CONVEX_URL=https://xxx.convex.cloud bun run dev  # or set in host dashboard
+bunx netlify deploy --build --prod  # or `vercel --prod`
+bunx convex deploy  # backend only, from main, human-run for prod
+```

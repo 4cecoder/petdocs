@@ -1,6 +1,7 @@
 # convex/ — backend
 
-Full schema lives in `schema.ts` (8 tables). Per-domain functions sit beside it.
+Full schema lives in `schema.ts` (10 tables, including `magicTokens` and
+`adminAudit`). Per-domain functions sit beside it.
 
 ## First run
 
@@ -8,18 +9,15 @@ Full schema lives in `schema.ts` (8 tables). Per-domain functions sit beside it.
 bunx convex dev   # provisions a dev deployment, generates convex/_generated/
 ```
 
-`_generated/` is codegen output (committed once it exists, like the reference
-portal). Until then, `tsconfig.json` only includes `convex/schema.ts` and
-`bun run test` only runs the `unit` project — widen both after codegen:
-
-- `tsconfig.json` → add `"convex/**/*.ts"` to `include`
-- `package.json` → `test` → `vitest run` (all projects)
+`_generated/` is codegen output and is committed (like the reference
+portal). `tsconfig.json` includes `convex/**/*.ts` and `bun run test` runs
+both unit and convex projects.
 
 ## Files
 
 | File | Purpose |
 |------|---------|
-| `schema.ts` | owners, pets, documents, vaccinations, medications, vetVisits, reminders, shareLinks |
+| `schema.ts` | owners, pets, documents, vaccinations, medications, vetVisits, reminders, shareLinks, magicTokens, adminAudit |
 | `pets.ts` | listByOwner, get, create, update, archive |
 | `documents.ts` | generateUploadUrl, create, listByPet, getUrl, rename, trash/restore/empty |
 | `vaccinations.ts` | listByPet, dueSoon, create, markAdministered |
@@ -49,12 +47,10 @@ Server-only — never import `resend.ts` / `magicLink.ts` from `src/`.
   prefix, `createdAt`) and returns `{ ok: true, ownerId }`
   (or `{ ok: false, error }`).
 
-## Schema addition (first codegen run)
+## Magic tokens table
 
-`magicTokens` does not exist in `schema.ts` yet — `magicLink.ts` was written
-before `bunx convex dev` codegen (which is also why `convex/_generated/` is
-still missing). Do NOT hand-edit `schema.ts` now; add this table when codegen
-first runs:
+`magicTokens` lives in `schema.ts` (added after the first codegen run unblocked
+`bunx convex dev`):
 
 ```ts
 magicTokens: defineTable({
