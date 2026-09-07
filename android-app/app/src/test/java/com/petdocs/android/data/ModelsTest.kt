@@ -7,16 +7,10 @@ import org.junit.Test
 /**
  * Unit tests for [Models.kt] helpers — JSON round-trips via [PetdocsJson]
  * (which must tolerate unknown keys from newer backends), [vaccineStatusFor]
- * display-status logic, [maskChip], and the [DocCategory]/[VaccineStatus]
- * value mappings.
- *
- * NOTE (validator parity gap): the web app validates uploads in
- * `src/lib/validators.ts` (`ALLOWED_DOC_MIME` = application/pdf, image/jpeg,
- * image/png, image/webp, image/heic; `MAX_DOC_BYTES` = 10MB; empty files
- * rejected). `Models.kt` has no equivalent (`validateDocUpload` /
- * allowed-mime consts do not exist), so there is nothing to test here — an
- * Android-side validator (e.g. in `Models.kt` or `PetdocsApi.kt`) still needs
- * to be added to reach parity.
+ * display-status logic, [maskChip], the [DocCategory]/[VaccineStatus]
+ * value mappings, and the upload / pet-name validators ([validateDocUpload],
+ * [validatePetName], [ALLOWED_DOC_MIME], [MAX_DOC_BYTES]) which mirror web
+ * `src/lib/validators.ts` / `validators.test.ts`.
  */
 class ModelsTest {
 
@@ -206,14 +200,14 @@ class ModelsTest {
     }
 
     @Test
-    fun docCategoryFromValueUnknownIsNull() {
-        // NOTE: Models.kt returns null (not OTHER) for unknown values.
-        assertNull(DocCategory.fromValue("carrier_pigeon"))
+    fun docCategoryFromValueUnknownIsOther() {
+        // Unknown values fall back to OTHER (never null).
+        assertEquals(DocCategory.OTHER, DocCategory.fromValue("carrier_pigeon"))
     }
 
     @Test
-    fun docCategoryFromValueNullIsNull() {
-        assertNull(DocCategory.fromValue(null))
+    fun docCategoryFromValueNullIsOther() {
+        assertEquals(DocCategory.OTHER, DocCategory.fromValue(null))
     }
 
     @Test
@@ -221,5 +215,85 @@ class ModelsTest {
         assertEquals(VaccineStatus.DUE, VaccineStatus.fromValue("due"))
         assertNull(VaccineStatus.fromValue("expired"))
         assertNull(VaccineStatus.fromValue(null))
+    }
+
+    // --- validateDocUpload (parity with web validators.test.ts) ---
+
+    @Test
+    fun docUploadAcceptsPdfAndJpegUnder10MB() {
+        assertNull(validateDocUpload("application/pdf", 1024))
+        assertNull(validateDocUpload("image/jpeg", 5_000_000))
+    }
+
+    @Test
+    fun docUploadAcceptsAllAllowedMimes() {
+        for (mime in ALLOWED_DOC_MIME) {
+            assertNull("expected $mime to be accepted", validateDocUpload(mime, 1024))
+        }
+    }
+
+    @Test
+    fun docUploadRejectsExecutable() {
+        val error = validateDocUpload("application/x-sh", 10)
+        assertEquals(
+            "Unsupported file type: application/x-sh. Use PDF or a photo (JPG/PNG/WebP/HEIC).",
+            error,
+        )
+    }
+
+    @Test
+    fun docUploadRejectsEmptyFile() {
+        assertEquals("File is empty.", validateDocUpload("image/png", 0))
+        assertEquals("File is empty.", validateDocUpload("application/pdf", -1))
+    }
+
+    @Test
+    fun docUploadRejectsOversizedFile() {
+        assertEquals(
+            "File is too large (11MB). Max is 10MB.",
+            validateDocUpload("image/png", 11L * 1024 * 1024),
+        )
+    }
+
+    @Test
+    fun docUploadAcceptsExactly10MB() {
+        assertNull(validateDocUpload("image/png", MAX_DOC_BYTES))
+    }
+
+    @Test
+    fun allowedDocMimeMatchesWebContract() {
+        assertEquals(
+            setOf(
+                "application/pdf",
+                "image/jpeg",
+                "image/png",
+                "image/webp",
+                "image/heic",
+            ),
+            ALLOWED_DOC_MIME,
+        )
+        assertEquals(10L * 1024 * 1024, MAX_DOC_BYTES)
+    }
+
+    // --- validatePetName (parity with web validators.test.ts) ---
+
+    @Test
+    fun petNameRequiresName() {
+        assertEquals("Pet name is required.", validatePetName("  "))
+        assertEquals("Pet name is required.", validatePetName(""))
+        assertNull(validatePetName("Mochi"))
+    }
+
+    @Test
+    fun petNameRejectsOver60Chars() {
+        assertEquals(
+            "Pet name must be under 60 characters.",
+            validatePetName("a".repeat(61)),
+        )
+    }
+
+    @Test
+    fun petNameAccepts60Chars() {
+        assertNull(validatePetName("a".repeat(60)))
     }
 }

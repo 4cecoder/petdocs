@@ -76,8 +76,8 @@ fun PassportScreen(
 
     LaunchedEffect(token, api) {
         if (api == null) {
-            // TODO(resolvePassport): call api.resolvePassport(token) (+ recordView)
-            // once a client is provided; placeholder below shows the token.
+            // No client (preview / signed-out deep link): placeholder below
+            // shows the token with no network call.
             payload = null
             loading = false
             return@LaunchedEffect

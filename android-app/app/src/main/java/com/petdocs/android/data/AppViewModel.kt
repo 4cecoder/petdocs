@@ -12,11 +12,23 @@ import kotlinx.coroutines.launch
 
 /**
  * Minimal dashboard state: pets -> docs (selected pet) -> reminders (owner).
- * The [PetdocsApi] is passed in per call so the ViewModel never hardcodes the
- * Convex URL (it lives in SessionStore / BuildConfig at the call site).
+ *
+ * The [PetdocsApi] used to come in per call; it can now be injected once via
+ * [init] (MainActivity owns `PetdocsApi(BuildConfig.CONVEX_URL)`) so screens
+ * can call the parameterless [refresh]. The per-call `refresh(api)` overload
+ * is kept for backward compatibility and just stores + delegates.
  */
 class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val session = SessionStore(application)
+
+    /**
+     * Injected backend + owner. Set via [init] once MainActivity/Nav resolves
+     * them; [refresh] uses these (falling back to SessionStore for ownerId).
+     */
+    var api: PetdocsApi? = null
+        private set
+    var ownerId: String? = null
+        private set
 
     private val _pets = MutableStateFlow<List<Pet>>(emptyList())
     val pets: StateFlow<List<Pet>> = _pets.asStateFlow()
@@ -45,15 +57,38 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Sequential load: pets first, then docs for the selected (or first) pet,
-     * then the owner's upcoming reminders.
+     * Injects the backend client + owner id. Call from MainActivity (which
+     * owns `PetdocsApi(BuildConfig.CONVEX_URL)`) or from Nav once
+     * `session.ownerId` resolves; [refresh] uses these when set.
      */
+    fun init(api: PetdocsApi, ownerId: String?) {
+        this.api = api
+        this.ownerId = ownerId
+    }
+
+    /** Backward-compatible overload: stores [api] then loads (see [refresh]). */
     fun refresh(api: PetdocsApi) {
+        this.api = api
+        refresh()
+    }
+
+    /**
+     * Sequential load: pets first, then docs for the selected (or first) pet,
+     * then the owner's upcoming reminders. No-op with an error when the
+     * injected [api]/owner are both missing.
+     */
+    fun refresh() {
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
             try {
-                val ownerId = session.ownerId.first()?.ifBlank { null }
+                val api = this@AppViewModel.api
+                    ?: run {
+                        _error.value = "API not configured"
+                        return@launch
+                    }
+                val ownerId = this@AppViewModel.ownerId?.ifBlank { null }
+                    ?: session.ownerId.first()?.ifBlank { null }
                     ?: run {
                         _error.value = "Not signed in"
                         _pets.value = emptyList()

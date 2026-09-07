@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -55,11 +56,25 @@ fun PetDetailScreen(
     var docs by remember { mutableStateOf(emptyList<VaultDoc>()) }
     var vaccinations by remember { mutableStateOf(emptyList<Vaccination>()) }
     var visits by remember { mutableStateOf(emptyList<VetVisit>()) }
+    var loading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
 
-    // TODO(api): wire pets:get + documents:listByPet + vaccinations:listByPet + vetVisits:listByPet here.
+    // Profile data: pets:get + documents:listByPet + vaccinations:listByPet +
+    // vetVisits:listByPet. Null api/ownerId keeps the warm placeholders.
     LaunchedEffect(api, ownerId, petId) {
         if (api == null || ownerId == null) return@LaunchedEffect
-        // Wiring lands separately — warm placeholders show until then.
+        loading = true
+        error = null
+        try {
+            pet = api.getPet(ownerId, petId)
+            docs = api.listDocs(ownerId, petId)
+            vaccinations = api.listVaccinations(ownerId, petId)
+            visits = api.listVisits(ownerId, petId)
+        } catch (e: Exception) {
+            error = e.message ?: "Couldn't load this pet"
+        } finally {
+            loading = false
+        }
     }
 
     val timeline = remember(vaccinations, visits) {
@@ -92,9 +107,38 @@ fun PetDetailScreen(
                         color = MaterialTheme.colorScheme.onBackground,
                     )
                     Text(
-                        text = "ID: $petId (wiring lands with Convex)",
+                        text = pet?.let {
+                            listOfNotNull(
+                                it.species,
+                                it.breed?.takeIf { b -> b.isNotBlank() },
+                            ).joinToString(" · ")
+                        }?.takeIf { it.isNotBlank() } ?: "ID: $petId",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
+        if (loading) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+        }
+
+        if (error != null) {
+            item {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = error ?: "Something went wrong",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(16.dp),
                     )
                 }
             }

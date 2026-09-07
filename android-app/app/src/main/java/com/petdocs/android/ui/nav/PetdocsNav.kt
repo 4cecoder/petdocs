@@ -18,6 +18,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,6 +34,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.petdocs.android.data.AppViewModel
+import com.petdocs.android.data.PetdocsApi
+import com.petdocs.android.data.SessionStore
+import kotlinx.coroutines.flow.flowOf
 import com.petdocs.android.ui.screens.DocsScreen
 import com.petdocs.android.ui.screens.HomeScreen
 import com.petdocs.android.ui.screens.LoginScreen
@@ -49,7 +55,8 @@ private fun hubSelected(hub: HubId, route: String): Boolean = when (hub) {
     HubId.Home -> route == HubId.Home.route
     HubId.Pets -> route == HubId.Pets.route || route.startsWith("petDetail/")
     HubId.Docs -> route == HubId.Docs.route
-    HubId.More -> route in setOf("reminders", "share", "scanner", "settings")
+    HubId.More -> route == "reminders" || route == "share" ||
+        route.startsWith("scanner") || route == "settings"
 }
 
 private fun isBottomBarRoute(route: String): Boolean = when {
@@ -62,16 +69,30 @@ private fun isBottomBarRoute(route: String): Boolean = when {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PetdocsNav() {
+fun PetdocsNav(
+    api: PetdocsApi? = null,
+    session: SessionStore? = null,
+    appViewModel: AppViewModel? = null,
+) {
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
     val route = backStack?.destination?.route.orEmpty()
     var showMore by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
 
-    // TODO(session): check persisted session (SessionStore/DataStore) here.
-    // Start at "login" when there is no session, else "home".
-    val startDestination = "login"
+    // Session-backed routing: null session/api keeps previews + tests working.
+    val ownerId by remember(session) { session?.ownerId ?: flowOf(null) }
+        .collectAsState(initial = null)
+    val ownerEmail by remember(session) { session?.ownerEmail ?: flowOf(null) }
+        .collectAsState(initial = null)
+    // Start at "home" when a session email is persisted, else "login".
+    val startDestination = if (ownerEmail != null) "home" else "login"
+
+    // Bridge the shared client + owner into the dashboard ViewModel so its
+    // parameterless refresh() loads pets -> docs -> reminders when both set.
+    LaunchedEffect(api, ownerId) {
+        if (api != null) appViewModel?.init(api, ownerId)
+    }
 
     Scaffold(
         bottomBar = {
@@ -111,6 +132,7 @@ fun PetdocsNav() {
                             popUpTo("login") { inclusive = true }
                         }
                     },
+                    session = session,
                 )
             }
             composable("home") {
@@ -118,11 +140,15 @@ fun PetdocsNav() {
                     onPet = { petId -> nav.navigate("petDetail/$petId") },
                     onDocs = { nav.navigate("docs") },
                     onReminders = { nav.navigate("reminders") },
+                    api = api,
+                    ownerId = ownerId,
                 )
             }
             composable("pets") {
                 PetsScreen(
                     onPet = { petId -> nav.navigate("petDetail/$petId") },
+                    api = api,
+                    ownerId = ownerId,
                 )
             }
             composable(
@@ -133,20 +159,43 @@ fun PetdocsNav() {
                 PetDetailScreen(
                     petId = petId,
                     onShare = { nav.navigate("share") },
+                    api = api,
+                    ownerId = ownerId,
                 )
             }
             composable("docs") {
-                DocsScreen()
+                DocsScreen(
+                    api = api,
+                    ownerId = ownerId,
+                )
             }
             composable("reminders") {
-                RemindersScreen()
+                RemindersScreen(
+                    api = api,
+                    ownerId = ownerId,
+                )
             }
             composable("share") {
-                ShareScreen()
+                ShareScreen(
+                    api = api,
+                    ownerId = ownerId,
+                )
             }
-            composable("scanner") {
+            composable(
+                route = "scanner?petId={petId}",
+                arguments = listOf(
+                    navArgument("petId") {
+                        type = NavType.StringType
+                        defaultValue = ""
+                    },
+                ),
+            ) { entry ->
+                val argPetId = entry.arguments?.getString("petId").orEmpty().ifEmpty { null }
                 ScannerScreen(
                     onDone = { nav.popBackStack() },
+                    api = api,
+                    ownerId = ownerId,
+                    petId = argPetId,
                 )
             }
             composable(
@@ -154,7 +203,7 @@ fun PetdocsNav() {
                 arguments = listOf(navArgument("token") { type = NavType.StringType }),
             ) { entry ->
                 val token = entry.arguments?.getString("token").orEmpty()
-                PassportScreen(token = token)
+                PassportScreen(token = token, api = api)
             }
             composable("settings") {
                 SettingsScreen()

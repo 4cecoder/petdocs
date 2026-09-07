@@ -40,8 +40,8 @@ enum class DocCategory(val value: String) {
     OTHER("other");
 
     companion object {
-        fun fromValue(value: String?): DocCategory? =
-            entries.firstOrNull { it.value == value }
+        fun fromValue(value: String?): DocCategory =
+            entries.firstOrNull { it.value == value } ?: OTHER
     }
 }
 
@@ -248,4 +248,43 @@ fun maskChip(full: String): String {
     if (full.isBlank()) return ""
     val last4 = full.takeLast(4)
     return "••••$last4"
+}
+
+// --- Upload / pet-name validators (parity with web `src/lib/validators.ts`) ---
+
+/** MIME types the vault accepts (mirrors web ALLOWED_DOC_MIME + convex/documents.ts). */
+val ALLOWED_DOC_MIME: Set<String> = setOf(
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/heic",
+)
+
+/** Max accepted doc upload size: 10MB (mirrors web MAX_DOC_BYTES). */
+const val MAX_DOC_BYTES: Long = 10L * 1024 * 1024
+
+/**
+ * Validates a doc upload. Returns null when OK, otherwise the user-facing
+ * error message (same message style as web `validateDocUpload`).
+ */
+fun validateDocUpload(mime: String, sizeBytes: Long): String? {
+    if (mime !in ALLOWED_DOC_MIME) {
+        return "Unsupported file type: $mime. Use PDF or a photo (JPG/PNG/WebP/HEIC)."
+    }
+    if (sizeBytes <= 0) return "File is empty."
+    if (sizeBytes > MAX_DOC_BYTES) {
+        return "File is too large (${kotlin.math.round(sizeBytes / 1024.0 / 1024.0)}MB). Max is 10MB."
+    }
+    return null
+}
+
+/**
+ * Validates a pet name (required, ≤60 chars after trimming).
+ * Returns null when OK, otherwise the user-facing error message.
+ */
+fun validatePetName(name: String): String? {
+    if (name.isBlank()) return "Pet name is required."
+    if (name.trim().length > 60) return "Pet name must be under 60 characters."
+    return null
 }

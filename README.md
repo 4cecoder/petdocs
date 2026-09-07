@@ -48,7 +48,7 @@ and [AGENTS.md](AGENTS.md) for bun-only rules + gates.
 
 ## Status
 
-Repo: [github.com/4cecoder/petdocs](https://github.com/4cecoder/petdocs) (private).
+Repo: [github.com/4cecoder/petdocs](https://github.com/4cecoder/petdocs) (public — Actions build jobs free).
 Docs index: [docs/README.md](docs/README.md) (docs/01–07).
 
 Scaffolded: web shell (marketing + dashboard + `/p/[shareToken]`) + Convex

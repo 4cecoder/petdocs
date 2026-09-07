@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 
 const status = v.union(
   v.literal("due"),
@@ -90,5 +90,25 @@ export const markAdministered = mutation({
       documentId: args.documentId,
     });
     return args.vaccinationId;
+  },
+});
+
+export const flipOverdue = internalMutation({
+  args: {},
+  returns: v.number(),
+  handler: async (ctx) => {
+    const now = Date.now();
+    const due = await ctx.db
+      .query("vaccinations")
+      .filter((q) => q.eq(q.field("status"), "due"))
+      .collect();
+    let flipped = 0;
+    for (const vac of due) {
+      if (vac.dueAt !== undefined && vac.dueAt < now) {
+        await ctx.db.patch(vac._id, { status: "overdue" });
+        flipped += 1;
+      }
+    }
+    return flipped;
   },
 });

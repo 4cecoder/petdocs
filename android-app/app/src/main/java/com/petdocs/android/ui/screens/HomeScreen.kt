@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -53,11 +54,28 @@ fun HomeScreen(
 ) {
     var pets by remember { mutableStateOf(emptyList<Pet>()) }
     var dueSoon by remember { mutableStateOf(emptyList<ReminderItem>()) }
+    var loading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
 
-    // TODO(api): wire pets:listByOwner + reminders:listByOwner(upcomingOnly) here.
+    // Dashboard greeting data: pets:listByOwner + reminders:listByOwner(upcomingOnly).
+    // Null api/ownerId keeps the warm empty states (previews, signed-out).
     LaunchedEffect(api, ownerId) {
-        if (api == null || ownerId == null) return@LaunchedEffect
-        // Wiring lands separately — warm empty states show until then.
+        if (api == null || ownerId == null) {
+            pets = emptyList()
+            dueSoon = emptyList()
+            loading = false
+            return@LaunchedEffect
+        }
+        loading = true
+        error = null
+        try {
+            pets = api.listPets(ownerId)
+            dueSoon = api.listReminders(ownerId, upcomingOnly = true)
+        } catch (e: Exception) {
+            error = e.message ?: "Couldn't load your pets"
+        } finally {
+            loading = false
+        }
     }
 
     Column(
@@ -91,6 +109,24 @@ fun HomeScreen(
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onBackground,
             )
+            if (loading) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            if (error != null) {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = error ?: "Something went wrong",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(16.dp),
+                    )
+                }
+            }
             if (pets.isEmpty()) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),

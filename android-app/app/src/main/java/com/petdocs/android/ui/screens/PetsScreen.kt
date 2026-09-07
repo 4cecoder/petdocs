@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,11 +45,27 @@ fun PetsScreen(
     ownerId: String? = null,
 ) {
     var pets by remember { mutableStateOf(emptyList<Pet>()) }
+    var loading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
 
-    // TODO(api): wire pets:listByOwner here.
+    // Pet grid data: pets:listByOwner. Null api/ownerId keeps the warm empty
+    // state (previews, signed-out).
     LaunchedEffect(api, ownerId) {
-        if (api == null || ownerId == null) return@LaunchedEffect
-        // Wiring lands separately — warm empty state shows until then.
+        if (api == null || ownerId == null) {
+            pets = emptyList()
+            loading = false
+            return@LaunchedEffect
+        }
+        loading = true
+        error = null
+        try {
+            pets = api.listPets(ownerId)
+        } catch (e: Exception) {
+            error = e.message ?: "Couldn't load pets"
+            pets = emptyList()
+        } finally {
+            loading = false
+        }
     }
 
     Column(
@@ -72,6 +89,26 @@ fun PetsScreen(
                 modifier = Modifier.heightIn(min = 48.dp),
             ) {
                 Text("+ Add pet")
+            }
+        }
+
+        if (loading) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+
+        if (error != null) {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    error ?: "Something went wrong",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(16.dp),
+                )
             }
         }
 

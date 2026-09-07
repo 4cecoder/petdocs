@@ -8,10 +8,11 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { clearSession, getOwnerId, getSessionEmail } from "@/lib/api";
 import { ROUTES } from "@/lib/routes";
 
 interface DashboardAuth {
-  /** Owner identifier once Convex auth lands (magic link). Null while unknown. */
+  /** Owner id from the verified magic-link session. Null while signed out. */
   ownerId: string | null;
   loading: boolean;
   signOut: () => void;
@@ -27,29 +28,42 @@ export function useDashboardAuth(): DashboardAuth {
   return useContext(DashboardAuthContext);
 }
 
+/**
+ * Authenticated only when BOTH the session email and the owner id are
+ * present. Legacy email-only entries (pre-magic-link demo scaffold) do not
+ * count — they redirect to sign-in instead of leaking into the dashboard.
+ */
+function readOwnerId(): string | null {
+  try {
+    if (typeof window === "undefined") return null;
+    if (!getSessionEmail()) return null;
+    return getOwnerId();
+  } catch {
+    return null;
+  }
+}
+
 export function DashboardAuthProvider({ children }: { children: ReactNode }) {
-  // TODO(convex): replace with Convex auth (useConvexAuth / owners.getMe).
-  const [ownerId, setOwnerId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  // localStorage is synchronous, so the session resolves during the initial
+  // render — no effect-delay flash on the client. `loading` is true only
+  // during SSR (window undefined), before hydration can read the session.
+  const [ownerId, setOwnerId] = useState<string | null>(() => readOwnerId());
+  const [loading, setLoading] = useState<boolean>(
+    () => typeof window === "undefined",
+  );
 
   useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem("petdocs-owner");
-      setOwnerId(stored);
-    } catch {
-      setOwnerId(null);
-    } finally {
-      setLoading(false);
-    }
+    // Safety re-sync: storage may have changed between render and effect
+    // (e.g. sign-in in another tab just before navigation here).
+    setOwnerId(readOwnerId());
+    setLoading(false);
   }, []);
 
   function signOut() {
-    try {
-      window.localStorage.removeItem("petdocs-owner");
-    } catch {
-      /* noop */
-    }
+    clearSession();
     setOwnerId(null);
+    router.replace(ROUTES.home);
   }
 
   return (

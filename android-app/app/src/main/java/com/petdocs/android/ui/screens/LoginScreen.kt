@@ -29,9 +29,14 @@ import kotlinx.coroutines.launch
  * email field + "Send magic link" button, no password.
  */
 @Composable
-fun LoginScreen(onSignedIn: () -> Unit) {
+fun LoginScreen(
+    onSignedIn: () -> Unit,
+    session: SessionStore? = null,
+) {
     val context = LocalContext.current
-    val sessionStore = remember { SessionStore(context.applicationContext) }
+    // Shared session when provided by Nav (MainActivity owns it); otherwise a
+    // local one on the same DataStore — same keys either way.
+    val sessionStore = session ?: remember { SessionStore(context.applicationContext) }
     val scope = rememberCoroutineScope()
 
     var email by remember { mutableStateOf("") }

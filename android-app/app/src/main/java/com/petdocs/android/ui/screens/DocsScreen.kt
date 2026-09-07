@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -25,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.petdocs.android.data.Pet
 import com.petdocs.android.data.PetdocsApi
 import com.petdocs.android.data.VaultDoc
 import java.text.SimpleDateFormat
@@ -40,13 +42,50 @@ fun DocsScreen(
     api: PetdocsApi? = null,
     ownerId: String? = null,
 ) {
+    var pets by remember { mutableStateOf(emptyList<Pet>()) }
     var docs by remember { mutableStateOf(emptyList<VaultDoc>()) }
     var selectedPetId by remember { mutableStateOf<String?>(null) }
+    var loading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
 
-    // TODO(api): wire per-pet documents:listByPet queries + category filter here.
-    LaunchedEffect(api, ownerId, selectedPetId) {
-        if (api == null || ownerId == null) return@LaunchedEffect
-        // Wiring lands separately — warm empty state shows until then.
+    // Pet list for the filter chips: pets:listByOwner.
+    LaunchedEffect(api, ownerId) {
+        if (api == null || ownerId == null) {
+            pets = emptyList()
+            return@LaunchedEffect
+        }
+        try {
+            pets = api.listPets(ownerId)
+        } catch (_: Exception) {
+            pets = emptyList()
+        }
+    }
+
+    // Vault docs: documents:listByPet per selected pet, or across all pets
+    // (newest first) when "All pets" is selected. Null api/ownerId keeps the
+    // warm empty state (previews, signed-out).
+    LaunchedEffect(api, ownerId, selectedPetId, pets) {
+        if (api == null || ownerId == null) {
+            docs = emptyList()
+            loading = false
+            return@LaunchedEffect
+        }
+        loading = true
+        error = null
+        try {
+            docs = if (selectedPetId != null) {
+                api.listDocs(ownerId, selectedPetId)
+            } else {
+                val all = mutableListOf<VaultDoc>()
+                pets.forEach { pet -> all += api.listDocs(ownerId, pet.id) }
+                all.sortedByDescending { it.createdAt }
+            }
+        } catch (e: Exception) {
+            error = e.message ?: "Couldn't load documents"
+            docs = emptyList()
+        } finally {
+            loading = false
+        }
     }
 
     LazyColumn(
@@ -72,7 +111,35 @@ fun DocsScreen(
                         modifier = Modifier.heightIn(min = 48.dp),
                     )
                 }
-                // TODO(api): per-pet filter chips once pets:listByOwner is wired.
+                items(pets, key = { it.id }) { pet ->
+                    FilterChip(
+                        selected = selectedPetId == pet.id,
+                        onClick = { selectedPetId = pet.id },
+                        label = { Text(pet.name) },
+                        modifier = Modifier.heightIn(min = 48.dp),
+                    )
+                }
+            }
+        }
+
+        if (loading) {
+            item {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item { CircularProgressIndicator() }
+                }
+            }
+        }
+
+        if (error != null) {
+            item {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        error ?: "Something went wrong",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(16.dp),
+                    )
+                }
             }
         }
 

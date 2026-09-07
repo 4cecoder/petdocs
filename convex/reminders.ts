@@ -119,6 +119,51 @@ export const markSent = internalMutation({
   },
 });
 
+export const ownerEmail = internalQuery({
+  args: { ownerId: v.id("owners") },
+  returns: v.union(v.string(), v.null()),
+  handler: async (ctx, args) => {
+    const owner = await ctx.db.get(args.ownerId);
+    return owner?.email ?? null;
+  },
+});
+
+export const reminderContext = internalQuery({
+  args: { reminderId: v.id("reminders") },
+  returns: v.union(
+    v.object({
+      email: v.union(v.string(), v.null()),
+      petName: v.string(),
+      title: v.string(),
+      dueAt: v.number(),
+    }),
+    v.null(),
+  ),
+  handler: async (ctx, args) => {
+    const reminder = await ctx.db.get(args.reminderId);
+    if (!reminder) return null;
+    const [owner, pet] = await Promise.all([
+      ctx.db.get(reminder.ownerId),
+      ctx.db.get(reminder.petId),
+    ]);
+    return {
+      email: owner?.email ?? null,
+      petName: pet?.name ?? "your pet",
+      title: reminder.title,
+      dueAt: reminder.dueAt,
+    };
+  },
+});
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export const sendDue = internalAction({
   args: {},
   returns: v.number(),
@@ -129,19 +174,40 @@ export const sendDue = internalAction({
       now,
       horizon,
     });
-    let marked = 0;
+    let sent = 0;
     for (const reminder of due) {
-      // TODO: actually send before marking — via resend (owner email, e.g.
-      // ctx.runAction(internal.resend.sendEmail, {...}) once the owner email
-      // is resolved) / FCM (push). Skipped for now with zero logging by
-      // design (no console.* — a secret must never reach logs); only the
-      // status flip runs, so the tick pipeline is exercised end-to-end and
-      // markSent stays idempotent once the real send lands.
-      const id = await ctx.runMutation(internal.reminders.markSent, {
+      const context = await ctx.runQuery(internal.reminders.reminderContext, {
         reminderId: reminder._id,
       });
-      if (id) marked += 1;
+      if (!context || !context.email) continue;
+      const { email, petName, title, dueAt } = context;
+      const subject = `PetDocs reminder: ${title} for ${petName}`;
+      const safeTitle = escapeHtml(title);
+      const safePet = escapeHtml(petName);
+      const dueLabel = escapeHtml(new Date(dueAt).toLocaleDateString());
+      const html =
+        `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#fff8f1;border:1px solid #f0e2d3;border-radius:12px;">` +
+        `<h2 style="margin:0 0 8px;color:#4a2c14;">🐾 PetDocs reminder</h2>` +
+        `<p style="margin:0 0 12px;color:#5b4a3f;">Hi there — just a gentle nudge for <strong>${safePet}</strong>.</p>` +
+        `<p style="margin:0 0 8px;color:#2b2118;font-size:16px;"><strong>${safeTitle}</strong></p>` +
+        `<p style="margin:0;color:#5b4a3f;">Due: ${dueLabel}</p>` +
+        `</div>`;
+      const text = `PetDocs reminder for ${petName}: ${title} (due ${new Date(dueAt).toLocaleDateString()}).`;
+      const result = await ctx.runAction(internal.resend.sendEmail, {
+        to: email,
+        subject,
+        html,
+        text,
+      });
+      // Only flip scheduled → sent on successful send; failures stay
+      // scheduled so the next hourly tick retries them.
+      if (result.ok) {
+        const id = await ctx.runMutation(internal.reminders.markSent, {
+          reminderId: reminder._id,
+        });
+        if (id) sent += 1;
+      }
     }
-    return marked;
+    return sent;
   },
 });
