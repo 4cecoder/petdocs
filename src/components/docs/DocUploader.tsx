@@ -5,6 +5,7 @@ import { Camera, FileText } from "lucide-react";
 import { DOC_CATEGORIES, validateDocUpload } from "@/lib/validators";
 import { api, getOwnerId, isBackendConfigured, uploadDoc, type Pet } from "@/lib/api";
 import { FlowNav, WizardShell, useSteps } from "@/components/flow/Wizard";
+import { ExtractFields, type SmartFillFields } from "./ExtractFields";
 
 const STEPS = ["Pet", "Capture", "Details", "Done"];
 const CAPTURE_INDEX = 1;
@@ -30,6 +31,10 @@ export function DocUploader({
   const [category, setCategory] = useState<string>("vaccine_record");
   // TODO: picks up a notes field in the UI; uploadDoc has no notes param so this stays client-side only for now.
   const [notes, setNotes] = useState("");
+  // Drafted vaccine fields from Smart fill. Human confirms via Apply before
+  // anything is stored here, and nothing writes to Convex yet.
+  // TODO(convex) to save as vaccination row on upload.
+  const [draftedVax, setDraftedVax] = useState<SmartFillFields | null>(null);
   const [savedName, setSavedName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -140,12 +145,22 @@ export function DocUploader({
     }
   }
 
+  function handleSmartFill(fields: SmartFillFields) {
+    const vaccineName = fields.vaccineName?.trim() || undefined;
+    const administeredAt = fields.administeredAt?.trim() || undefined;
+    const provider = fields.provider?.trim() || undefined;
+    if (!vaccineName && !administeredAt && !provider) return;
+    if (vaccineName) setCategory("vaccine_record");
+    setDraftedVax({ ...(vaccineName ? { vaccineName } : {}), ...(administeredAt ? { administeredAt } : {}), ...(provider ? { provider } : {}) });
+  }
+
   function resetToCapture() {
     setError(null);
     setStatus(null);
     setSavedName(null);
     setFile(null);
     setNotes("");
+    setDraftedVax(null);
     setPreview((old) => {
       if (old) URL.revokeObjectURL(old);
       return null;
@@ -310,6 +325,30 @@ export function DocUploader({
           subtitle="Tell us what this is."
         >
           <div className="flex flex-col gap-3">
+            <ExtractFields onApply={handleSmartFill} />
+            {draftedVax ? (
+              <div
+                role="status"
+                aria-live="polite"
+                className="flex flex-wrap gap-2"
+              >
+                {draftedVax.vaccineName ? (
+                  <span className="rounded-full border border-ink/15 bg-cream px-3 py-1 text-sm font-medium">
+                    Vaccine: {draftedVax.vaccineName}
+                  </span>
+                ) : null}
+                {draftedVax.administeredAt ? (
+                  <span className="rounded-full border border-ink/15 bg-cream px-3 py-1 text-sm font-medium">
+                    Given: {draftedVax.administeredAt}
+                  </span>
+                ) : null}
+                {draftedVax.provider ? (
+                  <span className="rounded-full border border-ink/15 bg-cream px-3 py-1 text-sm font-medium">
+                    Vet: {draftedVax.provider}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
             <label className="flex flex-col gap-1 text-sm font-medium">
               Document type
               <select

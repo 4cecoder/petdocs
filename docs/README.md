@@ -9,6 +9,7 @@
 | [05-ux-frontend.md](05-ux-frontend.md) | Routes, screens, components, onboarding. |
 | [06-roadmap.md](06-roadmap.md) | Build order, phases v0.1→v1.0. |
 | [07-feature-parity.md](07-feature-parity.md) | Web ↔ Android ↔ backend parity, pains, model, steal-list. |
+| [11-ai-ocr.md](11-ai-ocr.md) | OCR/AI use-case catalog UC-1..UC-10, determinism ladder, privacy. |
 
 ## How docs map to GitHub issues
 
