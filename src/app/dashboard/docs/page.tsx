@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { PetArt } from "@/components/art/PetArt";
 import { DocList, type VaultDoc as VaultDocRow } from "@/components/docs/DocList";
 import { api, getOwnerId, isBackendConfigured, type Pet } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -96,7 +97,14 @@ export default function DocsPage() {
             All pets
           </span>
         </div>
-        <DocList docs={[]} />
+        <div className="flex flex-col items-center rounded-2xl border border-dashed border-ink/20 bg-white p-8 text-center">
+          <PetArt name="camera" size={120} />
+          <p className="mt-2 font-semibold">Snap your first doc</p>
+          <p className="text-sm text-ink-soft">
+            Snap a photo of a vaccine cert to start the vault — it takes
+            seconds.
+          </p>
+        </div>
       </div>
     );
   }
@@ -151,7 +159,20 @@ export default function DocsPage() {
           </p>
         ) : null}
       </div>
-      {!loading && !error ? <DocList docs={filtered} /> : null}
+      {!loading && !error ? (
+        filtered.length === 0 ? (
+          <div className="flex flex-col items-center rounded-2xl border border-dashed border-ink/20 bg-white p-8 text-center">
+            <PetArt name="camera" size={120} />
+            <p className="mt-2 font-semibold">Snap your first doc</p>
+            <p className="text-sm text-ink-soft">
+              Snap a photo of a vaccine cert to start the vault — it takes
+              seconds.
+            </p>
+          </div>
+        ) : (
+          <DocList docs={filtered} />
+        )
+      ) : null}
     </div>
   );
 }

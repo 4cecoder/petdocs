@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PetArt } from "@/components/art/PetArt";
 import { ApartmentPacket } from "@/components/share/ApartmentPacket";
 import { api, getOwnerId, type Pet, type ShareLink } from "@/lib/api";
 import { passportHref } from "@/lib/routes";
@@ -80,18 +81,33 @@ export default function SharePage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="font-display text-2xl font-bold">Shared links</h1>
-      <p className="text-sm text-ink-soft">
-        One link per recipient — revoke one without breaking the others.
-      </p>
+      <header className="flex items-center gap-4 rounded-2xl border border-ink/10 bg-white p-4">
+        <PetArt name="link" size={72} />
+        <div className="flex min-w-0 flex-col gap-1">
+          <h1 className="font-display text-2xl font-bold">Shared links</h1>
+          <p className="text-sm font-semibold text-brand-700">
+            Share the love, safely.
+          </p>
+          <p className="text-sm text-ink-soft">
+            One link per recipient — revoke one without breaking the others.
+          </p>
+        </div>
+      </header>
 
+      <section
+        aria-label="Active share links"
+        className="rounded-2xl border border-ink/10 bg-white p-4"
+      >
       {loading ? (
         <p aria-live="polite" className="text-sm text-ink-soft">
           Loading links… 🐾
         </p>
       ) : petsWithLinks.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-ink/20 bg-white/60 p-8 text-center text-sm text-ink-soft">
-          No active links yet. Create one from a pet&apos;s profile.
+          <PetArt name="sleepy" size={120} className="mx-auto" />
+          <p className="mt-3">
+            No active links yet. Create one from a pet&apos;s profile.
+          </p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -138,6 +154,7 @@ export default function SharePage() {
           ))}
         </div>
       )}
+      </section>
 
       <section aria-label="Apartment packet" className="flex flex-col gap-2">
         <h2 className="font-display text-xl font-bold">Apartment packet</h2>

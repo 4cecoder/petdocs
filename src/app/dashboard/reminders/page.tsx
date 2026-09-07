@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { PetArt } from "@/components/art/PetArt";
 import { ReminderRow, type ReminderItem } from "@/components/reminders/ReminderRow";
 import { api, getOwnerId, isBackendConfigured, type Pet, type Reminder } from "@/lib/api";
 import { convexMutation } from "@/lib/convexHttp";
@@ -80,9 +81,19 @@ export default function RemindersPage() {
       else later.push(r);
     }
     return [
-      { title: "Overdue", empty: "Nothing overdue. 🎉", items: overdue, now },
-      { title: "This week", empty: "Nothing due this week.", items: thisWeek, now },
-      { title: "Later", empty: "Nothing scheduled later.", items: later, now },
+      { title: "Overdue", empty: "Nothing overdue — nice work.", items: overdue, now },
+      {
+        title: "This week",
+        empty: "Nothing due this week — enjoy the calm.",
+        items: thisWeek,
+        now,
+      },
+      {
+        title: "Later",
+        empty: "Nothing scheduled later — future you says thanks.",
+        items: later,
+        now,
+      },
     ];
   }, [reminders]);
 
@@ -99,15 +110,19 @@ export default function RemindersPage() {
           </button>
         </div>
         {[
-          { title: "Overdue", empty: "Nothing overdue. 🎉" },
-          { title: "This week", empty: "Nothing due this week." },
-          { title: "Later", empty: "Nothing scheduled later." },
+          { title: "Overdue", empty: "Nothing overdue — nice work." },
+          { title: "This week", empty: "Nothing due this week — enjoy the calm." },
+          { title: "Later", empty: "Nothing scheduled later — future you says thanks." },
         ].map((group) => (
           <section key={group.title} aria-label={group.title}>
             <h2 className="mb-2 font-display font-bold">{group.title}</h2>
-            <p className="rounded-2xl border border-dashed border-ink/20 bg-white/60 p-4 text-center text-sm text-ink-soft">
-              {group.empty}
-            </p>
+            <div className="flex flex-col items-center rounded-2xl border border-dashed border-ink/20 bg-white/60 p-4 text-center text-sm text-ink-soft">
+              <PetArt name="clock" size={96} />
+              <p className="mt-2 text-base font-semibold text-ink">
+                All clear — for now
+              </p>
+              <p className="mt-1">{group.empty}</p>
+            </div>
           </section>
         ))}
       </div>
@@ -280,9 +295,13 @@ export default function RemindersPage() {
             <section key={group.title} aria-label={group.title}>
               <h2 className="mb-2 font-display font-bold">{group.title}</h2>
               {group.items.length === 0 ? (
-                <p className="rounded-2xl border border-dashed border-ink/20 bg-white/60 p-4 text-center text-sm text-ink-soft">
-                  {group.empty}
-                </p>
+                <div className="flex flex-col items-center rounded-2xl border border-dashed border-ink/20 bg-white/60 p-4 text-center text-sm text-ink-soft">
+                  <PetArt name="clock" size={96} />
+                  <p className="mt-2 text-base font-semibold text-ink">
+                    All clear — for now
+                  </p>
+                  <p className="mt-1">{group.empty}</p>
+                </div>
               ) : (
                 <ul className="flex flex-col gap-2">
                   {group.items.map((reminder) => (

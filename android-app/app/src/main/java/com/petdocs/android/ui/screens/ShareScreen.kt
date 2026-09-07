@@ -4,6 +4,8 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDropDown
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -24,6 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -45,6 +49,7 @@ import com.petdocs.android.data.ShareLink
 import com.petdocs.android.data.Vaccination
 import com.petdocs.android.data.maskChip
 import com.petdocs.android.data.vaccineStatusFor
+import com.petdocs.android.ui.components.Stepper
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -321,6 +326,7 @@ private fun ShareLinkRow(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ShareCreatorCard(
     pet: Pet,
@@ -330,11 +336,20 @@ private fun ShareCreatorCard(
     val clipboard = LocalClipboardManager.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    var recipientLabel by remember { mutableStateOf("") }
     var expiry by remember { mutableStateOf(EXPIRY_OPTIONS[1]) }
     var expanded by remember { mutableStateOf(false) }
     var creating by remember { mutableStateOf(false) }
     var createdUrl by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
+
+    // Visible progress Who → Expiry → Copy.
+    val step = when {
+        createdUrl != null -> 2
+        recipientLabel.isNotBlank() -> 1
+        else -> 0
+    }
+    val presets = listOf("Vet", "Groomer", "Boarder", "Landlord", "Airline")
 
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -342,8 +357,29 @@ private fun ShareCreatorCard(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text("Share ${pet.name}'s passport 🐾", style = MaterialTheme.typography.titleSmall)
+            Stepper(current = step, labels = listOf("Who", "Expiry", "Copy"))
 
-            // Expiry dropdown: 24h / 7d / 30d.
+            // Step 1 — Who: recipient label + preset chips.
+            Text("1 · Who is this for?", style = MaterialTheme.typography.labelLarge)
+            OutlinedTextField(
+                value = recipientLabel,
+                onValueChange = { recipientLabel = it },
+                label = { Text("Recipient label") },
+                placeholder = { Text("e.g. Vet, groomer…") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                presets.forEach { preset ->
+                    AssistChip(
+                        onClick = { recipientLabel = preset },
+                        label = { Text(preset) },
+                    )
+                }
+            }
+
+            // Step 2 — Expiry dropdown: 24h / 7d / 30d (kept).
+            Text("2 · How long should it live?", style = MaterialTheme.typography.labelLarge)
             Box {
                 OutlinedButton(
                     onClick = { expanded = true },
@@ -369,17 +405,25 @@ private fun ShareCreatorCard(
                 }
             }
 
+            // Step 3 — Copy (create + clipboard behavior kept).
+            Text("3 · Copy + send", style = MaterialTheme.typography.labelLarge)
             Button(
                 onClick = {
                     creating = true
                     error = null
                     scope.launch {
                         try {
+                            val trimmed = recipientLabel.trim()
+                            val finalLabel = if (trimmed.isBlank()) {
+                                "${pet.name} passport (${expiry.short})"
+                            } else {
+                                "${pet.name} passport · $trimmed (${expiry.short})"
+                            }
                             val result = api.createShareToken(
                                 ownerId = ownerId,
                                 petId = pet.id,
                                 scope = "passport",
-                                label = "${pet.name} passport (${expiry.short})",
+                                label = finalLabel,
                                 expiresAt = System.currentTimeMillis() + expiry.durationMillis,
                             )
                             // TODO(baseUrl): pull the public web base URL from

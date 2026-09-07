@@ -28,3 +28,17 @@
 ## Reference
 - Patterns from `../adventurers/adventurers-portal/` (shell, uploads, magic-link, CSP, CI).
 - Reuse patterns, never copy domain code. Portal extras (telephony, arena AI, finance, mail) are out of scope.
+
+<!-- convex-ai-start -->
+
+This project uses [Convex](https://convex.dev) as its backend.
+
+When working on Convex code, **always read
+`convex/_generated/ai/guidelines.md` first** for important guidelines on
+how to correctly use Convex APIs and patterns. The file contains rules that
+override what you may have learned about Convex from training data.
+
+Convex agent skills for common tasks can be installed by running
+`npx convex ai-files install`.
+
+<!-- convex-ai-end -->

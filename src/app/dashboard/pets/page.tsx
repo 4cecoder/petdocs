@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { PetCard } from "@/components/pets/PetCard";
+import { FlowNav, WizardShell, useSteps } from "@/components/flow/Wizard";
 import { api, getOwnerId, isBackendConfigured, type Pet } from "@/lib/api";
 import { PET_SPECIES, validatePetName, type PetSpecies } from "@/lib/validators";
+
+const STEPS = ["Name", "Details"];
 
 export default function PetsPage() {
   const ownerId = getOwnerId();
@@ -14,6 +17,7 @@ export default function PetsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [showForm, setShowForm] = useState(false);
+  const { step, next, back, go } = useSteps(STEPS.length, 0);
   const [name, setName] = useState("");
   const [species, setSpecies] = useState<PetSpecies>("dog");
   const [breed, setBreed] = useState("");
@@ -61,12 +65,36 @@ export default function PetsPage() {
     );
   }
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
+  function handleToggle() {
+    setShowForm((v) => {
+      if (!v) {
+        go(0);
+        setFormError(null);
+      } else {
+        go(0);
+        setFormError(null);
+      }
+      return !v;
+    });
+  }
+
+  function handleClose() {
+    setShowForm(false);
+    go(0);
+    setFormError(null);
+  }
+
+  function handleGo(n: number) {
+    if (n === 1 && validatePetName(name)) return;
+    go(n);
+  }
+
+  async function handleCreate() {
     if (!ownerId) return;
     const nameProblem = validatePetName(name);
     if (nameProblem) {
       setFormError(nameProblem);
+      go(0);
       return;
     }
     setCreating(true);
@@ -84,6 +112,7 @@ export default function PetsPage() {
       setBreed("");
       setSpecies("dog");
       setShowForm(false);
+      go(0);
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : "Could not add pet.");
     } finally {
@@ -91,13 +120,15 @@ export default function PetsPage() {
     }
   }
 
+  const nameProblem = validatePetName(name);
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold">Pets</h1>
         <button
           type="button"
-          onClick={() => setShowForm((v) => !v)}
+          onClick={handleToggle}
           aria-expanded={showForm}
           className="min-h-[48px] rounded-2xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
         >
@@ -106,61 +137,106 @@ export default function PetsPage() {
       </div>
 
       {showForm ? (
-        <form
-          onSubmit={handleCreate}
-          className="flex flex-col gap-3 rounded-2xl border border-ink/10 bg-white p-4"
-        >
-          <div className="grid gap-3 sm:grid-cols-3">
-            <label className="flex flex-col gap-1 text-sm font-medium">
-              Name
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                maxLength={60}
-                required
-                placeholder="Biscuit"
-                className="min-h-[48px] rounded-xl border border-ink/15 bg-cream px-3"
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-sm font-medium">
-              Species
-              <select
-                value={species}
-                onChange={(e) => setSpecies(e.target.value as PetSpecies)}
-                className="min-h-[48px] rounded-xl border border-ink/15 bg-cream px-3 capitalize"
-              >
-                {PET_SPECIES.map((s) => (
-                  <option key={s} value={s} className="capitalize">
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-sm font-medium">
-              Breed <span className="font-normal text-ink-soft">(optional)</span>
-              <input
-                type="text"
-                value={breed}
-                onChange={(e) => setBreed(e.target.value)}
-                placeholder="Golden retriever"
-                className="min-h-[48px] rounded-xl border border-ink/15 bg-cream px-3"
-              />
-            </label>
-          </div>
-          {formError ? (
-            <p role="alert" className="text-sm font-medium text-red-600">
-              {formError}
-            </p>
+        <div className="rounded-2xl border border-ink/10 bg-white p-4">
+          {step === 0 ? (
+            <WizardShell
+              steps={STEPS}
+              current={step}
+              onGo={handleGo}
+              art="happy"
+              title="Name your pet"
+              subtitle="What do we call them?"
+              nav={
+                <div className="mt-4">
+                  <FlowNav
+                    onBack={handleClose}
+                    backLabel="Cancel"
+                    onNext={next}
+                    nextLabel="Continue"
+                    nextDisabled={!!nameProblem}
+                  />
+                </div>
+              }
+            >
+              <label className="flex flex-col gap-1 text-sm font-medium">
+                Name
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  maxLength={60}
+                  required
+                  placeholder="Biscuit"
+                  className="min-h-[48px] rounded-xl border border-ink/15 bg-cream px-3"
+                />
+              </label>
+              {nameProblem && name.trim() ? (
+                <p role="alert" className="mt-2 text-sm font-medium text-red-600">
+                  {nameProblem}
+                </p>
+              ) : null}
+              {formError ? (
+                <p role="alert" className="mt-2 text-sm font-medium text-red-600">
+                  {formError}
+                </p>
+              ) : null}
+            </WizardShell>
           ) : null}
-          <button
-            type="submit"
-            disabled={creating}
-            className="min-h-[48px] rounded-2xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
-          >
-            {creating ? "Adding…" : "Add pet"}
-          </button>
-        </form>
+
+          {step === 1 ? (
+            <WizardShell
+              steps={STEPS}
+              current={step}
+              onGo={handleGo}
+              art="box"
+              title="Pet details"
+              subtitle={`A little more about ${name.trim() || "your pet"}.`}
+              nav={
+                <div className="mt-4">
+                  <FlowNav
+                    onBack={back}
+                    backLabel="Back"
+                    onNext={() => void handleCreate()}
+                    nextLabel={creating ? "Adding…" : "Add pet"}
+                    loading={creating}
+                  />
+                </div>
+              }
+            >
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="flex flex-col gap-1 text-sm font-medium">
+                  Species
+                  <select
+                    value={species}
+                    onChange={(e) => setSpecies(e.target.value as PetSpecies)}
+                    className="min-h-[48px] rounded-xl border border-ink/15 bg-cream px-3 capitalize"
+                  >
+                    {PET_SPECIES.map((s) => (
+                      <option key={s} value={s} className="capitalize">
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-sm font-medium">
+                  Breed <span className="font-normal text-ink-soft">(optional)</span>
+                  <input
+                    type="text"
+                    value={breed}
+                    onChange={(e) => setBreed(e.target.value)}
+                    placeholder="Golden retriever"
+                    className="min-h-[48px] rounded-xl border border-ink/15 bg-cream px-3"
+                  />
+                </label>
+              </div>
+              {formError ? (
+                <p role="alert" className="mt-2 text-sm font-medium text-red-600">
+                  {formError}
+                </p>
+              ) : null}
+            </WizardShell>
+          ) : null}
+        </div>
       ) : null}
 
       <div aria-live="polite">

@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
+import { PetArt } from "@/components/art/PetArt";
 import { DocList, type VaultDoc as VaultDocRow } from "@/components/docs/DocList";
 import { DocUploader } from "@/components/docs/DocUploader";
 import { PetTimeline, type TimelineEvent } from "@/components/pets/PetTimeline";
@@ -157,19 +158,19 @@ export default function PetDetailPage({
     return (
       <div className="flex flex-col gap-6">
         <header className="flex items-center gap-4">
-          <span
-            aria-hidden="true"
-            className="flex h-20 w-20 items-center justify-center rounded-2xl bg-cream-dark text-4xl"
-          >
-            🐾
-          </span>
+          <PetArt name="happy" size={80} />
           <div>
             <h1 className="font-display text-2xl font-bold">Pet profile</h1>
             <p className="text-sm text-ink-soft">ID: {petId} (wiring lands with Convex)</p>
           </div>
         </header>
 
-        <ShareButton petId={petId} petName="your pet" />
+        <div className="flex items-start gap-3">
+          <PetArt name="link" size={96} className="shrink-0" />
+          <div className="flex-1">
+            <ShareButton petId={petId} petName="your pet" />
+          </div>
+        </div>
 
         <section aria-label="Upload">
           <h2 className="mb-2 font-display text-lg font-bold">Add a document</h2>
@@ -178,12 +179,25 @@ export default function PetDetailPage({
 
         <section aria-label="Documents">
           <h2 className="mb-2 font-display text-lg font-bold">Documents</h2>
-          <DocList docs={[]} />
+          <div className="flex flex-col items-center rounded-2xl border border-dashed border-ink/20 bg-white p-8 text-center">
+            <PetArt name="camera" size={120} />
+            <p className="mt-2 font-semibold">Snap your first doc</p>
+            <p className="text-sm text-ink-soft">
+              A vaccine cert photo is a perfect start — it keeps this vault
+              cozy and complete.
+            </p>
+          </div>
         </section>
 
         <section aria-label="Timeline">
           <h2 className="mb-2 font-display text-lg font-bold">Timeline</h2>
-          <PetTimeline events={[]} />
+          <div className="flex flex-col items-center rounded-2xl border border-dashed border-ink/20 bg-white p-8 text-center">
+            <PetArt name="sleepy" size={120} />
+            <p className="mt-2 font-display font-bold">Quiet for now</p>
+            <p className="text-sm text-ink-soft">
+              Uploads, visits, and vax will nap here until the story begins.
+            </p>
+          </div>
         </section>
       </div>
     );
@@ -224,12 +238,7 @@ export default function PetDetailPage({
   return (
     <div className="flex flex-col gap-6">
       <header className="flex items-center gap-4">
-        <span
-          aria-hidden="true"
-          className="flex h-20 w-20 items-center justify-center rounded-2xl bg-cream-dark text-4xl"
-        >
-          🐾
-        </span>
+        <PetArt name="happy" size={80} />
         <div>
           <h1 className="font-display text-2xl font-bold">{pet.name}</h1>
           <p className="text-sm capitalize text-ink-soft">
@@ -239,7 +248,12 @@ export default function PetDetailPage({
         </div>
       </header>
 
-      <ShareButton petId={petId} petName={pet.name} />
+      <div className="flex items-start gap-3">
+        <PetArt name="link" size={96} className="shrink-0" />
+        <div className="flex-1">
+          <ShareButton petId={petId} petName={pet.name} />
+        </div>
+      </div>
 
       <section aria-label="Upload">
         <h2 className="mb-2 font-display text-lg font-bold">Add a document</h2>
@@ -253,12 +267,34 @@ export default function PetDetailPage({
             {docsError}
           </p>
         ) : null}
-        <DocList docs={docs.map(toDocRow)} />
+        {docs.length === 0 ? (
+          <div className="flex flex-col items-center rounded-2xl border border-dashed border-ink/20 bg-white p-8 text-center">
+            <PetArt name="camera" size={120} />
+            <p className="mt-2 font-semibold">Snap your first doc</p>
+            <p className="text-sm text-ink-soft">
+              A vaccine cert photo is a perfect start — it keeps {pet.name}&apos;s
+              vault cozy and complete.
+            </p>
+          </div>
+        ) : (
+          <DocList docs={docs.map(toDocRow)} />
+        )}
       </section>
 
       <section aria-label="Timeline">
         <h2 className="mb-2 font-display text-lg font-bold">Timeline</h2>
-        <PetTimeline events={timeline} />
+        {timeline.length === 0 ? (
+          <div className="flex flex-col items-center rounded-2xl border border-dashed border-ink/20 bg-white p-8 text-center">
+            <PetArt name="sleepy" size={120} />
+            <p className="mt-2 font-display font-bold">Quiet for now</p>
+            <p className="text-sm text-ink-soft">
+              Uploads, visits, and vax will nap here until {pet.name}&apos;s story
+              begins.
+            </p>
+          </div>
+        ) : (
+          <PetTimeline events={timeline} />
+        )}
       </section>
     </div>
   );

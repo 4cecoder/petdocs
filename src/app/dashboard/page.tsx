@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PetArt } from "@/components/art/PetArt";
 import { ROUTES } from "@/lib/routes";
 
 /**
@@ -20,10 +21,15 @@ export default function DashboardHome() {
 
       <section aria-label="Your pets">
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-2xl border border-dashed border-ink/20 bg-white/60 p-6 text-center text-sm text-ink-soft">
-            Your pets will appear here.
-            <br />
-            Add your first pet to create its vault.
+          <div className="flex flex-col items-center rounded-2xl border border-dashed border-ink/20 bg-white/60 p-6 text-center text-sm text-ink-soft">
+            <PetArt name="happy" size={120} />
+            <p className="mt-2 text-base font-semibold text-ink">
+              Your pack starts here
+            </p>
+            <p className="mt-1">
+              Add your first pet to create its vault — photos, vax, and vet
+              visits, all in one cozy place.
+            </p>
           </div>
         </div>
         {/* Example once wired: <PetCard pet={...} dueCount={1} /> */}
@@ -40,8 +46,14 @@ export default function DashboardHome() {
           </Link>
         </div>
         <ul className="mt-2 flex flex-col gap-2">
-          <li className="rounded-2xl border border-dashed border-ink/20 bg-white/60 p-4 text-center text-sm text-ink-soft">
-            No upcoming reminders. Boosters and meds will show up here.
+          <li className="flex flex-col items-center rounded-2xl border border-dashed border-ink/20 bg-white/60 p-4 text-center text-sm text-ink-soft">
+            <PetArt name="clock" size={96} />
+            <p className="mt-2 text-base font-semibold text-ink">
+              All clear — for now
+            </p>
+            <p className="mt-1">
+              Boosters and meds will show up here right when they matter.
+            </p>
           </li>
         </ul>
         {/* Example once wired: <ReminderRow reminder={...} /> */}

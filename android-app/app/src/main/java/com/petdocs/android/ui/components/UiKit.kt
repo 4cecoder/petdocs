@@ -1,6 +1,7 @@
 package com.petdocs.android.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,8 +29,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.petdocs.android.data.VaccineStatus
 import com.petdocs.android.ui.theme.PetdocsColors
 
@@ -335,6 +341,181 @@ fun EmptyState(
             text = body,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (ctaLabel != null && onCta != null) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+                onClick = onCta,
+                modifier = Modifier.defaultMinSize(minHeight = 48.dp),
+            ) {
+                Text(text = ctaLabel)
+            }
+        }
+    }
+}
+
+/**
+ * Pet mood for [PetMoodArt]. Pragmatic stand-in for a Canvas-drawn pup/blob:
+ * a rounded cream circle + big emoji art (🐾😴📷🔗🎉⏰ plus 🚀🚨✉️) + teal ring.
+ */
+enum class PetMood {
+    HAPPY,
+    SLEEPY,
+    CAMERA,
+    LINK,
+    CLOCK,
+    ROCKET,
+    SIREN,
+    MAIL,
+}
+
+private fun PetMood.emoji(): String = when (this) {
+    PetMood.HAPPY -> "🐾"
+    PetMood.SLEEPY -> "😴"
+    PetMood.CAMERA -> "📷"
+    PetMood.LINK -> "🔗"
+    PetMood.CLOCK -> "⏰"
+    PetMood.ROCKET -> "🚀"
+    PetMood.SIREN -> "🚨"
+    PetMood.MAIL -> "✉️"
+}
+
+/**
+ * Cute pet-mood art: cream circle, big emoji glyph scaled to [size], teal ring.
+ * Material3 + [PetdocsColors] only — no Canvas pup drawing (too heavy).
+ */
+@Composable
+fun PetMoodArt(
+    mood: PetMood,
+    size: Dp = 72.dp,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .size(size)
+            .semantics { contentDescription = "Pet mood ${mood.name.lowercase()}" }
+            .clip(CircleShape)
+            .background(PetdocsColors.Cream)
+            .border(2.dp, PetdocsColors.Teal, CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = mood.emoji(),
+            fontSize = (size.value * 0.45f).sp,
+        )
+    }
+}
+
+/**
+ * Numbered-dots stepper with connectors.
+ *
+ * Each dot carries contentDescription "Step X of N: label" for TalkBack.
+ * [current] is zero-based and coerced into range; dots at/before [current]
+ * are teal, upcoming dots are cream-dark.
+ */
+@Composable
+fun Stepper(
+    current: Int,
+    labels: List<String>,
+    modifier: Modifier = Modifier,
+) {
+    if (labels.isEmpty()) return
+    val safeCurrent = current.coerceIn(0, labels.lastIndex)
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            labels.forEachIndexed { index, label ->
+                val filled = index <= safeCurrent
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .semantics {
+                            contentDescription = "Step ${index + 1} of ${labels.size}: $label"
+                        }
+                        .clip(CircleShape)
+                        .background(
+                            if (filled) PetdocsColors.Teal else PetdocsColors.CreamDark,
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "${index + 1}",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (filled) PetdocsColors.White else PetdocsColors.InkSoft,
+                    )
+                }
+                if (index < labels.lastIndex) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 6.dp)
+                            .height(2.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (index < safeCurrent) {
+                                    PetdocsColors.Teal
+                                } else {
+                                    PetdocsColors.CreamDark
+                                },
+                            ),
+                    )
+                }
+            }
+        }
+        Row(modifier = Modifier.fillMaxWidth()) {
+            labels.forEachIndexed { index, label ->
+                Text(
+                    text = label,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (index == safeCurrent) {
+                        PetdocsColors.TealDark
+                    } else {
+                        PetdocsColors.InkSoft
+                    },
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Art-led empty state combining [PetMoodArt] with title/body and an optional
+ * 48dp CTA. Material3 + [PetdocsColors] only.
+ */
+@Composable
+fun ArtEmptyState(
+    mood: PetMood,
+    title: String,
+    body: String,
+    modifier: Modifier = Modifier,
+    ctaLabel: String? = null,
+    onCta: (() -> Unit)? = null,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        PetMoodArt(mood = mood, size = 88.dp)
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = body,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
         )
         if (ctaLabel != null && onCta != null) {
             Spacer(modifier = Modifier.height(12.dp))

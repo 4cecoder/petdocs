@@ -4,122 +4,199 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { PET_SPECIES, validatePetName } from "@/lib/validators";
 import { ROUTES } from "@/lib/routes";
+import { FlowNav, WizardShell, useSteps } from "@/components/flow/Wizard";
 
-const STEPS = ["Add your pet", "Upload a doc", "Done"] as const;
+const STEPS = ["Your pet", "First doc", "All set"] as const;
 
 /** 3-step onboarding, resumable, skippable — goal <3 minutes. */
 export default function OnboardingPage() {
   const router = useRouter();
-  const [step, setStep] = useState(0);
+  const { step, next, back, go } = useSteps(STEPS.length);
   const [petName, setPetName] = useState("");
   const [species, setSpecies] = useState<string>("dog");
-  const [error, setError] = useState<string | null>(null);
+  const [touched, setTouched] = useState(false);
 
-  function handleAddPet(e: React.FormEvent) {
-    e.preventDefault();
-    const problem = validatePetName(petName);
-    if (problem) {
-      setError(problem);
-      return;
-    }
-    // TODO(convex): pets.create({ name, species }) → petId.
-    setError(null);
-    setStep(1);
+  // Live validation: gates Continue's disabled state; error shows after blur/attempt.
+  const nameProblem = validatePetName(petName);
+  const showNameError = touched && nameProblem !== null;
+  const displayName = petName.trim() || "Your pet";
+
+  // Stepper is clickable back only to already-visited steps.
+  function handleGo(n: number) {
+    if (n < step) go(n);
+  }
+
+  function handlePetContinue(e?: React.FormEvent) {
+    e?.preventDefault();
+    setTouched(true);
+    if (validatePetName(petName)) return;
+    // TODO(convex): pets.create({ name: petName.trim(), species }) → petId.
+    next();
+  }
+
+  function handleUpload() {
+    // TODO(convex): real doc picker → documents.generateUploadUrl → POST → documents.create.
+    next();
   }
 
   return (
     <main className="mx-auto max-w-md px-6 py-12">
-      <ol aria-label="Onboarding progress" className="flex gap-2">
-        {STEPS.map((label, i) => (
-          <li
-            key={label}
-            aria-current={i === step ? "step" : undefined}
-            className={`h-2 flex-1 rounded-full ${i <= step ? "bg-brand-600" : "bg-ink/10"}`}
-          />
-        ))}
-      </ol>
+      <p aria-live="polite" className="sr-only">
+        Step {step + 1} of {STEPS.length}: {STEPS[step]}
+      </p>
 
       {step === 0 ? (
-        <form onSubmit={handleAddPet} className="mt-8 flex flex-col gap-3">
-          <h1 className="font-display text-2xl font-bold">Add your first pet 🐶</h1>
-          <label className="flex flex-col gap-1 font-medium">
-            Pet&apos;s name
-            <input
-              value={petName}
-              onChange={(e) => setPetName(e.target.value)}
-              placeholder="Mochi"
-              className="min-h-[48px] rounded-xl border border-ink/15 bg-white px-4"
+        <WizardShell
+          steps={[...STEPS]}
+          current={step}
+          onGo={handleGo}
+          art="happy"
+          title="Add your first pet"
+          subtitle="Takes less than 3 minutes."
+          nav={
+            <FlowNav
+              hideBack
+              onNext={() => handlePetContinue()}
+              nextLabel="Continue"
+              nextDisabled={nameProblem !== null}
             />
-          </label>
-          <label className="flex flex-col gap-1 font-medium">
-            Species
-            <select
-              value={species}
-              onChange={(e) => setSpecies(e.target.value)}
-              className="min-h-[48px] rounded-xl border border-ink/15 bg-white px-3"
+          }
+        >
+          <form onSubmit={handlePetContinue} className="flex flex-col gap-3">
+            <label
+              htmlFor="onboarding-pet-name"
+              className="flex flex-col gap-1 font-medium"
             >
-              {PET_SPECIES.map((s) => (
-                <option key={s} value={s} className="capitalize">
-                  {s}
-                </option>
-              ))}
-            </select>
-          </label>
-          {error ? (
-            <p role="alert" className="text-sm font-medium text-red-600">
-              {error}
+              Pet&apos;s name
+              <input
+                id="onboarding-pet-name"
+                value={petName}
+                onChange={(e) => setPetName(e.target.value)}
+                onBlur={() => setTouched(true)}
+                placeholder="Mochi"
+                aria-invalid={showNameError}
+                aria-describedby={
+                  showNameError
+                    ? "onboarding-pet-name-error"
+                    : "onboarding-photo-note"
+                }
+                className="min-h-[48px] rounded-xl border border-ink/15 bg-white px-4"
+              />
+            </label>
+            <label
+              htmlFor="onboarding-species"
+              className="flex flex-col gap-1 font-medium"
+            >
+              Species
+              <select
+                id="onboarding-species"
+                value={species}
+                onChange={(e) => setSpecies(e.target.value)}
+                className="min-h-[48px] rounded-xl border border-ink/15 bg-white px-3"
+              >
+                {PET_SPECIES.map((s) => (
+                  <option key={s} value={s} className="capitalize">
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {showNameError ? (
+              <p
+                id="onboarding-pet-name-error"
+                role="alert"
+                className="text-sm font-medium text-red-600"
+              >
+                {nameProblem}
+              </p>
+            ) : null}
+            <p id="onboarding-photo-note" className="text-sm text-ink-soft">
+              Photo comes after signup — name and species is all we need for
+              now.
             </p>
-          ) : null}
-          <button
-            type="submit"
-            className="min-h-[48px] rounded-2xl bg-brand-600 px-4 py-3 font-semibold text-white hover:bg-brand-700"
-          >
-            Continue
-          </button>
-        </form>
+          </form>
+        </WizardShell>
       ) : null}
 
       {step === 1 ? (
-        <div className="mt-8 flex flex-col gap-3">
-          <h1 className="font-display text-2xl font-bold">Snap your first doc 📸</h1>
-          <p className="text-ink-soft">
-            A rabies certificate is perfect. You can also skip and do this later.
-          </p>
-          <button
-            type="button"
-            onClick={() => setStep(2)}
-            className="min-h-[48px] rounded-2xl bg-brand-600 px-4 py-3 font-semibold text-white hover:bg-brand-700"
-          >
-            Upload a document
-          </button>
-          <button
-            type="button"
-            onClick={() => setStep(2)}
-            className="min-h-[48px] rounded-2xl border border-ink/15 bg-white px-4 py-3 font-semibold"
-          >
-            Skip for now
-          </button>
-        </div>
+        <WizardShell
+          steps={[...STEPS]}
+          current={step}
+          onGo={handleGo}
+          art="camera"
+          title="Snap your first doc"
+          subtitle="A rabies certificate is perfect."
+          nav={
+            <button
+              type="button"
+              onClick={back}
+              className="min-h-[48px] rounded-2xl px-4 py-3 font-semibold text-ink-soft hover:bg-cream-dark"
+            >
+              ← Back
+            </button>
+          }
+        >
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={handleUpload}
+              className="flex min-h-[64px] items-center gap-3 rounded-2xl bg-brand-600 px-4 py-3 text-left font-semibold text-white hover:bg-brand-700"
+            >
+              <span aria-hidden="true" className="text-2xl">
+                📄
+              </span>
+              <span className="flex flex-col">
+                <span>Upload a document</span>
+                <span className="text-sm font-normal text-white/80">
+                  Photo or PDF, under 10MB
+                </span>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={next}
+              className="flex min-h-[64px] items-center gap-3 rounded-2xl border border-ink/15 bg-white px-4 py-3 text-left font-semibold hover:bg-cream-dark"
+            >
+              <span aria-hidden="true" className="text-2xl">
+                ⏭️
+              </span>
+              <span className="flex flex-col">
+                <span>Skip for now</span>
+                <span className="text-sm font-normal text-ink-soft">
+                  Do this later
+                </span>
+              </span>
+            </button>
+            <p className="text-center text-sm text-ink-soft">
+              Skippable — pick up where you left off anytime.
+            </p>
+          </div>
+        </WizardShell>
       ) : null}
 
       {step === 2 ? (
-        <div className="mt-8 flex flex-col items-center gap-3 text-center">
-          <p className="text-5xl" aria-hidden="true">
-            🎉
-          </p>
-          <h1 className="font-display text-2xl font-bold">You&apos;re set!</h1>
-          <p className="text-ink-soft">
-            {petName || "Your pet"} has a vault. Share the passport or add a
-            reminder next.
-          </p>
-          <button
-            type="button"
-            onClick={() => router.push(ROUTES.dashboard.root)}
-            className="min-h-[48px] w-full rounded-2xl bg-brand-600 px-4 py-3 font-semibold text-white hover:bg-brand-700"
-          >
-            Go to dashboard
-          </button>
-        </div>
+        <WizardShell
+          steps={[...STEPS]}
+          current={step}
+          onGo={handleGo}
+          art="rocket"
+          title="You're set!"
+          subtitle={`${displayName} has a vault. Share the passport or add a reminder next.`}
+          nav={
+            <div className="flex flex-col items-center gap-2">
+              <button
+                type="button"
+                onClick={() => router.push(ROUTES.dashboard.root)}
+                className="min-h-[48px] w-full rounded-2xl bg-brand-600 px-4 py-3 font-semibold text-white hover:bg-brand-700"
+              >
+                Go to dashboard
+              </button>
+              <p className="text-sm text-ink-soft">
+                Add a reminder later from the dashboard.
+              </p>
+            </div>
+          }
+        />
       ) : null}
     </main>
   );
