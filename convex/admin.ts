@@ -8,19 +8,22 @@
  * auditor (stats + audit read only) < support (stats, owners, links,
  * revoke, claims, audit) < manager (all support powers plus setRole
  * on owners plus claim review, no staff ops, no pet lock) < owner
- * (everything including staff manage).
+ * (everything including staff manage) < superadmin (developers, all
+ * powers including granting superadmin).
  * Legacy owners table roles (owner < support < admin) still resolve
  * when no active staff row exists. Legacy admin maps to owner rank.
- * Bootstrap: Convex env ADMIN_EMAILS (comma-separated) counts as admin
- * even when the owner row role is unset.
+ * Bootstrap: Convex env ADMIN_EMAILS (comma-separated) counts as
+ * superadmin even when the owner row role is unset, so developers are
+ * never locked out (previously resolved as admin).
  */
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
-const adminRole = v.union(
+export const adminRole = v.union(
   v.literal("owner"),
   v.literal("support"),
   v.literal("admin"),
+  v.literal("superadmin"),
 );
 
 export const staffRoleValidator = v.union(
@@ -28,10 +31,16 @@ export const staffRoleValidator = v.union(
   v.literal("manager"),
   v.literal("support"),
   v.literal("auditor"),
+  v.literal("superadmin"),
 );
 
-export type StaffRole = "owner" | "manager" | "support" | "auditor";
-export type LegacyRole = "owner" | "support" | "admin";
+export type StaffRole =
+  | "owner"
+  | "manager"
+  | "support"
+  | "auditor"
+  | "superadmin";
+export type LegacyRole = "owner" | "support" | "admin" | "superadmin";
 export type Role = StaffRole | LegacyRole;
 
 export const RANK: Record<Role, number> = {
@@ -40,13 +49,25 @@ export const RANK: Record<Role, number> = {
   manager: 3,
   owner: 4,
   admin: 4,
+  superadmin: 5,
 };
 
 const LEGACY_RANK: Record<LegacyRole, number> = {
   owner: 0,
   support: 2,
   admin: 4,
+  superadmin: 5,
 };
+
+/** Only developers hold this tier. Guards granting superadmin. */
+export function isSuperadminRole(role: Role): boolean {
+  return role === "superadmin";
+}
+
+/** Owner or superadmin. Guards granting owner and lower staff roles. */
+export function isOwnerPlusRole(role: Role): boolean {
+  return role === "owner" || role === "superadmin";
+}
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -68,7 +89,7 @@ function effectiveRole(
   stored: Role | undefined,
   email: string,
 ): Role {
-  if (isBootstrapAdmin(email)) return "admin";
+  if (isBootstrapAdmin(email)) return "superadmin";
   return stored ?? "owner";
 }
 
@@ -101,8 +122,8 @@ export async function requireRole(ctx: any, email: string, minRole: Role) {
     .first();
   if (!owner) throw new Error("Not authorized");
   if (isBootstrapAdmin(normalized)) {
-    if (RANK["admin"] < minRank) throw new Error("Not authorized");
-    return { owner, role: "admin" as Role };
+    if (RANK["superadmin"] < minRank) throw new Error("Not authorized");
+    return { owner, role: "superadmin" as Role };
   }
   const stored = (owner.role as LegacyRole | undefined) ?? "owner";
   const rank = LEGACY_RANK[stored] ?? 0;
@@ -125,7 +146,7 @@ async function writeAudit(
   });
 }
 
-/** Owner row or null. Client reads `role` to gate. Bootstrap resolves to admin. */
+/** Owner row or null. Client reads `role` to gate. Bootstrap resolves to superadmin. */
 export const getMe = query({
   args: { email: v.string() },
   handler: async (ctx, args) => {
@@ -232,7 +253,9 @@ export const listLinks = query({
   },
 });
 
-/** Set an owner role. Owner and manager. Audited. */
+/** Set an owner role. Manager may set owner/support only; owner and legacy
+ * admin may set owner/support/admin; only superadmin may grant superadmin.
+ * Audited. */
 export const setRole = mutation({
   args: {
     adminEmail: v.string(),
@@ -240,7 +263,21 @@ export const setRole = mutation({
     role: adminRole,
   },
   handler: async (ctx, args) => {
-    const { owner: actor } = await requireRole(ctx, args.adminEmail, "manager");
+    const { owner: actor, role: callerRole } = await requireRole(
+      ctx,
+      args.adminEmail,
+      "manager",
+    );
+    if (args.role === "superadmin" && !isSuperadminRole(callerRole)) {
+      throw new Error("Not authorized");
+    }
+    if (
+      callerRole === "manager" &&
+      args.role !== "owner" &&
+      args.role !== "support"
+    ) {
+      throw new Error("Not authorized");
+    }
     const target = await ctx.db.get(args.targetOwnerId);
     if (!target) throw new Error("Owner not found");
     await ctx.db.patch(target._id, { role: args.role });

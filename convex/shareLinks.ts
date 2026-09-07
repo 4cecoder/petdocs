@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 
 const scope = v.union(
   v.literal("passport"),
@@ -176,6 +177,20 @@ export const recordView = mutation({
       .unique();
     if (!link || !tokenIsLive(link)) return null;
     await ctx.db.patch(link._id, { viewCount: link.viewCount + 1 });
-    return link.viewCount + 1;
+    const nextCount = link.viewCount + 1;
+    try {
+      const pet = await ctx.db.get(link.petId);
+      const petName = pet?.name ?? "Pet";
+      await ctx.runMutation(internal.notifications.emit, {
+        ownerId: link.ownerId,
+        kind: "passport_view",
+        title: `Someone viewed ${petName} passport`,
+        body: `View #${nextCount} for ${petName}.`,
+        link: "/dashboard/share",
+      });
+    } catch {
+      // Notification failure must not break public view counting.
+    }
+    return nextCount;
   },
 });

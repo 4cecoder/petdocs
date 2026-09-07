@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Inbox, Lock } from "lucide-react";
+import { Bell, FileText, Inbox, Link2, Lock, PawPrint, Plug, Users } from "lucide-react";
 import { convexMutation, convexQuery } from "@/lib/convexHttp";
 import { getSessionEmail } from "@/lib/api";
 import { ROUTES } from "@/lib/routes";
 import StaffManager from "@/components/staff/StaffManager";
 
-type Role = "owner" | "support" | "admin";
+type Role = "owner" | "support" | "admin" | "superadmin";
 
-type StaffRoleName = "owner" | "manager" | "support" | "auditor";
+type StaffRoleName = "owner" | "manager" | "support" | "auditor" | "superadmin";
 
 interface StaffRoleInfo {
   role: StaffRoleName;
@@ -119,7 +119,8 @@ export default function AdminPage() {
           (staff.role === "owner" ||
             staff.role === "manager" ||
             staff.role === "support" ||
-            staff.role === "auditor");
+            staff.role === "auditor" ||
+            staff.role === "superadmin");
         if (
           (profile &&
             (profile.role === "support" || profile.role === "admin")) ||
@@ -258,13 +259,19 @@ export default function AdminPage() {
     ? staffRole.role
     : (me?.role ?? null);
   const canViewAdmin =
-    (!!me && (me.role === "support" || me.role === "admin")) || !!staffRole;
+    (!!me &&
+      (me.role === "support" ||
+        me.role === "admin" ||
+        me.role === "superadmin")) ||
+    !!staffRole;
   const isStaffOwner = effRole === "admin" || effRole === "owner";
+  const isSuperadmin = effRole === "superadmin";
   const showStaffSection =
     effRole === "admin" ||
     effRole === "owner" ||
     effRole === "manager" ||
-    effRole === "support";
+    effRole === "support" ||
+    effRole === "superadmin";
 
   if (!canViewAdmin) {
     return (
@@ -314,17 +321,29 @@ export default function AdminPage() {
         className="grid grid-cols-2 gap-2 sm:grid-cols-5"
       >
         {[
-          { label: "Owners", value: stats?.owners ?? 0 },
-          { label: "Pets", value: stats?.pets ?? 0 },
-          { label: "Docs", value: stats?.documents ?? 0 },
-          { label: "Active links", value: stats?.activeLinks ?? 0 },
-          { label: "Reminders", value: stats?.remindersScheduled ?? 0 },
+          { label: "Owners", value: stats?.owners ?? 0, Icon: Users },
+          { label: "Pets", value: stats?.pets ?? 0, Icon: PawPrint },
+          { label: "Docs", value: stats?.documents ?? 0, Icon: FileText },
+          {
+            label: "Active links",
+            value: stats?.activeLinks ?? 0,
+            Icon: Link2,
+          },
+          {
+            label: "Reminders",
+            value: stats?.remindersScheduled ?? 0,
+            Icon: Bell,
+          },
         ].map((s) => (
           <div
             key={s.label}
             className="rounded-2xl border border-ink/10 bg-white p-3 text-center"
           >
-            <p className="font-display text-xl font-bold">{s.value}</p>
+            <s.Icon
+              className="mx-auto h-4 w-4 text-ink-soft"
+              aria-hidden="true"
+            />
+            <p className="mt-1 font-display text-xl font-bold">{s.value}</p>
             <p className="text-xs text-ink-soft">{s.label}</p>
           </div>
         ))}
@@ -531,7 +550,11 @@ export default function AdminPage() {
             Angela&apos;s employees. Least privilege, always.
           </p>
           <div className="mt-3">
-            <StaffManager adminEmail={adminEmail} isOwner={isStaffOwner} />
+            <StaffManager
+              adminEmail={adminEmail}
+              isOwner={isStaffOwner || isSuperadmin}
+              isSuperadmin={isSuperadmin}
+            />
           </div>
         </section>
       ) : null}
@@ -558,6 +581,31 @@ export default function AdminPage() {
           Open inbox
         </Link>
       </section>
+
+      {me?.role === "superadmin" ? (
+        <section
+          aria-label="Integrations"
+          className="flex items-center justify-between gap-3 rounded-2xl border border-ink/10 bg-white p-4"
+        >
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-cream">
+              <Plug className="h-5 w-5 text-ink" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="font-display font-bold">Integrations</h2>
+              <p className="mt-0.5 text-sm text-ink-soft">
+                Keys and webhook status for developers.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/dashboard/admin/integrations"
+            className="inline-flex min-h-[48px] shrink-0 items-center rounded-xl bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700"
+          >
+            Open integrations
+          </Link>
+        </section>
+      ) : null}
     </div>
   );
 }

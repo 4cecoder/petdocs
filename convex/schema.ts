@@ -25,6 +25,7 @@ export default defineSchema({
         v.literal("owner"),
         v.literal("support"),
         v.literal("admin"),
+        v.literal("superadmin"),
       ),
     ),
     createdAt: v.number(),
@@ -255,6 +256,7 @@ export default defineSchema({
       v.literal("manager"),
       v.literal("support"),
       v.literal("auditor"),
+      v.literal("superadmin"),
     ),
     active: v.boolean(),
     invitedBy: v.optional(v.string()),
@@ -290,4 +292,23 @@ export default defineSchema({
     receivedAt: v.optional(v.number()),
     resendId: v.optional(v.string()),
   }).index("by_thread", ["threadId"]),
+
+  notifications: defineTable({
+    ownerId: v.id("owners"),
+    kind: v.union(
+      v.literal("passport_view"),
+      v.literal("reminder_sent"),
+      v.literal("claim_filed"),
+      v.literal("inbound_mail"),
+      v.literal("transfer_redeemed"),
+      v.literal("team_invite"),
+    ),
+    title: v.string(),
+    body: v.string(),
+    link: v.optional(v.string()),
+    readAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_owner", ["ownerId"])
+    .index("by_owner_and_read", ["ownerId", "readAt"]),
 });

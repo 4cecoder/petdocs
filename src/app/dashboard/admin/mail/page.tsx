@@ -8,8 +8,8 @@ import { getSessionEmail } from "@/lib/api";
 import { ROUTES } from "@/lib/routes";
 import { PetArt } from "@/components/art/PetArt";
 
-type Role = "owner" | "support" | "admin";
-type StaffRoleName = "owner" | "manager" | "support" | "auditor";
+type Role = "owner" | "support" | "admin" | "superadmin";
+type StaffRoleName = "owner" | "manager" | "support" | "auditor" | "superadmin";
 
 interface StaffRoleInfo {
   role: StaffRoleName;
@@ -241,7 +241,11 @@ export default function AdminMailPage() {
   }
 
   const canViewAdmin =
-    (!!me && (me.role === "support" || me.role === "admin")) || !!staffRole;
+    (!!me &&
+      (me.role === "support" ||
+        me.role === "admin" ||
+        me.role === "superadmin")) ||
+    !!staffRole;
 
   if (!canViewAdmin) {
     return (

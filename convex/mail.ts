@@ -305,6 +305,31 @@ export const ingestInbound = internalMutation({
       ...(args.resendId ? { resendId: args.resendId } : {}),
     });
 
+    try {
+      const staffRows = await ctx.db.query("staff").collect();
+      for (const staff of staffRows.filter((s) => s.active)) {
+        const email = staff.email.trim().toLowerCase();
+        const owner = await ctx.db
+          .query("owners")
+          .withIndex("by_email", (q) => q.eq("email", email))
+          .first();
+        if (!owner) continue;
+        try {
+          await ctx.runMutation(internal.notifications.emit, {
+            ownerId: owner._id,
+            kind: "inbound_mail",
+            title: `New mail for ${target.emailAddress}`,
+            body: `${from}: ${subject}`,
+            link: "/dashboard/admin/mail",
+          });
+        } catch {
+          continue;
+        }
+      }
+    } catch {
+      // Notification failure must not fail ingest.
+    }
+
     return { threadId, matched };
   },
 });

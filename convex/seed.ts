@@ -6,6 +6,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 const DEMO_EMAILS = ["maya@demo.pet", "sam@demo.pet"] as const;
 
+const DEMO_MAIL_EMAILS = ["support@demo.pet", "hello@demo.pet"] as const;
+
 // NOTE on `locked`: the schema defines `locked` ONLY on `owners` and `pets`.
 // vaccinations / medications / vetVisits / reminders / shareLinks have no such
 // field, so passing `locked` there would fail validation. We set it wherever
@@ -34,6 +36,37 @@ async function findDemoOwners(ctx: MutationCtx) {
     if (owner) found.push(owner);
   }
   return found;
+}
+
+async function findDemoMailAccounts(ctx: MutationCtx) {
+  const found = [];
+  for (const emailAddress of DEMO_MAIL_EMAILS) {
+    const account = await ctx.db
+      .query("mailAccounts")
+      .withIndex("by_email", (q) => q.eq("emailAddress", emailAddress))
+      .unique();
+    if (account) found.push(account);
+  }
+  return found;
+}
+
+async function wipeMailAccount(
+  ctx: MutationCtx,
+  accountId: Id<"mailAccounts">,
+): Promise<void> {
+  const threads = await ctx.db
+    .query("mailThreads")
+    .withIndex("by_account", (q) => q.eq("accountId", accountId))
+    .collect();
+  for (const thread of threads) {
+    const messages = await ctx.db
+      .query("mailMessages")
+      .withIndex("by_thread", (q) => q.eq("threadId", thread._id))
+      .collect();
+    for (const msg of messages) await ctx.db.delete(msg._id);
+    await ctx.db.delete(thread._id);
+  }
+  await ctx.db.delete(accountId);
 }
 
 async function wipeOwner(
@@ -124,6 +157,13 @@ async function wipeOwner(
     }
   }
 
+  // Notifications use by_owner (not by_ownerId), so they need their own wipe.
+  const notifications = await ctx.db
+    .query("notifications")
+    .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+    .collect();
+  for (const n of notifications) await ctx.db.delete(n._id);
+
   await ctx.db.delete(ownerId);
 }
 
@@ -136,6 +176,13 @@ export const seedDemo = mutation({
     }
     for (const owner of existing) {
       await wipeOwner(ctx, owner._id);
+    }
+    // Reset path for demo inbox (mail tables have no locked field and are
+    // not owner-scoped, so they need their own wipe). Also cleans orphans
+    // on a fresh seed if mail accounts linger without demo owners.
+    const existingMail = await findDemoMailAccounts(ctx);
+    for (const account of existingMail) {
+      await wipeMailAccount(ctx, account._id);
     }
 
     const now = Date.now();
@@ -310,6 +357,86 @@ export const seedDemo = mutation({
       createdAt: now,
     });
 
+    // ---- Demo team inbox (mail tables have no locked field) ----
+    const supportAccountId = await ctx.db.insert("mailAccounts", {
+      emailAddress: "support@demo.pet",
+      label: "Support",
+      active: true,
+      createdAt: now,
+    });
+    await ctx.db.insert("mailAccounts", {
+      emailAddress: "hello@demo.pet",
+      label: "Hello",
+      active: true,
+      createdAt: now,
+    });
+
+    const welcomeThreadId = await ctx.db.insert("mailThreads", {
+      accountId: supportAccountId,
+      subject: "Welcome to petdocs",
+      participants: ["hello@demo.pet", "support@demo.pet"],
+      lastAt: now,
+      unread: false,
+      labels: ["inbox"],
+    });
+    await ctx.db.insert("mailMessages", {
+      threadId: welcomeThreadId,
+      accountId: supportAccountId,
+      from: "hello@demo.pet",
+      to: ["support@demo.pet"],
+      subject: "Welcome to petdocs",
+      text: "Welcome to petdocs! This shared inbox handles support@demo.pet mail. Reply to try the team inbox flow.",
+      labels: ["inbox"],
+      receivedAt: now,
+    });
+
+    const vetThreadId = await ctx.db.insert("mailThreads", {
+      accountId: supportAccountId,
+      subject: "Vet records question",
+      participants: ["maya@demo.pet", "support@demo.pet"],
+      lastAt: now,
+      unread: true,
+      labels: ["inbox"],
+    });
+    await ctx.db.insert("mailMessages", {
+      threadId: vetThreadId,
+      accountId: supportAccountId,
+      from: "maya@demo.pet",
+      to: ["support@demo.pet"],
+      subject: "Vet records question",
+      text: "Hi team — how do I attach my vet's vaccination PDF to Mochi's passport?",
+      labels: ["inbox"],
+      receivedAt: now - 60 * 60 * 1000,
+    });
+    await ctx.db.insert("mailMessages", {
+      threadId: vetThreadId,
+      accountId: supportAccountId,
+      from: "maya@demo.pet",
+      to: ["support@demo.pet"],
+      subject: "Vet records question",
+      text: "Follow-up: the PDF is 4MB — is that small enough to upload?",
+      labels: ["inbox"],
+      receivedAt: now,
+    });
+
+    // ---- Demo notifications for Maya (both unread) ----
+    await ctx.db.insert("notifications", {
+      ownerId: mayaId,
+      kind: "passport_view",
+      title: "Someone viewed Mochi passport",
+      body: "Someone viewed Mochi's passport via your groomer share link.",
+      link: "/dashboard/share",
+      createdAt: now,
+    });
+    await ctx.db.insert("notifications", {
+      ownerId: mayaId,
+      kind: "reminder_sent",
+      title: "Mochi DHPP booster reminder",
+      body: "Reminder sent: Mochi's DHPP booster is due soon.",
+      link: "/dashboard/reminders",
+      createdAt: now,
+    });
+
     return {
       owners: 2,
       pets: 3,
@@ -319,6 +446,10 @@ export const seedDemo = mutation({
       reminders: 2,
       shareLinks: 2,
       documents: 0,
+      mailAccounts: 2,
+      mailThreads: 2,
+      mailMessages: 3,
+      notifications: 2,
       reset: reset === true && existing.length > 0,
     };
   },

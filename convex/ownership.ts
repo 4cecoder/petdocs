@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { requireRole } from "./admin";
 
 const claimMethod = v.union(
@@ -75,6 +76,34 @@ export const claimPet = mutation({
       status,
       createdAt: Date.now(),
     });
+    try {
+      // Notify active staff (owner/manager/support, plus superadmin); skip auditor.
+      const eligible = new Set(["owner", "manager", "support", "superadmin"]);
+      const staffRows = await ctx.db.query("staff").collect();
+      for (const staff of staffRows.filter(
+        (s) => s.active && eligible.has(s.role),
+      )) {
+        const email = staff.email.trim().toLowerCase();
+        const staffOwner = await ctx.db
+          .query("owners")
+          .withIndex("by_email", (q) => q.eq("email", email))
+          .first();
+        if (!staffOwner) continue;
+        try {
+          await ctx.runMutation(internal.notifications.emit, {
+            ownerId: staffOwner._id,
+            kind: "claim_filed",
+            title: `New ownership claim for ${pet.name}`,
+            body: `${args.method} claim for ${pet.name}`,
+            link: "/dashboard/admin",
+          });
+        } catch {
+          continue;
+        }
+      }
+    } catch {
+      // Notification failure must not fail the claim.
+    }
     return { claimId, status };
   },
 });
@@ -234,6 +263,18 @@ export const redeemTransfer = mutation({
       target: `pet:${pet._id}`,
       createdAt: now,
     });
+
+    try {
+      await ctx.runMutation(internal.notifications.emit, {
+        ownerId: args.ownerId,
+        kind: "transfer_redeemed",
+        title: `Transfer complete for ${pet.name}`,
+        body: `You now own ${pet.name}.`,
+        link: `/dashboard/pets/${pet._id}`,
+      });
+    } catch {
+      // Notification failure must not fail the redeem.
+    }
 
     return { petId: pet._id };
   },

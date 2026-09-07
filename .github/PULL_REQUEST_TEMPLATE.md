@@ -10,6 +10,7 @@
 - [ ] Web/Android parity checked against `docs/07-feature-parity.md`
 - [ ] No secrets committed (no `.env.local`, tokens, keys, or `google-services.json`)
 - [ ] Bun-only lockfile: `bun install --frozen-lockfile` is clean (no `package-lock.json`)
+- [ ] CHANGELOG.md Unreleased entry added
 
 ## Preview / notes
 <!-- Netlify Deploy Preview link, APK artifact link, or manual test notes. -->

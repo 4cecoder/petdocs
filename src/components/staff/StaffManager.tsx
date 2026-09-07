@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { ShieldCheck, UserPlus } from "lucide-react";
 import { convexMutation, convexQuery } from "@/lib/convexHttp";
 
-type StaffRole = "owner" | "manager" | "support" | "auditor";
+type StaffRole = "owner" | "manager" | "support" | "auditor" | "superadmin";
 
 interface StaffRow {
   email: string;
@@ -17,6 +17,7 @@ interface StaffRow {
 interface StaffManagerProps {
   adminEmail: string;
   isOwner: boolean;
+  isSuperadmin?: boolean;
 }
 
 function formatDate(ts: number): string {
@@ -29,7 +30,11 @@ function formatDate(ts: number): string {
   });
 }
 
-export default function StaffManager({ adminEmail, isOwner }: StaffManagerProps) {
+export default function StaffManager({
+  adminEmail,
+  isOwner,
+  isSuperadmin = false,
+}: StaffManagerProps) {
   const [staff, setStaff] = useState<StaffRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
@@ -192,6 +197,9 @@ export default function StaffManager({ adminEmail, isOwner }: StaffManagerProps)
               <option value="manager">manager</option>
               <option value="support">support</option>
               <option value="auditor">auditor</option>
+              {isSuperadmin ? (
+                <option value="superadmin">superadmin</option>
+              ) : null}
             </select>
             <button
               type="button"
@@ -241,6 +249,9 @@ export default function StaffManager({ adminEmail, isOwner }: StaffManagerProps)
                     <option value="manager">manager</option>
                     <option value="support">support</option>
                     <option value="auditor">auditor</option>
+                    {isSuperadmin ? (
+                      <option value="superadmin">superadmin</option>
+                    ) : null}
                   </select>
                   <button
                     type="button"

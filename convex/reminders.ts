@@ -220,7 +220,20 @@ export const sendDue = internalAction({
         const id = await ctx.runMutation(internal.reminders.markSent, {
           reminderId: reminder._id,
         });
-        if (id) sent += 1;
+        if (id) {
+          sent += 1;
+          try {
+            await ctx.runMutation(internal.notifications.emit, {
+              ownerId: reminder.ownerId,
+              kind: "reminder_sent",
+              title: `Reminder sent: ${title} for ${petName}`,
+              body: `We emailed your reminder due ${new Date(dueAt).toLocaleDateString()}.`,
+              link: "/dashboard/reminders",
+            });
+          } catch {
+            // Notification failure must not fail the tick.
+          }
+        }
       }
     }
     return sent;

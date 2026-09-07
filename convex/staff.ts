@@ -3,11 +3,19 @@
  *
  * Pet owners (owners table) stay separate from staff. Staff powers come
  * only from an active staff row, checked first in admin requireRole.
- * Least privilege: auditor < support < manager < owner.
+ * Least privilege: auditor < support < manager < owner < superadmin
+ * (developers). Only superadmin may grant superadmin or deactivate a
+ * superadmin; owner or superadmin may grant owner, manager, support,
+ * and auditor.
  */
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { requireRole, staffRoleValidator } from "./admin";
+import {
+  isOwnerPlusRole,
+  isSuperadminRole,
+  requireRole,
+  staffRoleValidator,
+} from "./admin";
 import type { StaffRole } from "./admin";
 
 function normalizeEmail(email: string): string {
@@ -60,7 +68,8 @@ export const myStaffRole = query({
   },
 });
 
-/** Invite or reactivate staff. Owner only. Audited. */
+/** Invite or reactivate staff. Owner or superadmin; only superadmin may
+ * invite as superadmin. Audited. */
 export const inviteStaff = mutation({
   args: {
     adminEmail: v.string(),
@@ -69,7 +78,17 @@ export const inviteStaff = mutation({
     role: staffRoleValidator,
   },
   handler: async (ctx, args) => {
-    const { owner: actor } = await requireRole(ctx, args.adminEmail, "owner");
+    const { owner: actor, role: callerRole } = await requireRole(
+      ctx,
+      args.adminEmail,
+      "owner",
+    );
+    if (args.role === "superadmin" && !isSuperadminRole(callerRole)) {
+      throw new Error("Not authorized");
+    }
+    if (!isOwnerPlusRole(callerRole)) {
+      throw new Error("Not authorized");
+    }
     const normalized = normalizeEmail(args.email);
     const name = args.name.trim();
     if (!normalized) throw new Error("Email is required");
@@ -110,7 +129,9 @@ export const inviteStaff = mutation({
   },
 });
 
-/** Change a staff role. Owner only. Audited. Refuses to demote the last owner. */
+/** Change a staff role. Owner or superadmin; only superadmin may grant
+ * superadmin. Audited. Refuses to demote the last owner, and refuses to
+ * demote the sole superadmin. */
 export const setStaffRole = mutation({
   args: {
     adminEmail: v.string(),
@@ -118,18 +139,41 @@ export const setStaffRole = mutation({
     role: staffRoleValidator,
   },
   handler: async (ctx, args) => {
-    const { owner: actor } = await requireRole(ctx, args.adminEmail, "owner");
+    const { owner: actor, role: callerRole } = await requireRole(
+      ctx,
+      args.adminEmail,
+      "owner",
+    );
     const normalized = normalizeEmail(args.targetEmail);
     const target = await ctx.db
       .query("staff")
       .withIndex("by_email", (q) => q.eq("email", normalized))
       .first();
     if (!target) throw new Error("Staff not found");
+    if (args.role === "superadmin" && !isSuperadminRole(callerRole)) {
+      throw new Error("Not authorized");
+    }
+    if (!isOwnerPlusRole(callerRole)) {
+      throw new Error("Not authorized");
+    }
     if (target.active && target.role === "owner" && args.role !== "owner") {
       const all = await ctx.db.query("staff").collect();
       const activeOwners = all.filter((s) => s.active && s.role === "owner");
       if (activeOwners.length <= 1) {
         throw new Error("Cannot demote the last owner");
+      }
+    }
+    if (
+      target.active &&
+      target.role === "superadmin" &&
+      args.role !== "superadmin"
+    ) {
+      const all = await ctx.db.query("staff").collect();
+      const activeSuperadmins = all.filter(
+        (s) => s.active && s.role === "superadmin",
+      );
+      if (activeSuperadmins.length <= 1) {
+        throw new Error("Cannot demote the last superadmin");
       }
     }
     await ctx.db.patch(target._id, { role: args.role });
@@ -143,14 +187,20 @@ export const setStaffRole = mutation({
   },
 });
 
-/** Deactivate staff. Owner only. Audited. Cannot deactivate self or last owner. */
+/** Deactivate staff. Owner or superadmin; only superadmin may deactivate a
+ * superadmin. Audited. Cannot deactivate self, the last owner, or the sole
+ * superadmin. */
 export const deactivateStaff = mutation({
   args: {
     adminEmail: v.string(),
     targetEmail: v.string(),
   },
   handler: async (ctx, args) => {
-    const { owner: actor } = await requireRole(ctx, args.adminEmail, "owner");
+    const { owner: actor, role: callerRole } = await requireRole(
+      ctx,
+      args.adminEmail,
+      "owner",
+    );
     const adminNormalized = normalizeEmail(args.adminEmail);
     const normalized = normalizeEmail(args.targetEmail);
     if (adminNormalized === normalized) {
@@ -161,6 +211,18 @@ export const deactivateStaff = mutation({
       .withIndex("by_email", (q) => q.eq("email", normalized))
       .first();
     if (!target) throw new Error("Staff not found");
+    if (target.role === "superadmin" && !isSuperadminRole(callerRole)) {
+      throw new Error("Not authorized");
+    }
+    if (target.active && target.role === "superadmin") {
+      const all = await ctx.db.query("staff").collect();
+      const activeSuperadmins = all.filter(
+        (s) => s.active && s.role === "superadmin",
+      );
+      if (activeSuperadmins.length <= 1) {
+        throw new Error("Cannot deactivate the last superadmin");
+      }
+    }
     if (target.active && target.role === "owner") {
       const all = await ctx.db.query("staff").collect();
       const activeOwners = all.filter((s) => s.active && s.role === "owner");

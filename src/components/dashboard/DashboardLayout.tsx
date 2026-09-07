@@ -7,10 +7,11 @@ import { DASHBOARD_NAV, isNavItemActive } from "@/lib/dashboardNav";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { useDashboardAuth } from "./DashboardGuard";
+import { NotificationsBell } from "./NotificationsBell";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { signOut } = useDashboardAuth();
+  const { ownerId, signOut } = useDashboardAuth();
 
   return (
     <div className="min-h-screen">
@@ -20,13 +21,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <PawPrint size={24} aria-hidden="true" className="text-brand-600" />
             <span className="font-display text-lg font-bold">petdocs</span>
           </Link>
-          <button
-            type="button"
-            onClick={signOut}
-            className="min-h-[48px] rounded-xl px-3 text-sm font-medium text-ink-soft hover:bg-cream-dark"
-          >
-            Sign out
-          </button>
+          <div className="flex items-center gap-1">
+            {ownerId ? <NotificationsBell ownerId={ownerId} /> : null}
+            <button
+              type="button"
+              onClick={signOut}
+              className="min-h-[48px] rounded-xl px-3 text-sm font-medium text-ink-soft hover:bg-cream-dark"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
 
