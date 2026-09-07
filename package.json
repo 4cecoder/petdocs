@@ -1,0 +1,42 @@
+{
+  "name": "petdocs",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "bun@1.2.0",
+  "engines": {
+    "bun": ">=1.1"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:smoke": "playwright test --grep @smoke",
+    "convex:dev": "bunx convex dev",
+    "convex:deploy": "bunx convex deploy"
+  },
+  "dependencies": {
+    "convex": "^1.44.0",
+    "lucide-react": "^1.31.0",
+    "next": "^16.3.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "@tanstack/react-query": "^5.101.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@tailwindcss/postcss": "^4.1.11",
+    "@types/node": "^24.2.1",
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7",
+    "convex-test": "^0.0.56",
+    "eslint": "^9.33.0",
+    "eslint-config-next": "^15.4.6",
+    "tailwindcss": "^4.1.11",
+    "typescript": "^5.9.2",
+    "vitest": "^4.1.11"
+  }
+}
