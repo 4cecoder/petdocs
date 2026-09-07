@@ -260,4 +260,34 @@ export default defineSchema({
     invitedBy: v.optional(v.string()),
     createdAt: v.number(),
   }).index("by_email", ["email"]),
+
+  mailAccounts: defineTable({
+    emailAddress: v.string(),
+    label: v.string(),
+    active: v.boolean(),
+    createdAt: v.number(),
+  }).index("by_email", ["emailAddress"]),
+
+  mailThreads: defineTable({
+    accountId: v.id("mailAccounts"),
+    subject: v.string(),
+    participants: v.array(v.string()),
+    lastAt: v.number(),
+    unread: v.boolean(),
+    labels: v.array(v.string()),
+  }).index("by_account", ["accountId"]),
+
+  mailMessages: defineTable({
+    threadId: v.id("mailThreads"),
+    accountId: v.id("mailAccounts"),
+    from: v.string(),
+    to: v.array(v.string()),
+    subject: v.string(),
+    text: v.string(),
+    html: v.optional(v.string()),
+    labels: v.array(v.string()),
+    sentAt: v.optional(v.number()),
+    receivedAt: v.optional(v.number()),
+    resendId: v.optional(v.string()),
+  }).index("by_thread", ["threadId"]),
 });

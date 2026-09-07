@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Lock } from "lucide-react";
+import { Inbox, Lock } from "lucide-react";
 import { convexMutation, convexQuery } from "@/lib/convexHttp";
 import { getSessionEmail } from "@/lib/api";
 import { ROUTES } from "@/lib/routes";
@@ -535,6 +535,29 @@ export default function AdminPage() {
           </div>
         </section>
       ) : null}
+
+      <section
+        aria-label="Team inbox"
+        className="flex items-center justify-between gap-3 rounded-2xl border border-ink/10 bg-white p-4"
+      >
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-cream">
+            <Inbox className="h-5 w-5 text-ink" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <h2 className="font-display font-bold">Team inbox</h2>
+            <p className="mt-0.5 text-sm text-ink-soft">
+              Customer mail for support and admins.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/dashboard/admin/mail"
+          className="inline-flex min-h-[48px] shrink-0 items-center rounded-xl bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700"
+        >
+          Open inbox
+        </Link>
+      </section>
     </div>
   );
 }

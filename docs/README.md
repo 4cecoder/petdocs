@@ -13,6 +13,7 @@
 | [12-demo-day.md](12-demo-day.md) | 5-min demo script, pain receipts, objections, ask for Angela. |
 | [15-trust.md](15-trust.md) | KYC, AI disclosure, retention, audit, minors, disclaimer, incidents. |
 | [16-team-access.md](16-team-access.md) | Team access playbook, roles matrix, invite and offboarding. |
+| [17-company-email.md](17-company-email.md) | Shared team inbox, inbound routing, setup and limits. |
 
 ## How docs map to GitHub issues
 
