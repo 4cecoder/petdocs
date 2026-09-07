@@ -1,0 +1,52 @@
+name: PR checks (web)
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Lint / Typecheck / Unit / Build / Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # NOTE: repo has no bun.lock yet — run `bun install` locally and commit
+      # the lockfile; until then --frozen-lockfile fails on a fresh clone.
+      # Bun-only repo: never commit package-lock.json (see AGENTS.md).
+      - name: Install deps (bun)
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Unit tests
+        run: bun run test:unit
+
+      - name: Build (Next.js)
+        run: bun run build
+
+      - name: Install Playwright Chromium
+        run: bunx playwright install chromium
+
+      - name: Playwright smoke
+        run: bun run test:e2e:smoke
+        env:
+          CI: true

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Blue shield with a centered plus — kept within the 66dp adaptive-icon safe zone (21,21)-(87,87). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#06B6D4"
+        android:pathData="M54,23.75L29.25,34.75v16.5c0,15.2625 10.56,29.535 24.75,33 14.19,-3.465 24.75,-17.7375 24.75,-33V34.75L54,23.75Z" />
+    <path
+        android:fillColor="#F1F5F9"
+        android:pathData="M50,33h8v34h-8zM37,46h34v8h-34z" />
+</vector>

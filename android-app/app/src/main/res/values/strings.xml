@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">petdocs</string>
+    <string name="cd_scanner_preview">Document scanner preview</string>
+    <string name="cd_pet_photo">Pet photo</string>
+    <string name="cd_back">Back</string>
+</resources>

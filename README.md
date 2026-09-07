@@ -48,8 +48,11 @@ and [AGENTS.md](AGENTS.md) for bun-only rules + gates.
 
 ## Status
 
-- [x] Product / architecture / data / UX blueprints (4 subagents, 2026-09-07)
-- [ ] `package.json` + Next.js scaffold (next step — see roadmap Step 1)
-- [ ] `convex/schema.ts` + `pets.ts` + `documents.ts` + `shareLinks.ts`
-- [ ] Auth + dashboard shell + upload UI + share links
-- [ ] Demo seed + Netlify branch deploy
+Repo: [github.com/4cecoder/petdocs](https://github.com/4cecoder/petdocs) (private).
+Docs index: [docs/README.md](docs/README.md) (docs/01–07).
+
+Scaffolded: web shell (marketing + dashboard + `/p/[shareToken]`) + Convex
+schema/functions + magic-link auth + seed + CI. Next: `android-app/` +
+codegen wiring (`convex/_generated/` + `magicTokens` table).
+
+Flow-by-flow parity (web ↔ Android ↔ backend): [docs/07-feature-parity.md](docs/07-feature-parity.md).

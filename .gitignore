@@ -1,0 +1,44 @@
+# dependencies
+/node_modules
+
+# testing
+/coverage
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+
+# env files — never commit real values
+.env.local
+.env*.local
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# Local Netlify folder
+.netlify
+
+# Convex local state (deployments/URLs live in .env.local + dashboard, not git)
+.convex/
+
+# Android / Gradle
+android-app/.gradle/
+android-app/**/build/
+android-app/local.properties
+*.iml
+.idea/
