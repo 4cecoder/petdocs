@@ -8,7 +8,7 @@ export function ConvexClientProvider({ children }: { children: ReactNode }) {
     const url = process.env.NEXT_PUBLIC_CONVEX_URL;
     if (!url) {
       console.error(
-        "[ConvexClientProvider] NEXT_PUBLIC_CONVEX_URL is not set — rendering without a Convex client. Run `bunx convex dev` to provision a deployment, then restart the dev server.",
+        "[ConvexClientProvider] NEXT_PUBLIC_CONVEX_URL is not set. Rendering without a Convex client. Run `bunx convex dev` to provision a deployment, then restart the dev server.",
       );
       return null;
     }

@@ -44,10 +44,14 @@ export const sendEmail = internalAction({
 
     const to = args.to.trim();
     if (!to) {
-      return { ok: false, error: "No recipients" };
+      return { ok: false, error: "No recipient address." };
+    }
+    if (!args.html.trim()) {
+      return { ok: false, error: "No email content." };
     }
 
     const subject = args.subject.slice(0, 998);
+    // ~100KB guard: Resend rejects oversized payloads, so truncate early.
     const html = args.html.slice(0, 100_000);
     const text = (args.text?.trim() ? args.text : stripHtml(html)).slice(
       0,
@@ -76,9 +80,14 @@ export const sendEmail = internalAction({
         name?: string;
       };
       if (!res.ok) {
+        // Always include the HTTP status; only echo Resend's short
+        // message/name fields (never headers, body, or the API key).
+        const detail = (body.message || body.name || "").trim().slice(0, 300);
         return {
           ok: false,
-          error: body.message || body.name || `Resend HTTP ${res.status}`,
+          error: detail
+            ? `Resend error ${res.status}: ${detail}`
+            : `Resend HTTP ${res.status}`,
         };
       }
       return { ok: true };

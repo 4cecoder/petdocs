@@ -28,6 +28,14 @@ const eslintConfig = [
           message:
             "Do not put Next.js route groups in URLs. Use constants from @/lib/routes (e.g. /, /dashboard).",
         },
+        {
+          selector: "Literal[value=/—/]",
+          message: "No em dashes in UI copy — use commas or periods.",
+        },
+        {
+          selector: "TemplateLiteral[quasis.0.value.raw=/—/]",
+          message: "No em dashes in UI copy — use commas or periods.",
+        },
       ],
     },
   },

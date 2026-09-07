@@ -17,11 +17,11 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "petdocs — Own your pet's docs",
+  title: "petdocs: Own your pet's docs",
   description:
     "One vault for every pet document: vaccines, labs, prescriptions, insurance, travel certs. Share a pet passport with your vet, groomer, or boarder in seconds.",
   openGraph: {
-    title: "petdocs — Own your pet's docs",
+    title: "petdocs: Own your pet's docs",
     description:
       "Upload once, prove vaccination in under 30 seconds, never miss a booster.",
     type: "website",

@@ -51,7 +51,7 @@ function buildTimeline(
         id: `vaccine-${v._id}`,
         date: ts ? formatDate(ts) : "No date",
         kind: "vaccine",
-        title: `${v.vaccineName} — ${v.status}`,
+        title: `${v.vaccineName}: ${v.status}`,
         detail: v.administeredAt
           ? `Given ${formatDate(v.administeredAt)}${v.provider ? ` · ${v.provider}` : ""}`
           : v.dueAt
@@ -183,8 +183,7 @@ export default function PetDetailPage({
             <PetArt name="camera" size={120} />
             <p className="mt-2 font-semibold">Snap your first doc</p>
             <p className="text-sm text-ink-soft">
-              A vaccine cert photo is a perfect start — it keeps this vault
-              cozy and complete.
+              A vaccine cert photo is a perfect start.
             </p>
           </div>
         </section>
@@ -272,8 +271,7 @@ export default function PetDetailPage({
             <PetArt name="camera" size={120} />
             <p className="mt-2 font-semibold">Snap your first doc</p>
             <p className="text-sm text-ink-soft">
-              A vaccine cert photo is a perfect start — it keeps {pet.name}&apos;s
-              vault cozy and complete.
+              A vaccine cert photo is a perfect start.
             </p>
           </div>
         ) : (

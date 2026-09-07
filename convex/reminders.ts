@@ -164,6 +164,8 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
+const DEFAULT_SITE_URL = "http://localhost:3000";
+
 export const sendDue = internalAction({
   args: {},
   returns: v.number(),
@@ -181,18 +183,31 @@ export const sendDue = internalAction({
       });
       if (!context || !context.email) continue;
       const { email, petName, title, dueAt } = context;
-      const subject = `PetDocs reminder: ${title} for ${petName}`;
+      const subject = `Reminder: ${title} for ${petName}`;
       const safeTitle = escapeHtml(title);
       const safePet = escapeHtml(petName);
       const dueLabel = escapeHtml(new Date(dueAt).toLocaleDateString());
+      const siteUrl = (
+        process.env.SITE_URL?.trim() || DEFAULT_SITE_URL
+      ).replace(/\/+$/, "");
+      const safeSiteUrl = escapeHtml(siteUrl);
       const html =
-        `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#fff8f1;border:1px solid #f0e2d3;border-radius:12px;">` +
-        `<h2 style="margin:0 0 8px;color:#4a2c14;">🐾 PetDocs reminder</h2>` +
-        `<p style="margin:0 0 12px;color:#5b4a3f;">Hi there — just a gentle nudge for <strong>${safePet}</strong>.</p>` +
-        `<p style="margin:0 0 8px;color:#2b2118;font-size:16px;"><strong>${safeTitle}</strong></p>` +
-        `<p style="margin:0;color:#5b4a3f;">Due: ${dueLabel}</p>` +
-        `</div>`;
-      const text = `PetDocs reminder for ${petName}: ${title} (due ${new Date(dueAt).toLocaleDateString()}).`;
+        `<!doctype html><html><body style="margin:0;padding:0;background-color:#FFFBF5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">` +
+        `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#FFFBF5;padding:32px 16px;"><tr><td align="center">` +
+        `<table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;background-color:#ffffff;border:1px solid #F0E2D3;border-radius:16px;overflow:hidden;">` +
+        `<tr><td style="padding:32px 32px 8px 32px;"><div style="font-size:13px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#0D9488;">PetDocs</div></td></tr>` +
+        `<tr><td style="padding:8px 32px 0 32px;">` +
+        `<h2 style="margin:0;font-size:18px;line-height:1.4;color:#1C1917;">Reminder: ${safeTitle} for ${safePet}</h2>` +
+        `<p style="margin:12px 0 0 0;font-size:14px;line-height:1.6;color:#57534E;">Due: ${dueLabel}</p>` +
+        `</td></tr>` +
+        `<tr><td style="padding:24px 32px;">` +
+        `<a href="${safeSiteUrl}" style="display:inline-block;background-color:#0D9488;color:#ffffff;font-weight:600;font-size:15px;text-decoration:none;padding:13px 28px;border-radius:999px;">Open petdocs</a>` +
+        `</td></tr>` +
+        `<tr><td style="padding:0 32px 32px 32px;">` +
+        `<p style="margin:0;font-size:12px;line-height:1.6;color:#78716C;">Manage this reminder in petdocs.</p>` +
+        `</td></tr>` +
+        `</table></td></tr></table></body></html>`;
+      const text = `Reminder: ${title} for ${petName} (due ${new Date(dueAt).toLocaleDateString()}). Open petdocs: ${siteUrl}`;
       const result = await ctx.runAction(internal.resend.sendEmail, {
         to: email,
         subject,

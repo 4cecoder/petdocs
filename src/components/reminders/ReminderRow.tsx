@@ -1,5 +1,7 @@
 "use client";
 
+import { Square } from "lucide-react";
+
 export interface ReminderItem {
   id: string;
   title: string;
@@ -23,9 +25,9 @@ export function ReminderRow({
         type="button"
         aria-label={`Mark done: ${reminder.title} for ${reminder.petName}`}
         onClick={() => onDone?.(reminder.id)}
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-ink/15 text-lg hover:bg-cream"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-ink/15 hover:bg-cream"
       >
-        ☐
+        <Square size={20} aria-hidden="true" className="text-ink-soft" />
       </button>
       <div className="min-w-0 flex-1">
         <p className="truncate font-semibold">{reminder.title}</p>

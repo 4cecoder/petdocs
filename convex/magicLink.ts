@@ -65,39 +65,41 @@ async function hashToken(token: string): Promise<string> {
 function brandedEmail(loginUrl: string): { text: string; html: string } {
   const text = `Hi there,
 
-Sign in to PetDocs with this link (single-use, expires in 15 minutes):
+Sign in to petdocs with this link (15 minutes, one use):
 
 ${loginUrl}
 
-If you didn't request this, you can ignore this email — no one can access your account without clicking this exact link.`;
+If you didn't ask, ignore this.`;
 
+  // Warm PetDocs card: inline CSS only, no external assets.
+  const safeUrl = loginUrl.replace(/&/g, "&amp;");
   const html = `<!doctype html>
 <html>
-  <body style="margin:0;padding:0;background-color:#070b14;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#070b14;padding:32px 16px;">
+  <body style="margin:0;padding:0;background-color:#FFFBF5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#FFFBF5;padding:32px 16px;">
       <tr>
         <td align="center">
-          <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;background-color:#0c1222;border:1px solid rgba(255,255,255,0.08);border-radius:16px;overflow:hidden;">
+          <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;background-color:#ffffff;border:1px solid #F0E2D3;border-radius:16px;overflow:hidden;">
             <tr>
               <td style="padding:32px 32px 8px 32px;">
-                <div style="font-size:13px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#06b6d4;">PetDocs</div>
+                <div style="font-size:13px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#0D9488;">PetDocs</div>
               </td>
             </tr>
             <tr>
               <td style="padding:8px 32px 0 32px;">
-                <h1 style="margin:0;font-size:20px;line-height:1.4;color:#ffffff;">Sign in to PetDocs</h1>
-                <p style="margin:12px 0 0 0;font-size:14px;line-height:1.6;color:#94a3b8;">Click below to sign in. This link is single-use and expires in 15 minutes.</p>
+                <h1 style="margin:0;font-size:20px;line-height:1.4;color:#1C1917;">Sign in to petdocs</h1>
+                <p style="margin:12px 0 0 0;font-size:14px;line-height:1.6;color:#57534E;">Use the button below. It expires in 15 minutes, one use.</p>
               </td>
             </tr>
             <tr>
               <td style="padding:24px 32px;">
-                <a href="${loginUrl}" style="display:inline-block;background-color:#06b6d4;color:#020617;font-weight:600;font-size:14px;text-decoration:none;padding:12px 24px;border-radius:8px;">Sign in</a>
+                <a href="${safeUrl}" style="display:inline-block;background-color:#0D9488;color:#ffffff;font-weight:600;font-size:15px;text-decoration:none;padding:13px 28px;border-radius:999px;">Sign in</a>
               </td>
             </tr>
             <tr>
               <td style="padding:0 32px 32px 32px;">
-                <p style="margin:0;font-size:12px;line-height:1.6;color:#475569;word-break:break-all;">Or paste this link into your browser:<br/><span style="color:#64748b;">${loginUrl}</span></p>
-                <p style="margin:16px 0 0 0;font-size:12px;line-height:1.6;color:#475569;">Didn't request this? You can safely ignore this email.</p>
+                <p style="margin:0;font-size:12px;line-height:1.6;color:#78716C;word-break:break-all;">Or paste this link into your browser:<br/><span style="color:#57534E;">${safeUrl}</span></p>
+                <p style="margin:16px 0 0 0;font-size:12px;line-height:1.6;color:#78716C;">If you didn't ask, ignore this.</p>
               </td>
             </tr>
           </table>

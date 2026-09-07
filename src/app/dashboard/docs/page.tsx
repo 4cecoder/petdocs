@@ -51,7 +51,7 @@ export default function DocsPage() {
               sortKey: doc.createdAt,
               row: {
                 id: `${pet._id}:${doc._id}`,
-                name: `${pet.name} — ${doc.name}`,
+                name: `${pet.name}: ${doc.name}`,
                 category: doc.category ?? "other",
                 date: new Date(doc.createdAt).toLocaleDateString(),
                 sizeLabel: formatBytes(doc.size),
@@ -101,8 +101,7 @@ export default function DocsPage() {
           <PetArt name="camera" size={120} />
           <p className="mt-2 font-semibold">Snap your first doc</p>
           <p className="text-sm text-ink-soft">
-            Snap a photo of a vaccine cert to start the vault — it takes
-            seconds.
+            Snap a vaccine cert photo to start the vault.
           </p>
         </div>
       </div>
@@ -165,8 +164,7 @@ export default function DocsPage() {
             <PetArt name="camera" size={120} />
             <p className="mt-2 font-semibold">Snap your first doc</p>
             <p className="text-sm text-ink-soft">
-              Snap a photo of a vaccine cert to start the vault — it takes
-              seconds.
+              Snap a vaccine cert photo to start the vault.
             </p>
           </div>
         ) : (

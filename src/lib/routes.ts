@@ -10,6 +10,11 @@ export const ROUTES = {
   home: "/",
   howItWorks: "/how-it-works",
   pricing: "/pricing",
+  legal: {
+    terms: "/legal/terms",
+    privacy: "/legal/privacy",
+    refunds: "/legal/refunds",
+  },
   signIn: "/sign-in",
   onboarding: "/onboarding",
   dashboard: {
@@ -27,8 +32,12 @@ export type DashboardRoute =
 
 /** Flat list of every static path we expose as a typed constant. */
 export function allRouteHrefs(): string[] {
-  const { dashboard, ...marketing } = ROUTES;
-  return [...Object.values(marketing), ...Object.values(dashboard)];
+  const { dashboard, legal, ...marketing } = ROUTES;
+  return [
+    ...Object.values(marketing),
+    ...Object.values(legal),
+    ...Object.values(dashboard),
+  ];
 }
 
 /** True when a path incorrectly embeds a Next.js route-group segment. */

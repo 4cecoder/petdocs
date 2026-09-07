@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Camera, FileText } from "lucide-react";
 import { DOC_CATEGORIES, validateDocUpload } from "@/lib/validators";
 import { api, getOwnerId, isBackendConfigured, uploadDoc, type Pet } from "@/lib/api";
 import { FlowNav, WizardShell, useSteps } from "@/components/flow/Wizard";
@@ -132,7 +133,7 @@ export function DocUploader({
       onComplete?.(file.name);
       go(3);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Upload failed — try again");
+      setError(e instanceof Error ? e.message : "Upload failed. Try again.");
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -238,9 +239,16 @@ export function DocUploader({
               type="button"
               onClick={() => inputRef.current?.click()}
               disabled={uploading}
-              className="min-h-[48px] flex-1 rounded-2xl bg-brand-600 px-4 py-3 font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+              className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 py-3 font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
             >
-              {uploading ? "Uploading…" : "📷 Take photo / upload"}
+              {uploading ? (
+                "Uploading…"
+              ) : (
+                <>
+                  <Camera size={18} aria-hidden="true" /> Take photo /
+                  upload
+                </>
+              )}
             </button>
             <input
               ref={inputRef}
@@ -261,7 +269,14 @@ export function DocUploader({
               />
             ) : null}
             {file && !preview ? (
-              <p className="truncate text-sm text-ink-soft">📄 {file.name}</p>
+              <p className="flex items-center gap-1.5 truncate text-sm text-ink-soft">
+                <FileText
+                  size={16}
+                  aria-hidden="true"
+                  className="shrink-0"
+                />{" "}
+                <span className="truncate">{file.name}</span>
+              </p>
             ) : null}
             <p
               role="status"
@@ -322,7 +337,14 @@ export function DocUploader({
               />
             </label>
             {file ? (
-              <p className="truncate text-sm text-ink-soft">📎 {file.name}</p>
+              <p className="flex items-center gap-1.5 truncate text-sm text-ink-soft">
+                <FileText
+                  size={16}
+                  aria-hidden="true"
+                  className="shrink-0"
+                />{" "}
+                <span className="truncate">{file.name}</span>
+              </p>
             ) : null}
             <p
               role="status"
@@ -352,7 +374,7 @@ export function DocUploader({
           onGo={handleGo}
           art="happy"
           title="Saved to the vault"
-          subtitle={savedName ? `🎉 ${savedName}` : undefined}
+          subtitle={savedName ?? undefined}
         >
           <p
             role="status"

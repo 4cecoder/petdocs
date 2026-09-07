@@ -2,13 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ArrowLeft, ArrowRight, FileText } from "lucide-react";
 import { PET_SPECIES, validatePetName } from "@/lib/validators";
 import { ROUTES } from "@/lib/routes";
 import { FlowNav, WizardShell, useSteps } from "@/components/flow/Wizard";
 
 const STEPS = ["Your pet", "First doc", "All set"] as const;
 
-/** 3-step onboarding, resumable, skippable — goal <3 minutes. */
+/** 3-step onboarding, resumable, skippable, goal <3 minutes. */
 export default function OnboardingPage() {
   const router = useRouter();
   const { step, next, back, go } = useSteps(STEPS.length);
@@ -111,8 +112,7 @@ export default function OnboardingPage() {
               </p>
             ) : null}
             <p id="onboarding-photo-note" className="text-sm text-ink-soft">
-              Photo comes after signup — name and species is all we need for
-              now.
+              Photo comes later. Name and species is enough for now.
             </p>
           </form>
         </WizardShell>
@@ -130,9 +130,9 @@ export default function OnboardingPage() {
             <button
               type="button"
               onClick={back}
-              className="min-h-[48px] rounded-2xl px-4 py-3 font-semibold text-ink-soft hover:bg-cream-dark"
+              className="inline-flex min-h-[48px] items-center gap-1 rounded-2xl px-4 py-3 font-semibold text-ink-soft hover:bg-cream-dark"
             >
-              ← Back
+              <ArrowLeft size={18} aria-hidden="true" /> Back
             </button>
           }
         >
@@ -142,9 +142,7 @@ export default function OnboardingPage() {
               onClick={handleUpload}
               className="flex min-h-[64px] items-center gap-3 rounded-2xl bg-brand-600 px-4 py-3 text-left font-semibold text-white hover:bg-brand-700"
             >
-              <span aria-hidden="true" className="text-2xl">
-                📄
-              </span>
+              <FileText size={24} aria-hidden="true" className="shrink-0" />
               <span className="flex flex-col">
                 <span>Upload a document</span>
                 <span className="text-sm font-normal text-white/80">
@@ -157,9 +155,7 @@ export default function OnboardingPage() {
               onClick={next}
               className="flex min-h-[64px] items-center gap-3 rounded-2xl border border-ink/15 bg-white px-4 py-3 text-left font-semibold hover:bg-cream-dark"
             >
-              <span aria-hidden="true" className="text-2xl">
-                ⏭️
-              </span>
+              <ArrowRight size={24} aria-hidden="true" className="shrink-0" />
               <span className="flex flex-col">
                 <span>Skip for now</span>
                 <span className="text-sm font-normal text-ink-soft">
@@ -168,7 +164,7 @@ export default function OnboardingPage() {
               </span>
             </button>
             <p className="text-center text-sm text-ink-soft">
-              Skippable — pick up where you left off anytime.
+              Skippable. Pick up where you left off.
             </p>
           </div>
         </WizardShell>

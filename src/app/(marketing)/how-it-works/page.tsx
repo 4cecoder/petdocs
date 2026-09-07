@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Camera, Link2, PawPrint, Syringe } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { ROUTES } from "@/lib/routes";
@@ -12,22 +13,22 @@ export default function HowItWorksPage() {
         <ol className="mt-8 flex flex-col gap-4">
           {[
             {
-              icon: "🐶",
+              Icon: PawPrint,
               title: "Add your pet",
               body: "Name, species, breed, photo, microchip number. One minute, on your phone.",
             },
             {
-              icon: "📸",
+              Icon: Camera,
               title: "Snap your docs",
-              body: "Point the camera at a rabies cert, lab result, or prescription. Pick a type, save — it lands in the vault and on the timeline.",
+              body: "Point the camera at a rabies cert, lab result, or prescription. Pick a type, save. It lands in the vault and on the timeline.",
             },
             {
-              icon: "💉",
+              Icon: Syringe,
               title: "Track vaccines & meds",
-              body: "Due dates for rabies, DHPP, Bordetella — plus daily meds like Apoquel. Reminders keep you ahead of lapses.",
+              body: "Due dates for rabies, DHPP, Bordetella, plus daily meds like Apoquel. Reminders keep you ahead.",
             },
             {
-              icon: "🔗",
+              Icon: Link2,
               title: "Share the passport",
               body: "Create a read-only link with an expiry date. Text it to the boarder, show the QR at the groomer. Revoke anytime.",
             },
@@ -36,9 +37,11 @@ export default function HowItWorksPage() {
               key={step.title}
               className="flex gap-4 rounded-2xl border border-ink/10 bg-white p-5"
             >
-              <span aria-hidden="true" className="text-3xl">
-                {step.icon}
-              </span>
+              <step.Icon
+                size={28}
+                aria-hidden="true"
+                className="shrink-0 text-brand-600"
+              />
               <div>
                 <h2 className="font-display font-bold">
                   Step {i + 1}: {step.title}

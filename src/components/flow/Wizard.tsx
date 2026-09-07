@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { Check } from "lucide-react";
 import { PetArt, type PetArtName } from "@/components/art/PetArt";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
-// useSteps — tiny multistep state machine (the DX-maximized primitive)
+// useSteps: tiny multistep state machine (the DX-maximized primitive)
 // ---------------------------------------------------------------------------
 export function useSteps(total: number, initial = 0) {
   const [step, setStep] = useState(initial);
@@ -19,7 +20,7 @@ export function useSteps(total: number, initial = 0) {
 }
 
 // ---------------------------------------------------------------------------
-// Stepper — dots + labels, never progress-bar-only (screen-reader text)
+// Stepper: dots + labels, never progress-bar-only (screen-reader text)
 // ---------------------------------------------------------------------------
 export function Stepper({
   steps,
@@ -46,7 +47,7 @@ export function Stepper({
                 !done && !active && "bg-ink/10 text-ink-soft",
               )}
             >
-              {done ? "✓" : i + 1}
+              {done ? <Check size={14} aria-hidden="true" /> : i + 1}
             </span>
             <span
               className={cn(
@@ -86,7 +87,7 @@ export function Stepper({
 }
 
 // ---------------------------------------------------------------------------
-// StepShell — centered art + title + body card (the cozy container)
+// StepShell: centered art + title + body card (the cozy container)
 // ---------------------------------------------------------------------------
 export function StepShell({
   art,
@@ -117,7 +118,7 @@ export function StepShell({
 }
 
 // ---------------------------------------------------------------------------
-// FlowNav — Back / Continue bar (48px targets, loading-aware)
+// FlowNav: Back / Continue bar (48px targets, loading-aware)
 // ---------------------------------------------------------------------------
 export function FlowNav({
   onBack,
@@ -153,14 +154,14 @@ export function FlowNav({
         disabled={nextDisabled || loading}
         className="min-h-[48px] flex-1 rounded-2xl bg-brand-600 px-4 py-3 font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
       >
-        {loading ? "Working… 🐾" : nextLabel}
+        {loading ? "Working…" : nextLabel}
       </button>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// WizardShell — stepper + shell in one (fastest path to a new flow)
+// WizardShell: stepper + shell in one (fastest path to a new flow)
 // ---------------------------------------------------------------------------
 export function WizardShell({
   steps,

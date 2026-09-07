@@ -31,7 +31,7 @@ export function useDashboardAuth(): DashboardAuth {
 /**
  * Authenticated only when BOTH the session email and the owner id are
  * present. Legacy email-only entries (pre-magic-link demo scaffold) do not
- * count — they redirect to sign-in instead of leaking into the dashboard.
+ * count: they redirect to sign-in instead of leaking into the dashboard.
  */
 function readOwnerId(): string | null {
   try {
@@ -46,7 +46,7 @@ function readOwnerId(): string | null {
 export function DashboardAuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   // localStorage is synchronous, so the session resolves during the initial
-  // render — no effect-delay flash on the client. `loading` is true only
+  // render: no effect-delay flash on the client. `loading` is true only
   // during SSR (window undefined), before hydration can read the session.
   const [ownerId, setOwnerId] = useState<string | null>(() => readOwnerId());
   const [loading, setLoading] = useState<boolean>(
@@ -92,7 +92,7 @@ export function DashboardGuard({ children }: { children: ReactNode }) {
     return (
       <main className="mx-auto flex min-h-screen max-w-lg items-center justify-center px-6">
         <p aria-live="polite" className="text-ink-soft">
-          Checking your session… 🐾
+          Checking your session…
         </p>
       </main>
     );

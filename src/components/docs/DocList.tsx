@@ -1,3 +1,5 @@
+import { FileText } from "lucide-react";
+
 export interface VaultDoc {
   id: string;
   name: string;
@@ -8,7 +10,7 @@ export interface VaultDoc {
 
 export function DocList({
   docs,
-  emptyHint = "No documents yet — snap a photo of a vaccine cert to get started.",
+  emptyHint = "No documents yet. Snap a vaccine cert photo to start.",
 }: {
   docs: VaultDoc[];
   emptyHint?: string;
@@ -16,9 +18,11 @@ export function DocList({
   if (docs.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-ink/20 bg-white p-8 text-center">
-        <p className="text-4xl" aria-hidden="true">
-          📸
-        </p>
+        <FileText
+          size={32}
+          aria-hidden="true"
+          className="mx-auto text-ink-soft"
+        />
         <p className="mt-2 font-semibold">Nothing here yet</p>
         <p className="text-sm text-ink-soft">{emptyHint}</p>
       </div>
@@ -33,9 +37,9 @@ export function DocList({
         >
           <span
             aria-hidden="true"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cream-dark text-xl"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cream-dark"
           >
-            {doc.name.toLowerCase().endsWith(".pdf") ? "📕" : "🖼️"}
+            <FileText size={20} aria-hidden="true" className="text-ink-soft" />
           </span>
           <div className="min-w-0 flex-1">
             <p className="truncate font-semibold">{doc.name}</p>

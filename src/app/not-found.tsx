@@ -11,7 +11,7 @@ export default function NotFound() {
           This trail went cold
         </h1>
         <p className="text-ink-soft">
-          The page you&apos;re looking for doesn&apos;t exist — but your
+          The page you&apos;re looking for doesn&apos;t exist, but your
           pet&apos;s docs are safe.
         </p>
         <p className="text-sm text-ink-soft">

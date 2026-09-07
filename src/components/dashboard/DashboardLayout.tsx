@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { PawPrint } from "lucide-react";
 import { DASHBOARD_NAV, isNavItemActive } from "@/lib/dashboardNav";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
@@ -16,9 +17,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-40 border-b border-ink/10 bg-cream/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <Link href={ROUTES.dashboard.root} className="flex items-center gap-2">
-            <span aria-hidden="true" className="text-2xl">
-              🐾
-            </span>
+            <PawPrint size={24} aria-hidden="true" className="text-brand-600" />
             <span className="font-display text-lg font-bold">petdocs</span>
           </Link>
           <button
@@ -61,7 +60,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <main className="min-w-0 flex-1 pb-24 md:pb-8">{children}</main>
       </div>
 
-      {/* Bottom tab bar — primary nav on phones, mirrors Android bottom nav. */}
+      {/* Bottom tab bar: primary nav on phones, mirrors Android bottom nav. */}
       <nav
         aria-label="Dashboard"
         className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-6 border-t border-ink/10 bg-cream/95 backdrop-blur md:hidden"

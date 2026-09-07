@@ -20,10 +20,24 @@ export default defineSchema({
     phone: v.optional(v.string()),
     avatarStorageId: v.optional(v.id("_storage")),
     locked: v.optional(v.boolean()),
+    role: v.optional(
+      v.union(
+        v.literal("owner"),
+        v.literal("support"),
+        v.literal("admin"),
+      ),
+    ),
     createdAt: v.number(),
   })
     .index("by_externalId", ["externalId"])
     .index("by_email", ["email"]),
+
+  adminAudit: defineTable({
+    actorOwnerId: v.id("owners"),
+    action: v.string(),
+    target: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("by_actor", ["actorOwnerId"]),
 
   pets: defineTable({
     ownerId: v.id("owners"),

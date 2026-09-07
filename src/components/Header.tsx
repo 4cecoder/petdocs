@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { Menu, PawPrint, X } from "lucide-react";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
@@ -20,9 +21,9 @@ export function Header() {
         <Link href={ROUTES.home} className="flex items-center gap-2.5">
           <span
             aria-hidden="true"
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-xl text-white"
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white"
           >
-            🐾
+            <PawPrint size={20} aria-hidden="true" />
           </span>
           <span className="font-display text-lg font-bold tracking-tight">
             petdocs
@@ -49,12 +50,16 @@ export function Header() {
 
         <button
           type="button"
-          className="min-h-[48px] min-w-[48px] rounded-xl px-3 text-xl md:hidden"
+          className="flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl px-3 md:hidden"
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
           aria-expanded={mobileOpen}
           onClick={() => setMobileOpen((v) => !v)}
         >
-          {mobileOpen ? "✕" : "☰"}
+          {mobileOpen ? (
+            <X size={24} aria-hidden="true" />
+          ) : (
+            <Menu size={24} aria-hidden="true" />
+          )}
         </button>
       </div>
 

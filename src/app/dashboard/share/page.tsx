@@ -89,7 +89,7 @@ export default function SharePage() {
             Share the love, safely.
           </p>
           <p className="text-sm text-ink-soft">
-            One link per recipient — revoke one without breaking the others.
+            One link per recipient. Revoke one without breaking others.
           </p>
         </div>
       </header>
@@ -100,7 +100,7 @@ export default function SharePage() {
       >
       {loading ? (
         <p aria-live="polite" className="text-sm text-ink-soft">
-          Loading links… 🐾
+          Loading links…
         </p>
       ) : petsWithLinks.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-ink/20 bg-white/60 p-8 text-center text-sm text-ink-soft">

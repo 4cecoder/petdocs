@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  /* petdocs brand — warm, trustworthy, photo-first */
+  /* petdocs brand: warm, trustworthy, photo-first */
   --color-cream: #fffbf5;
   --color-cream-dark: #f7efe2;
   --color-ink: #1c1917;

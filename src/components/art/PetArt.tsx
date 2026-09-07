@@ -1,20 +1,20 @@
 /**
- * PetArt — hand-drawn kawaii SVG artwork kit. Zero deps, offline-safe,
+ * PetArt: hand-drawn kawaii SVG artwork kit. Zero deps, offline-safe,
  * theme-matched (cream / teal / amber / ink). Decorative: aria-hidden.
  *
  * Usage: <PetArt name="lost" size={160} />
  */
 export type PetArtName =
-  | "lost" // 404 — puppy + question mark
-  | "sleepy" // empty lists — curled cat + Zzz
-  | "happy" // success/done — jumping pup + hearts
-  | "mail" // magic link / reminders — envelope + paw seal
-  | "camera" // upload — camera + paw + sparkles
-  | "box" // vault/docs — open box + papers
-  | "rocket" // onboarding done — rocket pup
-  | "siren" // errors — pup with cone + cross
-  | "clock" // reminders — alarm clock + paw
-  | "link"; // share — chain link + heart
+  | "lost" // 404: puppy + question mark
+  | "sleepy" // empty lists: curled cat + Zzz
+  | "happy" // success/done: jumping pup + hearts
+  | "mail" // magic link / reminders: envelope + paw seal
+  | "camera" // upload: camera + paw + sparkles
+  | "box" // vault/docs: open box + papers
+  | "rocket" // onboarding done: rocket pup
+  | "siren" // errors: pup with cone + cross
+  | "clock" // reminders: alarm clock + paw
+  | "link"; // share: chain link + heart
 
 const INK = "#1C1917";
 const TEAL = "#0D9488";

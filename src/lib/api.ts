@@ -252,7 +252,7 @@ export async function uploadDoc(input: {
     headers: { "Content-Type": input.file.type },
     body: input.file,
   });
-  if (!put.ok) throw new Error("Upload failed — try again");
+  if (!put.ok) throw new Error("Upload failed. Try again.");
   const { storageId } = (await put.json()) as { storageId: string };
   return convexMutation<string>("documents:create", {
     ownerId: input.ownerId,

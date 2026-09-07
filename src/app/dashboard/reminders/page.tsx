@@ -81,16 +81,16 @@ export default function RemindersPage() {
       else later.push(r);
     }
     return [
-      { title: "Overdue", empty: "Nothing overdue — nice work.", items: overdue, now },
+      { title: "Overdue", empty: "Nothing overdue. Nice work.", items: overdue, now },
       {
         title: "This week",
-        empty: "Nothing due this week — enjoy the calm.",
+        empty: "Nothing due this week. Enjoy the calm.",
         items: thisWeek,
         now,
       },
       {
         title: "Later",
-        empty: "Nothing scheduled later — future you says thanks.",
+        empty: "Nothing scheduled later.",
         items: later,
         now,
       },
@@ -110,16 +110,16 @@ export default function RemindersPage() {
           </button>
         </div>
         {[
-          { title: "Overdue", empty: "Nothing overdue — nice work." },
-          { title: "This week", empty: "Nothing due this week — enjoy the calm." },
-          { title: "Later", empty: "Nothing scheduled later — future you says thanks." },
+          { title: "Overdue", empty: "Nothing overdue. Nice work." },
+          { title: "This week", empty: "Nothing due this week. Enjoy the calm." },
+          { title: "Later", empty: "Nothing scheduled later." },
         ].map((group) => (
           <section key={group.title} aria-label={group.title}>
             <h2 className="mb-2 font-display font-bold">{group.title}</h2>
             <div className="flex flex-col items-center rounded-2xl border border-dashed border-ink/20 bg-white/60 p-4 text-center text-sm text-ink-soft">
               <PetArt name="clock" size={96} />
               <p className="mt-2 text-base font-semibold text-ink">
-                All clear — for now
+                All clear for now
               </p>
               <p className="mt-1">{group.empty}</p>
             </div>
@@ -298,7 +298,7 @@ export default function RemindersPage() {
                 <div className="flex flex-col items-center rounded-2xl border border-dashed border-ink/20 bg-white/60 p-4 text-center text-sm text-ink-soft">
                   <PetArt name="clock" size={96} />
                   <p className="mt-2 text-base font-semibold text-ink">
-                    All clear — for now
+                    All clear for now
                   </p>
                   <p className="mt-1">{group.empty}</p>
                 </div>

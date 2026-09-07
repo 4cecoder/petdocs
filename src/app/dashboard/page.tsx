@@ -10,7 +10,7 @@ export default function DashboardHome() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold">Good morning 🐾</h1>
+        <h1 className="font-display text-2xl font-bold">Good morning</h1>
         <Link
           href={ROUTES.dashboard.pets}
           className="min-h-[48px] rounded-2xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
@@ -27,8 +27,7 @@ export default function DashboardHome() {
               Your pack starts here
             </p>
             <p className="mt-1">
-              Add your first pet to create its vault — photos, vax, and vet
-              visits, all in one cozy place.
+              Add your first pet. Photos, vax, and visits in one place.
             </p>
           </div>
         </div>
@@ -49,10 +48,10 @@ export default function DashboardHome() {
           <li className="flex flex-col items-center rounded-2xl border border-dashed border-ink/20 bg-white/60 p-4 text-center text-sm text-ink-soft">
             <PetArt name="clock" size={96} />
             <p className="mt-2 text-base font-semibold text-ink">
-              All clear — for now
+              All clear for now
             </p>
             <p className="mt-1">
-              Boosters and meds will show up here right when they matter.
+              Boosters and meds will show up here when they matter.
             </p>
           </li>
         </ul>

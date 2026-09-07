@@ -73,3 +73,13 @@ export function MiniFlow() {
 - [ ] Loading: `role="status"` skeleton (“Loading pet…”, spinners untouched)
 - [ ] Error: `role="alert"` + retry (“Couldn’t create the share link — try again.”)
 - [ ] Success: `happy`/`rocket` + toast + timeline insert + undo where destructive
+
+## Art direction + voice law
+
+Hand-drawn is PetArt SVG only. Use it for empty, error, success, and celebration moments. Crisp is Lucide icons only. Use it for nav, buttons, rows, and status. Never use both competing in one card. Pick one layer per card.
+
+Icon map: logo and paw headers use `PawPrint`. Photo and upload buttons use `Camera` or `Upload`. Share uses `Link2` or `Share2`. Reminders use `Bell`. Docs use `FileText`. Checks use `Check`. Close and menu use `X` and `Menu`. Clinic uses `Stethoscope`. Shots use `Syringe`. Meds use `Pill`. Home uses `Home`. Gear uses `Settings`.
+
+Voice: short, plain, warm. No em dashes in UI copy. Use commas, periods, or colons. Cut filler like very, really, simply, delightful. Keep helper text to one line where possible. Emoji max one per screen, only where it carries unique meaning. Delete the rest. PetArt scenes stay. They are the hand-drawn layer, not emoji.
+
+Lint guard: `no-restricted-syntax` bans `Literal` and `TemplateLiteral` containing an em dash. It mirrors the route group guard in `eslint.config.mjs`.

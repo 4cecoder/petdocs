@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Check } from "lucide-react";
 import { PetArt } from "@/components/art/PetArt";
 import { FlowNav, Stepper } from "@/components/flow/Wizard";
 import { api, getOwnerId } from "@/lib/api";
@@ -58,7 +59,7 @@ export function ShareButton({ petId, petName }: { petId: string; petName: string
       setCreating(true);
       try {
         const expiresAt = Date.now() + (EXPIRY_MS[expiry] ?? EXPIRY_MS["7d"] ?? 0);
-        // TODO(post-MVP): scope select (passport | vaccines_only | full_vault) — currently passport only.
+        // TODO(post-MVP): scope select (passport | vaccines_only | full_vault), currently passport only.
         const { token: newToken } = await api.share.createToken({
           ownerId,
           petId,
@@ -70,7 +71,7 @@ export function ShareButton({ petId, petName }: { petId: string; petName: string
         setToken(newToken);
         setShareUrl(`${window.location.origin}${passportHref(newToken)}`);
       } catch {
-        if (!cancelled) setError("Couldn't create the share link — try again.");
+        if (!cancelled) setError("Couldn't create the share link. Try again.");
       } finally {
         if (!cancelled) setCreating(false);
       }
@@ -122,7 +123,7 @@ export function ShareButton({ petId, petName }: { petId: string; petName: string
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
     } catch {
-      setError("Couldn't copy the link — copy it manually.");
+      setError("Couldn't copy the link. Copy it manually.");
     }
   }
 
@@ -229,7 +230,7 @@ export function ShareButton({ petId, petName }: { petId: string; petName: string
         <div className="flex flex-col gap-3">
           {creating ? (
             <p aria-live="polite" className="text-center text-sm text-ink-soft">
-              Making link… 🐾
+              Making link…
             </p>
           ) : null}
 
@@ -267,7 +268,7 @@ export function ShareButton({ petId, petName }: { petId: string; petName: string
                 aria-live="polite"
                 className="text-center text-sm font-bold text-brand-700"
               >
-                Done! 🎉 Link ready{recipient.trim() ? ` for ${recipient.trim()}` : ""}.
+                Done. Link ready{recipient.trim() ? ` for ${recipient.trim()}` : ""}.
               </p>
               <p className="truncate rounded-xl bg-cream px-3 py-2.5 text-center text-xs">
                 <a
@@ -280,13 +281,18 @@ export function ShareButton({ petId, petName }: { petId: string; petName: string
               <button
                 type="button"
                 onClick={handleCopy}
-                className="min-h-[48px] w-full rounded-2xl bg-brand-600 px-4 py-3 font-semibold text-white hover:bg-brand-700"
+                className="inline-flex min-h-[48px] w-full items-center justify-center gap-1.5 rounded-2xl bg-brand-600 px-4 py-3 font-semibold text-white hover:bg-brand-700"
               >
-                {copied ? "✓ Link copied!" : "Copy link"}
+                {copied ? (
+                  <>
+                    <Check size={18} aria-hidden="true" /> Link copied
+                  </>
+                ) : (
+                  "Copy link"
+                )}
               </button>
               <p role="status" aria-live="polite" className="text-xs text-ink-soft">
-                Read-only link for vets, groomers, or boarders — no login needed.
-                Revoke anytime.
+                Read-only link. No login needed. Revoke anytime.
               </p>
               <div className="flex w-full gap-2">
                 <button
@@ -309,7 +315,7 @@ export function ShareButton({ petId, petName }: { petId: string; petName: string
 
           {!creating && !error && !token ? (
             <p aria-live="polite" className="text-center text-sm text-ink-soft">
-              Making link… 🐾
+              Making link…
             </p>
           ) : null}
         </div>

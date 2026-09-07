@@ -17,7 +17,7 @@ export default function GlobalError({
           <div className="flex w-full flex-col items-center gap-4 rounded-2xl border border-ink/10 bg-white px-8 py-10 shadow-sm">
             <PetArt name="siren" size={160} />
             <h1 className="font-display text-2xl font-bold">
-              Uh oh — the leash slipped
+              Uh oh. The leash slipped
             </h1>
             <p className="text-ink-soft">
               Something broke on our end. Your pet&apos;s docs are safe.

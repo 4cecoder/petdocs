@@ -56,6 +56,14 @@ export default function PricingPage() {
             Start free
           </Link>
         </div>
+        <p className="mt-8 text-center text-xs text-ink-soft">
+          Cancel anytime in Settings. Annual plans refundable within 14 days
+          (see{" "}
+          <Link href={ROUTES.legal.refunds} className="underline">
+            Refunds
+          </Link>
+          ). Prices in USD. Receipts by email.
+        </p>
       </main>
       <Footer />
     </>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PawPrint } from "lucide-react";
 import { petHref } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { VaccineBadge, type VaccineStatus } from "./VaccineBadge";
@@ -25,7 +26,7 @@ export function PetCard({
       href={petHref(pet.id)}
       className="block overflow-hidden rounded-2xl border border-ink/10 bg-white shadow-sm transition hover:shadow-md"
     >
-      <div className="flex h-32 items-center justify-center bg-cream-dark text-5xl">
+      <div className="flex h-32 items-center justify-center bg-cream-dark">
         {pet.photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -34,7 +35,7 @@ export function PetCard({
             className="h-full w-full object-cover"
           />
         ) : (
-          <span aria-hidden="true">🐾</span>
+          <PawPrint size={40} aria-hidden="true" className="text-ink-soft" />
         )}
       </div>
       <div className="flex items-center justify-between gap-2 p-4">

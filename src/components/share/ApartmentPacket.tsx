@@ -1,5 +1,6 @@
 "use client";
 
+import { Link2, PawPrint, Printer } from "lucide-react";
 import { VaccineBadge, type VaccineStatus } from "@/components/pets/VaccineBadge";
 
 export interface ApartmentPacketVaccine {
@@ -15,7 +16,7 @@ export interface ApartmentPacketProps {
   /** ISO date string (YYYY-MM-DD). Age is computed from it. */
   birthdate?: string;
   weightKg?: number;
-  /** Last 4 of the microchip number only — never pass the full chip. */
+  /** Last 4 of the microchip number only: never pass the full chip. */
   microchipLast4?: string;
   /** true = spayed/neutered, false = intact, null/undefined = unknown ("Ask vet"). */
   spayNeuter?: boolean | null;
@@ -24,15 +25,15 @@ export interface ApartmentPacketProps {
 }
 
 function formatAge(birthdate?: string): string {
-  if (!birthdate) return "—";
+  if (!birthdate) return "-";
   const born = new Date(birthdate);
-  if (Number.isNaN(born.getTime())) return "—";
+  if (Number.isNaN(born.getTime())) return "-";
   const now = new Date();
   let months =
     (now.getFullYear() - born.getFullYear()) * 12 +
     (now.getMonth() - born.getMonth());
   if (now.getDate() < born.getDate()) months -= 1;
-  if (months < 0) return "—";
+  if (months < 0) return "-";
   if (months < 12) return `${months} mo`;
   const years = Math.floor(months / 12);
   const rem = months % 12;
@@ -40,9 +41,9 @@ function formatAge(birthdate?: string): string {
 }
 
 function formatVaccineDate(administeredAt?: string): string {
-  if (!administeredAt) return "—";
+  if (!administeredAt) return "-";
   const d = new Date(administeredAt);
-  if (Number.isNaN(d.getTime())) return "—";
+  if (Number.isNaN(d.getTime())) return "-";
   return d.toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
@@ -81,7 +82,7 @@ export function ApartmentPacket({
     >
       {/* Header: photo + identity */}
       <header className="flex items-center gap-4">
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-cream-dark text-4xl print:border print:border-ink/20">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-cream-dark print:border print:border-ink/20">
           {photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -90,7 +91,7 @@ export function ApartmentPacket({
               className="h-full w-full object-cover"
             />
           ) : (
-            <span aria-hidden="true">🐾</span>
+            <PawPrint size={28} aria-hidden="true" className="text-ink-soft" />
           )}
         </div>
         <div>
@@ -119,7 +120,7 @@ export function ApartmentPacket({
           </dt>
           <dd className="text-sm font-semibold">
             {weightKg == null
-              ? "—"
+              ? "-"
               : `${weightKg} kg (${Math.round(weightKg * 2.20462)} lb)`}
           </dd>
         </div>
@@ -178,23 +179,23 @@ export function ApartmentPacket({
         )}
       </section>
 
-      {/* Landlord CTA — explainer prints, button is screen-only */}
+      {/* Landlord CTA: explainer prints, button is screen-only */}
       <section
         aria-label="For landlords"
         className="mt-4 rounded-2xl bg-cream p-4 print:border print:border-ink/20 print:bg-white"
       >
         <h3 className="font-display font-bold">For landlords</h3>
         <p className="mt-1 text-sm text-ink-soft">
-          {petName} is part of a documented, vaccinated household. Ask the owner
-          for the read-only passport link or vet contact to verify any detail
-          above.
+          {petName} is part of a documented, vaccinated household. Ask the
+          owner for the passport link or vet contact to verify.
         </p>
         {/* TODO(convex): wire to shareLinks.createToken once codegen exists */}
         <button
           type="button"
-          className="mt-3 min-h-[48px] w-full rounded-2xl border border-ink/15 bg-white px-4 py-3 text-sm font-semibold hover:bg-cream-dark print:hidden sm:w-auto"
+          className="mt-3 inline-flex min-h-[48px] w-full items-center justify-center gap-1.5 rounded-2xl border border-ink/15 bg-white px-4 py-3 text-sm font-semibold hover:bg-cream-dark print:hidden sm:w-auto"
         >
-          🔗 Copy share link (coming soon)
+          <Link2 size={16} aria-hidden="true" /> Copy share link (coming
+          soon)
         </button>
       </section>
 
@@ -203,9 +204,9 @@ export function ApartmentPacket({
         <button
           type="button"
           onClick={() => window.print()}
-          className="min-h-[48px] w-full rounded-2xl bg-brand-600 px-4 py-3 font-semibold text-white hover:bg-brand-700 sm:w-auto"
+          className="inline-flex min-h-[48px] w-full items-center justify-center gap-1.5 rounded-2xl bg-brand-600 px-4 py-3 font-semibold text-white hover:bg-brand-700 sm:w-auto"
         >
-          🖨️ Print / Download
+          <Printer size={18} aria-hidden="true" /> Print / Download
         </button>
       </div>
     </article>

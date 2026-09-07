@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Camera, Link2, PawPrint } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { ROUTES } from "@/lib/routes";
@@ -9,15 +10,17 @@ export default function MarketingHome() {
       <Header />
       <main className="mx-auto max-w-6xl px-6 pb-20 pt-28">
         <section className="mx-auto max-w-2xl text-center">
-          <p className="text-6xl" aria-hidden="true">
-            🐾
-          </p>
+          <PawPrint
+            size={56}
+            aria-hidden="true"
+            className="mx-auto text-brand-600"
+          />
           <h1 className="mt-4 font-display text-4xl font-bold tracking-tight md:text-5xl">
             Own your pet&apos;s docs
           </h1>
           <p className="mt-4 text-lg text-ink-soft">
             Every vaccine, lab result, and prescription in one vault. Prove
-            vaccination in under 30 seconds — share a pet passport with your
+            vaccination in under 30 seconds. Share a pet passport with your
             vet, groomer, or boarder.
           </p>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
@@ -25,7 +28,7 @@ export default function MarketingHome() {
               href={ROUTES.onboarding}
               className="min-h-[48px] rounded-2xl bg-brand-600 px-8 py-3 font-semibold text-white hover:bg-brand-700"
             >
-              Get started — it&apos;s free
+              Get started: it&apos;s free
             </Link>
             <Link
               href={ROUTES.howItWorks}
@@ -39,17 +42,17 @@ export default function MarketingHome() {
         <section aria-label="How it works" className="mx-auto mt-16 grid max-w-4xl gap-4 md:grid-cols-3">
           {[
             {
-              icon: "🐶",
+              Icon: PawPrint,
               title: "1. Add your pet",
-              body: "Name, species, photo, microchip — under a minute.",
+              body: "Name, species, photo, microchip. Under a minute.",
             },
             {
-              icon: "📸",
+              Icon: Camera,
               title: "2. Snap your docs",
               body: "Vaccine certs, labs, prescriptions. Camera-first upload.",
             },
             {
-              icon: "🔗",
+              Icon: Link2,
               title: "3. Share the passport",
               body: "One read-only link + QR. No login needed for vets.",
             },
@@ -58,9 +61,11 @@ export default function MarketingHome() {
               key={step.title}
               className="rounded-2xl border border-ink/10 bg-white p-6 text-center shadow-sm"
             >
-              <p className="text-4xl" aria-hidden="true">
-                {step.icon}
-              </p>
+              <step.Icon
+                size={32}
+                aria-hidden="true"
+                className="mx-auto text-brand-600"
+              />
               <h2 className="mt-2 font-display font-bold">{step.title}</h2>
               <p className="mt-1 text-sm text-ink-soft">{step.body}</p>
             </div>

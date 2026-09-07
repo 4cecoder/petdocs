@@ -1,19 +1,20 @@
 import Link from "next/link";
+import { PawPrint } from "lucide-react";
 import { VaccineBadge, type VaccineStatus } from "@/components/pets/VaccineBadge";
 import { ROUTES } from "@/lib/routes";
 
 /**
- * Public pet passport — NO auth, NO dashboard shell.
+ * Public pet passport: NO auth, NO dashboard shell.
  *
  * Resolves the share token server-side via the Convex HTTP API
  * (`shareLinks:resolve`) and renders only the scoped projection.
- * Must never leak other pets, owner email, or storageIds — `resolve`
+ * Must never leak other pets, owner email, or storageIds: `resolve`
  * doesn't return them, and this page only reads Passport fields
  * (scope / pet / vaccinations / documents).
  */
 
 // Scoped projection returned by `shareLinks:resolve`. Deliberately narrow:
-// no owner email, no storageIds — only what the owner chose to share.
+// no owner email, no storageIds: only what the owner chose to share.
 interface PassportVaccination {
   vaccineName: string;
   status: string;
@@ -60,14 +61,14 @@ function deriveStatus(vaccinations: PassportVaccination[]): VaccineStatus {
 }
 
 function formatAge(birthdate?: number): string {
-  if (!birthdate) return "—";
+  if (!birthdate) return "-";
   const born = new Date(birthdate);
-  if (Number.isNaN(born.getTime())) return "—";
+  if (Number.isNaN(born.getTime())) return "-";
   const now = new Date();
   let months =
     (now.getFullYear() - born.getFullYear()) * 12 + (now.getMonth() - born.getMonth());
   if (now.getDate() < born.getDate()) months -= 1;
-  if (months < 0) return "—";
+  if (months < 0) return "-";
   if (months < 12) return `${months} mo`;
   const years = Math.floor(months / 12);
   const rem = months % 12;
@@ -75,9 +76,9 @@ function formatAge(birthdate?: number): string {
 }
 
 function formatDate(ts?: number): string {
-  if (ts == null) return "—";
+  if (ts == null) return "-";
   const d = new Date(ts);
-  if (Number.isNaN(d.getTime())) return "—";
+  if (Number.isNaN(d.getTime())) return "-";
   return d.toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
@@ -111,7 +112,7 @@ async function resolvePassport(
   }
 }
 
-/** Fire-and-forget view count — never blocks or fails the page. */
+/** Fire-and-forget view count: never blocks or fails the page. */
 function fireRecordView(convexUrl: string, token: string): void {
   try {
     void fetch(`${convexUrl}/api/mutation`, {
@@ -135,9 +136,11 @@ function PlaceholderPassport({ shareToken }: { shareToken: string }) {
   return (
     <main className="mx-auto max-w-lg px-6 py-12">
       <header className="text-center">
-        <p className="text-5xl" aria-hidden="true">
-          🐾
-        </p>
+        <PawPrint
+          size={40}
+          aria-hidden="true"
+          className="mx-auto text-brand-600"
+        />
         <p className="mt-2 text-xs font-semibold uppercase tracking-widest text-ink-soft">
           petdocs passport
         </p>
@@ -180,8 +183,8 @@ function PassportFooter() {
         Powered by{" "}
         <Link href={ROUTES.home} className="font-semibold text-brand-700">
           petdocs
-        </Link>{" "}
-        — own your pet&apos;s docs.
+        </Link>
+        . Own your pet&apos;s docs.
       </p>
     </footer>
   );
@@ -205,9 +208,11 @@ export default async function PublicPassportPage({
     return (
       <main className="mx-auto max-w-lg px-6 py-12">
         <header className="text-center">
-          <p className="text-5xl" aria-hidden="true">
-            🐾
-          </p>
+          <PawPrint
+            size={40}
+            aria-hidden="true"
+            className="mx-auto text-brand-600"
+          />
           <p className="mt-2 text-xs font-semibold uppercase tracking-widest text-ink-soft">
             petdocs passport
           </p>
@@ -219,8 +224,7 @@ export default async function PublicPassportPage({
         >
           <p className="font-semibold">This link is expired or revoked.</p>
           <p className="mt-1 text-sm text-ink-soft">
-            Ask the owner for a fresh passport link — they can create one in
-            seconds.
+            Ask the owner for a fresh link. They can make one in seconds.
           </p>
           <Link
             href={ROUTES.home}
@@ -242,9 +246,11 @@ export default async function PublicPassportPage({
   return (
     <main className="mx-auto max-w-lg px-6 py-12">
       <header className="text-center">
-        <p className="text-5xl" aria-hidden="true">
-          🐾
-        </p>
+        <PawPrint
+          size={40}
+          aria-hidden="true"
+          className="mx-auto text-brand-600"
+        />
         <p className="mt-2 text-xs font-semibold uppercase tracking-widest text-ink-soft">
           petdocs passport
         </p>
@@ -335,7 +341,7 @@ export default async function PublicPassportPage({
       </section>
 
       <p className="mt-4 text-center text-xs text-ink-soft">
-        Read-only link — it may expire or be revoked by the owner at any time.
+        Read-only link. It may expire or be revoked.
       </p>
 
       <PassportFooter />

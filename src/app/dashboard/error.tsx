@@ -18,7 +18,7 @@ export default function DashboardError({
           This page chewed a shoe
         </h1>
         <p className="text-ink-soft">
-          Give it another go — your vault is fine.
+          Give it another go. Your vault is fine.
         </p>
         <div className="flex flex-col items-center gap-3 sm:flex-row">
           <button
