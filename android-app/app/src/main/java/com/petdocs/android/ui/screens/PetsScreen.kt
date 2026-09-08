@@ -43,6 +43,7 @@ fun PetsScreen(
     onPet: (String) -> Unit,
     api: PetdocsApi? = null,
     ownerId: String? = null,
+    onAddPet: () -> Unit = {},
 ) {
     var pets by remember { mutableStateOf(emptyList<Pet>()) }
     var loading by remember { mutableStateOf(false) }
@@ -85,7 +86,7 @@ fun PetsScreen(
                 color = MaterialTheme.colorScheme.onBackground,
             )
             Button(
-                onClick = { /* TODO(api): open add-pet flow (pets:create) */ },
+                onClick = onAddPet,
                 modifier = Modifier.heightIn(min = 48.dp),
             ) {
                 Text("+ Add pet")
@@ -138,7 +139,7 @@ fun PetsScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Button(
-                        onClick = { /* TODO(api): open add-pet flow (pets:create) */ },
+                        onClick = onAddPet,
                         modifier = Modifier.heightIn(min = 48.dp),
                     ) {
                         Text("+ Add your first pet")

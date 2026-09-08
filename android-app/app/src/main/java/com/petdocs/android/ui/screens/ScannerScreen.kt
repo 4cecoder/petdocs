@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -56,6 +57,8 @@ import java.io.File
  * CameraX document capture: preview -> photo saved to cache -> category ->
  * [PetdocsApi.uploadDocument]. Pass [api]/[ownerId]/[petId] to enable upload;
  * without them capture still works and upload is a TODO.
+ * When [onPhoto] is set, capture becomes step one of the wizard and Continue
+ * forwards the cached file path instead of uploading inline.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,6 +67,7 @@ fun ScannerScreen(
     api: PetdocsApi? = null,
     ownerId: String? = null,
     petId: String? = null,
+    onPhoto: ((String) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current
@@ -91,13 +95,16 @@ fun ScannerScreen(
             Text(
                 text = if (showRationale) {
                     "petdocs needs camera access to scan documents. " +
-                        "Please allow it — your photos stay on this device until you upload."
+                        "Please allow it. Your photos stay on this device until you upload."
                 } else {
                     "Camera permission is required to scan documents."
                 },
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Button(onClick = { permissionLauncher.launch(camPerm) }, modifier = Modifier.padding(top = 16.dp)) {
+            Button(
+                onClick = { permissionLauncher.launch(camPerm) },
+                modifier = Modifier.padding(top = 16.dp).heightIn(min = 48.dp),
+            ) {
                 Text("Allow camera")
             }
         }
@@ -177,38 +184,58 @@ fun ScannerScreen(
         }
 
         photoFile?.let { file ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            ) {
-                AsyncImage(
-                    model = file,
-                    contentDescription = "Scanned document preview",
-                    modifier = Modifier.size(64.dp),
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                ExposedDropdownMenuBox(
-                    expanded = menuExpanded,
-                    onExpandedChange = { menuExpanded = !menuExpanded },
-                    modifier = Modifier.weight(1f),
+            if (onPhoto != null) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 ) {
-                    OutlinedTextField(
-                        value = category.value,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Category") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(menuExpanded) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    AsyncImage(
+                        model = file,
+                        contentDescription = "Scanned document preview",
+                        modifier = Modifier.size(64.dp),
                     )
-                    ExposedDropdownMenu(
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "Looks good? Continue to add details.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            } else {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                ) {
+                    AsyncImage(
+                        model = file,
+                        contentDescription = "Scanned document preview",
+                        modifier = Modifier.size(64.dp),
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    ExposedDropdownMenuBox(
                         expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false },
+                        onExpandedChange = { menuExpanded = !menuExpanded },
+                        modifier = Modifier.weight(1f),
                     ) {
-                        DocCategory.entries.forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(option.value) },
-                                onClick = { category = option; menuExpanded = false },
-                            )
+                        OutlinedTextField(
+                            value = category.value,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Category") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(menuExpanded) },
+                            modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        )
+                        ExposedDropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false },
+                        ) {
+                            DocCategory.entries.forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(option.value) },
+                                    onClick = { category = option; menuExpanded = false },
+                                )
+                            }
                         }
                     }
                 }
@@ -227,12 +254,22 @@ fun ScannerScreen(
                 Icon(Icons.Filled.PhotoCamera, contentDescription = "Capture")
             }
             Spacer(modifier = Modifier.width(12.dp))
-            Button(
-                onClick = ::upload,
-                enabled = photoFile != null && !uploading,
-                modifier = Modifier.weight(1f),
-            ) {
-                Text(if (uploading) "Uploading…" else "Upload")
+            if (onPhoto != null) {
+                Button(
+                    onClick = { photoFile?.let { onPhoto(it.absolutePath) } },
+                    enabled = photoFile != null && !uploading,
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                ) {
+                    Text("Continue")
+                }
+            } else {
+                Button(
+                    onClick = ::upload,
+                    enabled = photoFile != null && !uploading,
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                ) {
+                    Text(if (uploading) "Uploading..." else "Upload")
+                }
             }
         }
     }

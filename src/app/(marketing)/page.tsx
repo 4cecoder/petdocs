@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Camera, Link2, PawPrint } from "lucide-react";
+import { Apple, Camera, Link2, PawPrint, Play } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { ROUTES } from "@/lib/routes";
@@ -36,6 +36,32 @@ export default function MarketingHome() {
             >
               How it works
             </Link>
+          </div>
+          <div
+            aria-label="Mobile apps coming soon"
+            className="mt-6 flex flex-col items-center justify-center gap-2 sm:flex-row"
+          >
+            <button
+              type="button"
+              disabled
+              aria-label="iOS app, coming soon"
+              className="flex min-h-[48px] cursor-not-allowed items-center gap-2 rounded-2xl border border-ink/10 bg-ink/5 px-6 py-3 font-semibold text-ink-soft opacity-60"
+            >
+              <Apple size={20} aria-hidden="true" />
+              iOS app
+            </button>
+            <button
+              type="button"
+              disabled
+              aria-label="Android app, coming soon"
+              className="flex min-h-[48px] cursor-not-allowed items-center gap-2 rounded-2xl border border-ink/10 bg-ink/5 px-6 py-3 font-semibold text-ink-soft opacity-60"
+            >
+              <Play size={20} aria-hidden="true" />
+              Android app
+            </button>
+            <span className="rounded-full bg-accent-500/15 px-3 py-1 text-xs font-bold text-accent-600">
+              Coming soon
+            </span>
           </div>
         </section>
 

@@ -20,6 +20,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,9 +43,10 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Pet profile: header + share + upload + docs + timeline.
+ * Pet profile as compact tabs: Profile plus Timeline plus Docs plus Share.
  * Mirrors web `src/app/dashboard/pets/[petId]/page.tsx`
  * (TODO(convex): pets.get + documents.listByPet + vaccinations.listByPet).
+ * [onUpload] routes to the scanner for this pet (scanner?petId).
  */
 @Composable
 fun PetDetailScreen(
@@ -51,6 +54,7 @@ fun PetDetailScreen(
     onShare: () -> Unit,
     api: PetdocsApi? = null,
     ownerId: String? = null,
+    onUpload: (String) -> Unit = {},
 ) {
     var pet by remember { mutableStateOf<Pet?>(null) }
     var docs by remember { mutableStateOf(emptyList<VaultDoc>()) }
@@ -81,45 +85,14 @@ fun PetDetailScreen(
         buildDetailTimeline(vaccinations, visits)
     }
 
+    var tab by remember { mutableStateOf(0) }
+    val tabs = listOf("Profile", "Timeline", "Docs", "Share")
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        item {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(text = "🐾", style = MaterialTheme.typography.displaySmall)
-                }
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = pet?.name ?: "Pet profile",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
-                    Text(
-                        text = pet?.let {
-                            listOfNotNull(
-                                it.species,
-                                it.breed?.takeIf { b -> b.isNotBlank() },
-                            ).joinToString(" · ")
-                        }?.takeIf { it.isNotBlank() } ?: "ID: $petId",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-        }
-
         if (loading) {
             item {
                 Row(
@@ -145,143 +118,191 @@ fun PetDetailScreen(
         }
 
         item {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Button(
-                        onClick = onShare,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 48.dp),
-                    ) {
-                        Text("🔗 Share ${pet?.name ?: "your pet"}'s passport")
-                    }
-                    Text(
-                        text = "Read-only link for vets, groomers, or boarders — no login needed. Revoke anytime.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+            TabRow(selectedTabIndex = tab) {
+                tabs.forEachIndexed { index, label ->
+                    Tab(
+                        selected = tab == index,
+                        onClick = { tab = index },
+                        text = { Text(label) },
                     )
                 }
             }
         }
 
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "Add a document",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+        when (tab) {
+            0 -> {
+                item {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-                        Button(
-                            onClick = { /* TODO(api): open camera/upload (documents:generateUploadUrl → documents:create) */ },
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(min = 48.dp),
+                                .size(80.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                            contentAlignment = Alignment.Center,
                         ) {
-                            Text("📷 Take photo / upload")
+                            Text(text = "🐾", style = MaterialTheme.typography.displaySmall)
                         }
-                        Text(
-                            text = "PDF or photo, up to 10MB. Saved to this pet's vault.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
-        }
-
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "Documents",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                if (docs.isEmpty()) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        ),
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(32.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Text(text = "📸", style = MaterialTheme.typography.displaySmall)
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(
-                                text = "Nothing here yet",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
+                                text = pet?.name ?: "Pet profile",
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = MaterialTheme.colorScheme.onBackground,
                             )
                             Text(
-                                text = "No documents yet — snap a photo of a vaccine cert to get started.",
-                                style = MaterialTheme.typography.bodyMedium,
+                                text = pet?.let {
+                                    listOfNotNull(
+                                        it.species,
+                                        it.breed?.takeIf { b -> b.isNotBlank() },
+                                    ).joinToString(" · ")
+                                }?.takeIf { it.isNotBlank() } ?: "ID: $petId",
+                                style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
                 }
             }
-        }
-
-        if (docs.isNotEmpty()) {
-            items(docs, key = { it.id }) { doc ->
-                DetailDocRow(doc = doc)
-            }
-        }
-
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "Timeline",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
+            1 -> {
+                item {
+                    Text(
+                        text = "Timeline",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
                 if (timeline.isEmpty()) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        ),
-                    ) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            ),
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Text(text = "📋", style = MaterialTheme.typography.displaySmall)
+                                Text(
+                                    text = "No history yet",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                                Text(
+                                    text = "Upload your first document and it will show up here.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    items(timeline, key = { it.id }) { entry ->
+                        DetailTimelineRow(entry = entry)
+                    }
+                }
+            }
+            2 -> {
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "Add a document",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Button(
+                                    onClick = { onUpload(petId) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 48.dp),
+                                ) {
+                                    Text("📷 Take photo / upload")
+                                }
+                                Text(
+                                    text = "PDF or photo, up to 10MB. Saved to this pet's vault.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
+                item {
+                    Text(
+                        text = "Documents",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
+                if (docs.isEmpty()) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            ),
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Text(text = "📸", style = MaterialTheme.typography.displaySmall)
+                                Text(
+                                    text = "Nothing here yet",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                                Text(
+                                    text = "No documents yet. Snap a photo of a vaccine cert to get started.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    items(docs, key = { it.id }) { doc ->
+                        DetailDocRow(doc = doc)
+                    }
+                }
+            }
+            else -> {
+                item {
+                    Card(modifier = Modifier.fillMaxWidth()) {
                         Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(32.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Text(text = "📋", style = MaterialTheme.typography.displaySmall)
+                            Button(
+                                onClick = onShare,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 48.dp),
+                            ) {
+                                Text("🔗 Share ${pet?.name ?: "your pet"}'s passport")
+                            }
                             Text(
-                                text = "No history yet",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Text(
-                                text = "Upload your first document and it will show up here.",
-                                style = MaterialTheme.typography.bodyMedium,
+                                text = "Read-only link for vets, groomers, or boarders. No login needed. Revoke anytime.",
+                                style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
                 }
-            }
-        }
-
-        if (timeline.isNotEmpty()) {
-            items(timeline, key = { it.id }) { entry ->
-                DetailTimelineRow(entry = entry)
             }
         }
     }

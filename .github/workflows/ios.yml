@@ -1,0 +1,40 @@
+name: iOS CI (simulator build)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ios-app/**"
+      - ".github/workflows/ios.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "ios-app/**"
+      - ".github/workflows/ios.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-sim:
+    name: Build for simulator (unsigned)
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use latest installed Xcode
+        run: |
+          LATEST=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$LATEST" ]; then sudo xcode-select -s "$LATEST/Contents/Developer"; fi
+          xcodebuild -version
+
+      # Unsigned simulator build only: no provisioning profile or signing
+      # identity needed for the iOS Simulator destination.
+      - name: Build PetDocs for simulator
+        run: xcodebuild -project ios-app/PetDocs.xcodeproj -scheme PetDocs -destination 'platform=iOS Simulator,name=iPhone 16' build CODE_SIGNING_ALLOWED=NO

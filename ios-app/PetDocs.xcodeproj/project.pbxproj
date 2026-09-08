@@ -1,0 +1,320 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		CCCC00000000000000000001 /* PetDocsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000001 /* PetDocsApp.swift */; };
+		CCCC00000000000000000002 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000002 /* Theme.swift */; };
+		CCCC00000000000000000003 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000003 /* Models.swift */; };
+		CCCC00000000000000000004 /* ConvexAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000004 /* ConvexAPI.swift */; };
+		CCCC00000000000000000005 /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000005 /* SessionStore.swift */; };
+		CCCC00000000000000000006 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000006 /* AppViewModel.swift */; };
+		CCCC00000000000000000007 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000007 /* ContentView.swift */; };
+		CCCC00000000000000000008 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000008 /* Components.swift */; };
+		CCCC00000000000000000009 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000009 /* HomeView.swift */; };
+		CCCC00000000000000000010 /* PetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000010 /* PetsView.swift */; };
+		CCCC00000000000000000011 /* AddPetFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000011 /* AddPetFlowView.swift */; };
+		CCCC00000000000000000012 /* PetDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000012 /* PetDetailView.swift */; };
+		CCCC00000000000000000013 /* DocsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000013 /* DocsView.swift */; };
+		CCCC00000000000000000014 /* ScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000014 /* ScannerView.swift */; };
+		CCCC00000000000000000015 /* RemindersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000015 /* RemindersView.swift */; };
+		CCCC00000000000000000016 /* ShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000016 /* ShareView.swift */; };
+		CCCC00000000000000000017 /* PassportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000017 /* PassportView.swift */; };
+		CCCC00000000000000000018 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000018 /* LoginView.swift */; };
+		CCCC00000000000000000019 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000019 /* OnboardingView.swift */; };
+		CCCC00000000000000000020 /* NotificationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000020 /* NotificationsView.swift */; };
+		CCCC00000000000000000021 /* AdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000021 /* AdminView.swift */; };
+		CCCC00000000000000000022 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00000000000000000022 /* SettingsView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		AAAA00000000000000000010 /* PetDocs.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PetDocs.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BBBB00000000000000000001 /* PetDocsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetDocsApp.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000002 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000003 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000004 /* ConvexAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvexAPI.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000005 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000006 /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000007 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000008 /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000009 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000010 /* PetsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetsView.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000011 /* AddPetFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddPetFlowView.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000012 /* PetDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetDetailView.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000013 /* DocsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocsView.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000014 /* ScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerView.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000015 /* RemindersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersView.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000016 /* ShareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareView.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000017 /* PassportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassportView.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000018 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000019 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000020 /* NotificationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsView.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000021 /* AdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminView.swift; sourceTree = "<group>"; };
+		BBBB00000000000000000022 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AAAA00000000000000000008 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AAAA00000000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				AAAA00000000000000000004 /* PetDocs */,
+				AAAA00000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AAAA00000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AAAA00000000000000000010 /* PetDocs.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AAAA00000000000000000004 /* PetDocs */ = {
+			isa = PBXGroup;
+			children = (
+				BBBB00000000000000000001 /* PetDocsApp.swift */,
+				BBBB00000000000000000002 /* Theme.swift */,
+				BBBB00000000000000000003 /* Models.swift */,
+				BBBB00000000000000000004 /* ConvexAPI.swift */,
+				BBBB00000000000000000005 /* SessionStore.swift */,
+				BBBB00000000000000000006 /* AppViewModel.swift */,
+				AAAA00000000000000000005 /* Views */,
+			);
+			path = PetDocs;
+			sourceTree = "<group>";
+		};
+		AAAA00000000000000000005 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				BBBB00000000000000000007 /* ContentView.swift */,
+				BBBB00000000000000000008 /* Components.swift */,
+				BBBB00000000000000000009 /* HomeView.swift */,
+				BBBB00000000000000000010 /* PetsView.swift */,
+				BBBB00000000000000000011 /* AddPetFlowView.swift */,
+				BBBB00000000000000000012 /* PetDetailView.swift */,
+				BBBB00000000000000000013 /* DocsView.swift */,
+				BBBB00000000000000000014 /* ScannerView.swift */,
+				BBBB00000000000000000015 /* RemindersView.swift */,
+				BBBB00000000000000000016 /* ShareView.swift */,
+				BBBB00000000000000000017 /* PassportView.swift */,
+				BBBB00000000000000000018 /* LoginView.swift */,
+				BBBB00000000000000000019 /* OnboardingView.swift */,
+				BBBB00000000000000000020 /* NotificationsView.swift */,
+				BBBB00000000000000000021 /* AdminView.swift */,
+				BBBB00000000000000000022 /* SettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AAAA00000000000000000006 /* PetDocs */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AAAA0000000000000000000B /* Build configuration list for PBXNativeTarget "PetDocs" */;
+			buildPhases = (
+				AAAA00000000000000000007 /* Sources */,
+				AAAA00000000000000000008 /* Frameworks */,
+				AAAA00000000000000000009 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PetDocs;
+			productName = PetDocs;
+			productReference = AAAA00000000000000000010 /* PetDocs.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AAAA00000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					AAAA00000000000000000006 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = AAAA0000000000000000000A /* Build configuration list for PBXProject "PetDocs" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = AAAA00000000000000000002;
+			productRefGroup = AAAA00000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AAAA00000000000000000006 /* PetDocs */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AAAA00000000000000000009 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AAAA00000000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CCCC00000000000000000001 /* PetDocsApp.swift in Sources */,
+				CCCC00000000000000000002 /* Theme.swift in Sources */,
+				CCCC00000000000000000003 /* Models.swift in Sources */,
+				CCCC00000000000000000004 /* ConvexAPI.swift in Sources */,
+				CCCC00000000000000000005 /* SessionStore.swift in Sources */,
+				CCCC00000000000000000006 /* AppViewModel.swift in Sources */,
+				CCCC00000000000000000007 /* ContentView.swift in Sources */,
+				CCCC00000000000000000008 /* Components.swift in Sources */,
+				CCCC00000000000000000009 /* HomeView.swift in Sources */,
+				CCCC00000000000000000010 /* PetsView.swift in Sources */,
+				CCCC00000000000000000011 /* AddPetFlowView.swift in Sources */,
+				CCCC00000000000000000012 /* PetDetailView.swift in Sources */,
+				CCCC00000000000000000013 /* DocsView.swift in Sources */,
+				CCCC00000000000000000014 /* ScannerView.swift in Sources */,
+				CCCC00000000000000000015 /* RemindersView.swift in Sources */,
+				CCCC00000000000000000016 /* ShareView.swift in Sources */,
+				CCCC00000000000000000017 /* PassportView.swift in Sources */,
+				CCCC00000000000000000018 /* LoginView.swift in Sources */,
+				CCCC00000000000000000019 /* OnboardingView.swift in Sources */,
+				CCCC00000000000000000020 /* NotificationsView.swift in Sources */,
+				CCCC00000000000000000021 /* AdminView.swift in Sources */,
+				CCCC00000000000000000022 /* SettingsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		AAAA0000000000000000000C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		AAAA0000000000000000000D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		AAAA0000000000000000000E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Snap vaccine certs and vet records";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Choose pet photos and vet records from your library";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.petdocs.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AAAA0000000000000000000F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Snap vaccine certs and vet records";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Choose pet photos and vet records from your library";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.petdocs.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AAAA0000000000000000000A /* Build configuration list for PBXProject "PetDocs" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AAAA0000000000000000000C /* Debug */,
+				AAAA0000000000000000000D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AAAA0000000000000000000B /* Build configuration list for PBXNativeTarget "PetDocs" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AAAA0000000000000000000E /* Debug */,
+				AAAA0000000000000000000F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = AAAA00000000000000000001 /* Project object */;
+}

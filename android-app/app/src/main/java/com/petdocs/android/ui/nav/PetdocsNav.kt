@@ -38,9 +38,12 @@ import com.petdocs.android.data.AppViewModel
 import com.petdocs.android.data.PetdocsApi
 import com.petdocs.android.data.SessionStore
 import kotlinx.coroutines.flow.flowOf
+import com.petdocs.android.ui.screens.AdminScreen
 import com.petdocs.android.ui.screens.DocsScreen
 import com.petdocs.android.ui.screens.HomeScreen
 import com.petdocs.android.ui.screens.LoginScreen
+import com.petdocs.android.ui.screens.NotificationsScreen
+import com.petdocs.android.ui.screens.OnboardingScreen
 import com.petdocs.android.ui.screens.PassportScreen
 import com.petdocs.android.ui.screens.PetDetailScreen
 import com.petdocs.android.ui.screens.PetsScreen
@@ -56,11 +59,13 @@ private fun hubSelected(hub: HubId, route: String): Boolean = when (hub) {
     HubId.Pets -> route == HubId.Pets.route || route.startsWith("petDetail/")
     HubId.Docs -> route == HubId.Docs.route
     HubId.More -> route == "reminders" || route == "share" ||
-        route.startsWith("scanner") || route == "settings"
+        route.startsWith("scanner") || route == "settings" ||
+        route == "notifications" || route == "admin" || route == "onboarding"
 }
 
 private fun isBottomBarRoute(route: String): Boolean = when {
     route == "login" -> false
+    route == "onboarding" -> false
     route.startsWith("passport/") -> false
     route == "passport/{token}" -> false
     route.isEmpty() -> false
@@ -207,6 +212,33 @@ fun PetdocsNav(
             }
             composable("settings") {
                 SettingsScreen()
+            }
+            composable("onboarding") {
+                // First-run entry point (also in the More sheet). LoginScreen's
+                // onSignedIn signature is frozen, so fresh-account
+                // login → onboarding routing stays a TODO at the call site.
+                OnboardingScreen(
+                    onDone = {
+                        nav.navigate("home") {
+                            popUpTo("onboarding") { inclusive = true }
+                        }
+                    },
+                    api = api,
+                    ownerId = ownerId,
+                )
+            }
+            composable("notifications") {
+                NotificationsScreen(
+                    api = api,
+                    ownerId = ownerId,
+                )
+            }
+            composable("admin") {
+                AdminScreen(
+                    api = api,
+                    ownerId = ownerId,
+                    ownerEmail = ownerEmail,
+                )
             }
         }
     }
