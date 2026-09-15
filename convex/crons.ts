@@ -10,6 +10,18 @@ const crons = cronJobs();
  */
 crons.interval("reminder tick", { hours: 1 }, internal.reminders.sendDue, {});
 
+/**
+ * Daily housekeeping: prune outboxQuota counter rows older than 60 days.
+ * Quota days roll over naturally (a new UTC day = a fresh row); this only
+ * removes stale clutter.
+ */
+crons.interval(
+  "outbox quota cleanup",
+  { hours: 24 },
+  internal.outboxQuota.cleanupOld,
+  {},
+);
+
 crons.daily(
   "overdue flip",
   { hourUTC: 8, minuteUTC: 0 },

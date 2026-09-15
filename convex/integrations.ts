@@ -10,6 +10,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { requireRole } from "./admin";
+import { quotaFor, quotaStatusShape } from "./outboxQuota";
 
 const DEFAULT_SITE_URL = "http://localhost:3000";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -18,6 +19,7 @@ const resendStatusValidator = v.object({
   keySet: v.boolean(),
   fromSet: v.boolean(),
   from: v.optional(v.string()),
+  quota: v.optional(quotaStatusShape),
 });
 
 const polarStatusValidator = v.object({
@@ -62,9 +64,12 @@ function testEmailTemplate(): {
 /**
  * Integration status for the superadmin page. Booleans plus public sender
  * and site values only. Never returns keys or secrets.
+ *
+ * Pass `day` (UTC "YYYY-MM-DD", from the client's `utcDayKey()`) to include
+ * the daily email quota snapshot for the integrations meter.
  */
 export const status = query({
-  args: { adminEmail: v.string() },
+  args: { adminEmail: v.string(), day: v.optional(v.string()) },
   returns: v.object({
     resend: resendStatusValidator,
     polar: polarStatusValidator,
@@ -77,10 +82,12 @@ export const status = query({
   handler: async (ctx, args) => {
     await requireRole(ctx, args.adminEmail, "superadmin");
     const from = process.env.RESEND_FROM?.trim() || "";
+    const quota = args.day ? await quotaFor(ctx, args.day) : undefined;
     const resend = {
       keySet: (process.env.RESEND_API_KEY?.trim() || "") !== "",
       fromSet: from !== "",
       from: from || undefined,
+      ...(quota ? { quota } : {}),
     };
     const polar = {
       accessTokenSet: (process.env.POLAR_ACCESS_TOKEN?.trim() || "") !== "",

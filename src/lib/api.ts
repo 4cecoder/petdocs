@@ -11,6 +11,7 @@ import {
   getConvexUrl,
 } from "./convexHttp";
 import { validateDocUpload } from "./validators";
+import { utcDayKey } from "./utils";
 
 export const isBackendConfigured = !!getConvexUrl();
 
@@ -139,6 +140,15 @@ export interface Reminder {
   status: string;
 }
 
+/** Mirrors convex/outboxQuota.ts status (daily email quota snapshot). */
+export interface EmailQuotaStatus {
+  day: string;
+  sent: number;
+  limit: number;
+  remaining: number;
+  exhausted: boolean;
+}
+
 export interface ShareLink {
   _id: string;
   petId: string;
@@ -261,6 +271,14 @@ export const api = {
       convexQuery<Reminder[]>("reminders:listByPet", { ownerId, petId }),
     setStatus: (ownerId: string, reminderId: string, status: "done" | "dismissed") =>
       convexMutation<string>("reminders:setStatus", { ownerId, reminderId, status }),
+  },
+
+  email: {
+    /** Daily outbound quota for the current UTC day (resets at midnight UTC). */
+    quotaStatus: () =>
+      convexQuery<EmailQuotaStatus>("outboxQuota:status", {
+        day: utcDayKey(),
+      }),
   },
 
   share: {

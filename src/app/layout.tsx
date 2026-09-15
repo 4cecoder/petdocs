@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Nunito } from "next/font/google";
+import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";
 
 const nunito = Nunito({
@@ -41,7 +42,7 @@ export default function RootLayout({
       className={`${nunito.variable} ${inter.variable} antialiased`}
     >
       <body className="min-h-screen bg-cream font-sans text-ink antialiased">
-        {children}
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   );
