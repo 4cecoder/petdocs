@@ -70,6 +70,28 @@ export interface Pet {
   status: string;
 }
 
+export interface ExtractedFieldRow {
+  label: string;
+  value: string;
+}
+
+export type DocPipelineStatus =
+  | "uploaded"
+  | "processing"
+  | "ready"
+  | "needsReview"
+  | "needsOcr"
+  | "failed";
+
+export interface DocPipelineMetadata {
+  type: "vaccination" | "vet_visit" | "medication" | "lab" | "other";
+  confidence: number;
+  fields: ExtractedFieldRow[];
+  needsReview: boolean;
+  ocrUsed?: boolean;
+  processedAt?: number;
+}
+
 export interface VaultDoc {
   _id: string;
   name: string;
@@ -77,6 +99,9 @@ export interface VaultDoc {
   size: number;
   category?: string;
   createdAt: number;
+  status?: DocPipelineStatus;
+  statusError?: string;
+  metadata?: DocPipelineMetadata;
 }
 
 export interface Vaccination {
@@ -202,6 +227,20 @@ export const api = {
       convexQuery<string | null>("documents:getUrl", { ownerId, documentId }),
     moveToTrash: (ownerId: string, documentId: string) =>
       convexMutation<string>("documents:moveToTrash", { ownerId, documentId }),
+    reprocess: (ownerId: string, documentId: string) =>
+      convexMutation<string>("documents:reprocess", { ownerId, documentId }),
+    reviewSubmit: (input: {
+      ownerId: string;
+      documentId: string;
+      type: "vaccination" | "vet_visit" | "medication" | "lab" | "other";
+      fields: ExtractedFieldRow[];
+    }) => convexMutation<string>("documents:reviewSubmit", input),
+    getStatus: (ownerId: string, documentId: string) =>
+      convexQuery<{
+        status?: DocPipelineStatus;
+        statusError?: string;
+        metadata?: DocPipelineMetadata;
+      } | null>("documents:getStatus", { ownerId, documentId }),
   },
 
   vaccinations: {
