@@ -14,6 +14,7 @@ function toItem(reminder: Reminder, petName: string, now: number): ReminderItem 
     title: reminder.title,
     petName,
     dueLabel: new Date(reminder.dueAt).toLocaleDateString(),
+    dueAt: reminder.dueAt,
     overdue: reminder.dueAt < now,
   };
 }

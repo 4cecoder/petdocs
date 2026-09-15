@@ -1,0 +1,16 @@
+<!--
+  petdocs full-bleed icon — rasterized to src/app/apple-icon.png (180x180) and
+  public/icon-{192,512}.png (maskable). No rounded corners / no transparency:
+  maskable icons are cropped to a circle by launchers, and iOS applies its own
+  mask. Paw stays inside the maskable safe zone (center ~66%).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <rect width="120" height="120" fill="#0D9488"/>
+  <g fill="#FFFBF5">
+    <ellipse cx="60" cy="72" rx="18" ry="14.5"/>
+    <circle cx="37.5" cy="53" r="8.5"/>
+    <circle cx="51.5" cy="43" r="8.5"/>
+    <circle cx="68.5" cy="43" r="8.5"/>
+    <circle cx="82.5" cy="53" r="8.5"/>
+  </g>
+</svg>

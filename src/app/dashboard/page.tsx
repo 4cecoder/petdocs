@@ -10,6 +10,8 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { PetArt } from "@/components/art/PetArt";
+import { AddToCalendarButton } from "@/components/calendar/AddToCalendarButton";
+import { reminderCalendarEvent } from "@/lib/calendar";
 import {
   api,
   getOwnerId,
@@ -447,6 +449,18 @@ export default function DashboardHome() {
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
+                    <AddToCalendarButton
+                      variant="menu"
+                      event={reminderCalendarEvent(
+                        {
+                          id: reminder._id,
+                          title: reminder.title,
+                          dueAt: reminder.dueAt,
+                          kind: reminder.kind,
+                        },
+                        pet?.name || "Pet",
+                      )}
+                    />
                     <button
                       type="button"
                       disabled={isMutating}
