@@ -11,6 +11,7 @@ import {
   getConvexUrl,
 } from "./convexHttp";
 import { validateDocUpload } from "./validators";
+import { utcDayKey } from "./utils";
 
 export const isBackendConfigured = !!getConvexUrl();
 
@@ -70,6 +71,28 @@ export interface Pet {
   status: string;
 }
 
+export interface ExtractedFieldRow {
+  label: string;
+  value: string;
+}
+
+export type DocPipelineStatus =
+  | "uploaded"
+  | "processing"
+  | "ready"
+  | "needsReview"
+  | "needsOcr"
+  | "failed";
+
+export interface DocPipelineMetadata {
+  type: "vaccination" | "vet_visit" | "medication" | "lab" | "other";
+  confidence: number;
+  fields: ExtractedFieldRow[];
+  needsReview: boolean;
+  ocrUsed?: boolean;
+  processedAt?: number;
+}
+
 export interface VaultDoc {
   _id: string;
   name: string;
@@ -77,6 +100,9 @@ export interface VaultDoc {
   size: number;
   category?: string;
   createdAt: number;
+  status?: DocPipelineStatus;
+  statusError?: string;
+  metadata?: DocPipelineMetadata;
 }
 
 export interface Vaccination {
@@ -119,6 +145,15 @@ export type ContactSubmitResult =
   | { ok: true }
   | { ok: false; reason: "rate_limited" };
 
+/** Mirrors convex/outboxQuota.ts status (daily email quota snapshot). */
+export interface EmailQuotaStatus {
+  day: string;
+  sent: number;
+  limit: number;
+  remaining: number;
+  exhausted: boolean;
+}
+
 export interface ShareLink {
   _id: string;
   petId: string;
@@ -130,6 +165,30 @@ export interface ShareLink {
   viewCount: number;
   isActive: boolean;
 }
+
+/** One passport email send (#39), mirrored from convex/passportShare.ts. */
+export interface ShareEmail {
+  _id: string;
+  petId: string;
+  petName: string;
+  recipientEmail: string;
+  note?: string;
+  status: "sent" | "failed";
+  error?: string;
+  linkActive: boolean;
+  createdAt: number;
+}
+
+export type EmailPassportResult =
+  | { ok: false; error: string }
+  | {
+      ok: true;
+      reused: boolean;
+      token: string;
+      linkId: string;
+      delivered: boolean;
+      deliveryError?: string;
+    };
 
 export interface Passport {
   scope: string;
@@ -201,6 +260,20 @@ export const api = {
       convexQuery<string | null>("documents:getUrl", { ownerId, documentId }),
     moveToTrash: (ownerId: string, documentId: string) =>
       convexMutation<string>("documents:moveToTrash", { ownerId, documentId }),
+    reprocess: (ownerId: string, documentId: string) =>
+      convexMutation<string>("documents:reprocess", { ownerId, documentId }),
+    reviewSubmit: (input: {
+      ownerId: string;
+      documentId: string;
+      type: "vaccination" | "vet_visit" | "medication" | "lab" | "other";
+      fields: ExtractedFieldRow[];
+    }) => convexMutation<string>("documents:reviewSubmit", input),
+    getStatus: (ownerId: string, documentId: string) =>
+      convexQuery<{
+        status?: DocPipelineStatus;
+        statusError?: string;
+        metadata?: DocPipelineMetadata;
+      } | null>("documents:getStatus", { ownerId, documentId }),
   },
 
   vaccinations: {
@@ -229,6 +302,14 @@ export const api = {
       convexMutation<string>("reminders:setStatus", { ownerId, reminderId, status }),
   },
 
+  email: {
+    /** Daily outbound quota for the current UTC day (resets at midnight UTC). */
+    quotaStatus: () =>
+      convexQuery<EmailQuotaStatus>("outboxQuota:status", {
+        day: utcDayKey(),
+      }),
+  },
+
   share: {
     createToken: (input: {
       ownerId: string;
@@ -246,6 +327,15 @@ export const api = {
       convexQuery<Passport | null>("shareLinks:resolve", { token }),
     recordView: (token: string) =>
       convexMutation<number | null>("shareLinks:recordView", { token }),
+    emailPassport: (input: {
+      ownerId: string;
+      petId: string;
+      recipientEmail: string;
+      note?: string;
+      origin?: string;
+    }) => convexAction<EmailPassportResult>("passportShare:emailPassport", input),
+    listEmails: (ownerId: string) =>
+      convexQuery<ShareEmail[]>("passportShare:listEmails", { ownerId }),
   },
 
   contact: {

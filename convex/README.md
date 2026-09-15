@@ -26,7 +26,8 @@ both unit and convex projects.
 | `reminders.ts` | listByOwner, listByPet, create, setStatus |
 | `shareLinks.ts` | createToken, listByPet, revoke, resolve (public), recordView |
 | `http.ts` | HTTP router placeholder |
-| `resend.ts` | shared Resend sender (`sendEmail` internal action; reads RESEND_API_KEY + RESEND_FROM) |
+| `resend.ts` | shared Resend sender (`sendEmail` internal action; reads RESEND_API_KEY + RESEND_FROM; gated by the daily outbox quota) |
+| `outboxQuota.ts` | daily outbound email counter (atomic increment, UTC day rollover, 429 handling, `status` for UI) |
 | `magicLink.ts` | passwordless auth (`requestMagicLink` action, `verifyMagicLink` mutation; needs `magicTokens` table below) |
 
 ## Auth (magic link)
@@ -62,6 +63,26 @@ magicTokens: defineTable({
 }).index("by_email", ["email"]),
 ```
 
+## Daily email quota (`outboxQuota`)
+
+One `outboxQuota` row per UTC day; `resend.sendEmail` checks remaining before
+sending, increments after a successful send, and marks the day exhausted when
+Resend answers 429 (quota failures return `{ ok: false, error: "quota" }`).
+Callers surface the state via `outboxQuota:status { day }` (public), or the
+optional `quota` field on `resend:status` / `integrations:status` when the
+client passes the current UTC day (`utcDayKey()` in `src/lib/utils.ts`).
+Reminder emails that fail on quota stay `scheduled` and raise one
+`reminder_queued` in-app notification per reminder per day.
+
+```ts
+outboxQuota: defineTable({
+  day: v.string(),          // "YYYY-MM-DD" (UTC)
+  sent: v.number(),
+  exhaustedAt: v.optional(v.number()),
+  updatedAt: v.number(),
+}).index("by_day", ["day"]),
+```
+
 ## Convex env vars
 
 Convex env ≠ Netlify env — set these on the Convex deployment (never commit
@@ -71,6 +92,7 @@ secrets; never use `NEXT_PUBLIC_*` for the API key):
 bunx convex env set RESEND_API_KEY re_…
 bunx convex env set RESEND_FROM "PetDocs <hello@yourdomain.com>"
 bunx convex env set SITE_URL http://localhost:3000   # prod: https://your-app-url
+bunx convex env set RESEND_DAILY_LIMIT 100           # optional; default 100 (free tier)
 ```
 
 `SITE_URL` defaults to `http://localhost:3000` when unset. Missing

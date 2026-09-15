@@ -1,12 +1,16 @@
 "use client";
 
 import { Square } from "lucide-react";
+import { AddToCalendarButton } from "@/components/calendar/AddToCalendarButton";
+import { reminderCalendarEvent } from "@/lib/calendar";
 
 export interface ReminderItem {
   id: string;
   title: string;
   petName: string;
   dueLabel: string;
+  /** Epoch ms — enables the one-click add-to-calendar control. */
+  dueAt?: number;
   overdue?: boolean;
 }
 
@@ -38,6 +42,19 @@ export function ReminderRow({
           </span>
         </p>
       </div>
+      {reminder.dueAt !== undefined ? (
+        <AddToCalendarButton
+          variant="menu"
+          event={reminderCalendarEvent(
+            {
+              id: reminder.id,
+              title: reminder.title,
+              dueAt: reminder.dueAt,
+            },
+            reminder.petName,
+          )}
+        />
+      ) : null}
       <button
         type="button"
         onClick={() => onSnooze?.(reminder.id)}

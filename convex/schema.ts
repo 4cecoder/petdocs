@@ -12,6 +12,43 @@ const docCategory = v.union(
   v.literal("other"),
 );
 
+/**
+ * Doc pipeline status machine:
+ * uploaded -> processing -> ready | needsReview | needsOcr | failed(error)
+ * Rows created before the pipeline have no status (optional field); the UI
+ * treats missing status as legacy "ready".
+ */
+export const docPipelineStatus = v.union(
+  v.literal("uploaded"),
+  v.literal("processing"),
+  v.literal("ready"),
+  v.literal("needsReview"),
+  v.literal("needsOcr"),
+  v.literal("failed"),
+);
+
+export const docPipelineType = v.union(
+  v.literal("vaccination"),
+  v.literal("vet_visit"),
+  v.literal("medication"),
+  v.literal("lab"),
+  v.literal("other"),
+);
+
+export const extractedField = v.object({
+  label: v.string(),
+  value: v.string(),
+});
+
+export const docPipelineMetadata = v.object({
+  type: docPipelineType,
+  confidence: v.number(),
+  fields: v.array(extractedField),
+  needsReview: v.boolean(),
+  ocrUsed: v.optional(v.boolean()),
+  processedAt: v.number(),
+});
+
 export default defineSchema({
   owners: defineTable({
     externalId: v.string(),
@@ -28,10 +65,23 @@ export default defineSchema({
         v.literal("superadmin"),
       ),
     ),
+    // Billing block (Polar.sh entitlements, synced only from verified
+    // webhooks in convex/polarHttp.ts — never from client args).
+    // Kept as top-level fields (not a nested `billing` object) so
+    // polarCustomerId can be indexed for O(log n) webhook lookups.
+    // activeTierOf() in convex/billing.ts treats the tier as expired once
+    // currentPeriodEnd is in the past.
+    billingTier: v.optional(
+      v.union(v.literal("free"), v.literal("plus"), v.literal("family")),
+    ),
+    polarCustomerId: v.optional(v.string()),
+    polarSubId: v.optional(v.string()),
+    currentPeriodEnd: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_externalId", ["externalId"])
-    .index("by_email", ["email"]),
+    .index("by_email", ["email"])
+    .index("by_polarCustomerId", ["polarCustomerId"]),
 
   adminAudit: defineTable({
     actorOwnerId: v.id("owners"),
@@ -84,6 +134,9 @@ export default defineSchema({
     tags: v.optional(v.array(v.string())),
     notes: v.optional(v.string()),
     extractedText: v.optional(v.string()),
+    status: v.optional(docPipelineStatus),
+    statusError: v.optional(v.string()),
+    metadata: v.optional(docPipelineMetadata),
     linkedVaccinationId: v.optional(v.id("vaccinations")),
     linkedVisitId: v.optional(v.id("vetVisits")),
     uploadedBy: v.string(),
@@ -96,7 +149,8 @@ export default defineSchema({
     .index("by_petId", ["petId"])
     .index("by_petId_and_category", ["petId", "category"])
     .index("by_isTrash", ["isTrash"])
-    .index("by_isFavorite", ["isFavorite"]),
+    .index("by_isFavorite", ["isFavorite"])
+    .index("by_status", ["status"]),
 
   vaccinations: defineTable({
     ownerId: v.id("owners"),
@@ -180,6 +234,7 @@ export default defineSchema({
       v.literal("done"),
       v.literal("dismissed"),
     ),
+    queuedNotifiedAt: v.optional(v.number()),
     relatedVaccinationId: v.optional(v.id("vaccinations")),
     relatedMedicationId: v.optional(v.id("medications")),
     relatedVisitId: v.optional(v.id("vetVisits")),
@@ -210,6 +265,22 @@ export default defineSchema({
     .index("by_token", ["token"])
     .index("by_petId", ["petId"])
     .index("by_ownerId", ["ownerId"]),
+
+  // #39: one row per passport email send from the dashboard share tool.
+  // Deliberately NOT in the staff mail tables (mailMessages is the team
+  // inbox) — this is the owner-facing share-email history/outbox.
+  shareEmails: defineTable({
+    ownerId: v.id("owners"),
+    petId: v.id("pets"),
+    linkId: v.id("shareLinks"),
+    recipientEmail: v.string(),
+    note: v.optional(v.string()),
+    status: v.union(v.literal("sent"), v.literal("failed")),
+    error: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_ownerId", ["ownerId"])
+    .index("by_petId_and_recipient", ["petId", "recipientEmail"]),
 
   magicTokens: defineTable({
     email: v.string(),
@@ -298,6 +369,7 @@ export default defineSchema({
     kind: v.union(
       v.literal("passport_view"),
       v.literal("reminder_sent"),
+      v.literal("reminder_queued"),
       v.literal("claim_filed"),
       v.literal("inbound_mail"),
       v.literal("transfer_redeemed"),
@@ -328,4 +400,13 @@ export default defineSchema({
   })
     .index("by_email", ["email"])
     .index("by_createdAt", ["createdAt"]),
+
+  // Daily outbound email counter (one row per UTC day, e.g. day "2026-09-15").
+  // Keyed by day so rollover at UTC midnight is just a fresh row at sent=0.
+  outboxQuota: defineTable({
+    day: v.string(),
+    sent: v.number(),
+    exhaustedAt: v.optional(v.number()),
+    updatedAt: v.number(),
+  }).index("by_day", ["day"]),
 });

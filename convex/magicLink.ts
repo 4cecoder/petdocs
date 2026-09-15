@@ -8,7 +8,12 @@
  *      stores ONLY its SHA-256 hash (15-min expiry, single-use), then emails
  *      `${SITE_URL}/sign-in?token=...&email=...` via the shared Resend sender
  *      (convex/resend.ts). Always returns { ok: true } — even when the email
- *      is invalid or unsent — to avoid account enumeration.
+ *      is invalid or unsent — to avoid account enumeration. When the send
+ *      fails on the daily quota (error "quota"), the external contract is
+ *      unchanged ({ ok: true }); the at-capacity state is surfaced to the
+ *      sign-in page via the quota status queries instead (convex/
+ *      outboxQuota.ts status / resend:status). The dev preview-link path is
+ *      unaffected.
  *   2. verifyMagicLink({ email, token }) — public mutation. Hashes + looks up
  *      the token scoped to the email, rejects unknown/expired/already-used
  *      links (honest state — no instant-access fallback), consumes the token

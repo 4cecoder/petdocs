@@ -1,6 +1,9 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
+// --- Polar webhook registration (billing surface) — logic lives in
+// --- convex/polarHttp.ts; keep this block 3 lines when rebasing.
+import { polarWebhook } from "./polarHttp";
 
 // Public HTTP surface (resend webhooks, share oEmbed later).
 // Auth for /p/[token] stays in shareLinks.resolve - no HTTP routes needed
@@ -191,5 +194,13 @@ http.route({
     return jsonResponse({ ok: true }, 200);
   }),
 });
+
+// --- #39 BEGIN passport email-share QR route — defined in passportHttp.ts (passport agent owns this block; android agent owns the rest of http.ts) ---
+import { passportRoutes } from "./passportHttp";
+for (const route of passportRoutes) http.route(route);
+// --- #39 END ---
+
+// --- Polar webhook (billing surface): single route, owned by polarHttp.ts.
+http.route({ path: "/polar/webhook", method: "POST", handler: polarWebhook });
 
 export default http;

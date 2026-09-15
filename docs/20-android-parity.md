@@ -26,7 +26,7 @@ Web source of truth for the feature list: `src/lib/dashboardNav.ts`
 | `/sign-in` | `src/app/sign-in/page.tsx` | `login` → `LoginScreen` | partial — scaffold session only; `TODO(magic-link verify)` + `TODO(deep-link)` still open |
 | `/p/[shareToken]` | `src/app/p/[shareToken]/page.tsx` | `passport/{token}` → `PassportScreen` | exists (no-auth projection, never leaks vault) |
 | `/legal/terms`, `/legal/privacy`, `/legal/refunds` | `src/app/(marketing)/legal/*` | — (link out to site) | skipped (§4) |
-| Pricing / Stripe billing | `(marketing)/pricing`, `convex/*billing*` | — (web-first) | skipped (§4) |
+| Pricing / Polar billing | `(marketing)/pricing`, `convex/*billing*` | — (web-first) | skipped (§4) |
 
 Bottom-bar mapping stays: **Home / Pets / Docs + More sheet**.
 The More sheet now lists (in order): Reminders, Share, Scanner,
@@ -106,7 +106,7 @@ bottom bar like `login`/`passport`.
 - **Legal pages** (`/legal/terms`, `/legal/privacy`, `/legal/refunds`) —
   no native screens. Link out to the site instead: legal copy must stay
   single-sourced with the web, and duplicating it risks divergence.
-- **Stripe / billing** — web-first. Payment sheets, webhook secrets, and
+- **Polar / billing** — web-first. Payment sheets, webhook secrets, and
   price-table copy live in the browser; mobile gets entitlement checks only
   (future: Plus gate on packets/share, same as web).
 - **Admin destructive ops** (roles, revoke-any-link, pet lock, audit writes,
