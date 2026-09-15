@@ -11,6 +11,7 @@ import {
   getConvexUrl,
 } from "./convexHttp";
 import { validateDocUpload } from "./validators";
+import { utcDayKey } from "./utils";
 
 export const isBackendConfigured = !!getConvexUrl();
 
@@ -70,6 +71,28 @@ export interface Pet {
   status: string;
 }
 
+export interface ExtractedFieldRow {
+  label: string;
+  value: string;
+}
+
+export type DocPipelineStatus =
+  | "uploaded"
+  | "processing"
+  | "ready"
+  | "needsReview"
+  | "needsOcr"
+  | "failed";
+
+export interface DocPipelineMetadata {
+  type: "vaccination" | "vet_visit" | "medication" | "lab" | "other";
+  confidence: number;
+  fields: ExtractedFieldRow[];
+  needsReview: boolean;
+  ocrUsed?: boolean;
+  processedAt?: number;
+}
+
 export interface VaultDoc {
   _id: string;
   name: string;
@@ -77,6 +100,9 @@ export interface VaultDoc {
   size: number;
   category?: string;
   createdAt: number;
+  status?: DocPipelineStatus;
+  statusError?: string;
+  metadata?: DocPipelineMetadata;
 }
 
 export interface Vaccination {
@@ -112,6 +138,15 @@ export interface Reminder {
   title: string;
   dueAt: number;
   status: string;
+}
+
+/** Mirrors convex/outboxQuota.ts status (daily email quota snapshot). */
+export interface EmailQuotaStatus {
+  day: string;
+  sent: number;
+  limit: number;
+  remaining: number;
+  exhausted: boolean;
 }
 
 export interface ShareLink {
@@ -220,6 +255,20 @@ export const api = {
       convexQuery<string | null>("documents:getUrl", { ownerId, documentId }),
     moveToTrash: (ownerId: string, documentId: string) =>
       convexMutation<string>("documents:moveToTrash", { ownerId, documentId }),
+    reprocess: (ownerId: string, documentId: string) =>
+      convexMutation<string>("documents:reprocess", { ownerId, documentId }),
+    reviewSubmit: (input: {
+      ownerId: string;
+      documentId: string;
+      type: "vaccination" | "vet_visit" | "medication" | "lab" | "other";
+      fields: ExtractedFieldRow[];
+    }) => convexMutation<string>("documents:reviewSubmit", input),
+    getStatus: (ownerId: string, documentId: string) =>
+      convexQuery<{
+        status?: DocPipelineStatus;
+        statusError?: string;
+        metadata?: DocPipelineMetadata;
+      } | null>("documents:getStatus", { ownerId, documentId }),
   },
 
   vaccinations: {
@@ -246,6 +295,14 @@ export const api = {
       convexQuery<Reminder[]>("reminders:listByPet", { ownerId, petId }),
     setStatus: (ownerId: string, reminderId: string, status: "done" | "dismissed") =>
       convexMutation<string>("reminders:setStatus", { ownerId, reminderId, status }),
+  },
+
+  email: {
+    /** Daily outbound quota for the current UTC day (resets at midnight UTC). */
+    quotaStatus: () =>
+      convexQuery<EmailQuotaStatus>("outboxQuota:status", {
+        day: utcDayKey(),
+      }),
   },
 
   share: {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
+import { Input, Label } from "@seridian/ui-kit";
 import { PetArt } from "@/components/art/PetArt";
 import { FlowNav, Stepper } from "@/components/flow/Wizard";
 import { api, getOwnerId } from "@/lib/api";
@@ -146,17 +147,17 @@ export function ShareButton({ petId, petName }: { petId: string; petName: string
 
       {step === 0 ? (
         <div className="flex flex-col gap-3">
-          <label htmlFor="share-recipient" className="text-sm font-medium">
+          <Label htmlFor="share-recipient" className="text-sm font-medium">
             Who&apos;s this link for?
-          </label>
-          <input
+          </Label>
+          <Input
             id="share-recipient"
             type="text"
             value={recipient}
             onChange={(e) => setRecipient(e.target.value)}
             placeholder='e.g. "Maple Groomer"'
             autoComplete="off"
-            className="min-h-[48px] w-full rounded-xl border border-ink/15 bg-cream px-3 text-sm"
+            className="min-h-[48px] w-full bg-cream text-sm"
           />
           <div className="flex flex-wrap gap-2" aria-label="Recipient presets">
             {RECIPIENT_PRESETS.map((preset) => (

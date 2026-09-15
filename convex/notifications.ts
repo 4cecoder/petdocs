@@ -4,12 +4,15 @@ import { internalMutation, mutation, query } from "./_generated/server";
 const notificationKind = v.union(
   v.literal("passport_view"),
   v.literal("reminder_sent"),
+  v.literal("reminder_queued"),
   v.literal("claim_filed"),
   v.literal("inbound_mail"),
   v.literal("transfer_redeemed"),
 );
 
 // Note: schema also allows team_invite but it stays unwired (no emission path).
+// reminder_queued = reminder email could not send (daily quota) and stays
+// scheduled for retry; surfaced in-app so the user sees the queue state.
 
 /**
  * Internal emit only. Never called from the client.

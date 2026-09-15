@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { Check, ScanLine } from "lucide-react";
+import { Input, Label, Textarea } from "@seridian/ui-kit";
 import { parseCertText } from "@/lib/parsers";
 import { suggestCategory } from "@/lib/classify";
 
@@ -48,6 +49,7 @@ export function ExtractFields({
   const [administeredAt, setAdministeredAt] = useState("");
   const [provider, setProvider] = useState("");
   const datalistId = useId();
+  const rawTextId = useId();
 
   function handleParse() {
     const text = raw.trim();
@@ -116,16 +118,19 @@ export function ExtractFields({
         </span>
       </summary>
       <div className="flex flex-col gap-3 pb-2 pt-1">
-        <label className="flex flex-col gap-1 text-sm font-medium">
-          Paste cert text or ML Kit scan output
-          <textarea
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor={rawTextId} className="text-sm font-medium">
+            Paste cert text or ML Kit scan output
+          </Label>
+          <Textarea
+            id={rawTextId}
             value={raw}
             onChange={(e) => setRaw(e.target.value)}
             rows={4}
             placeholder="Paste cert text or ML Kit scan output"
-            className="min-h-[48px] rounded-xl border border-ink/15 bg-white px-3 py-2 text-sm font-normal"
+            className="min-h-[48px] bg-white text-sm font-normal"
           />
-        </label>
+        </div>
         <button
           type="button"
           onClick={handleParse}
@@ -138,43 +143,52 @@ export function ExtractFields({
 
         {hasParsed ? (
           <div className="flex flex-col gap-3 rounded-xl border border-ink/10 bg-white p-3">
-            <label className="flex flex-col gap-1 text-sm font-medium">
-              Vaccine name
-              <input
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={`${datalistId}-name`} className="text-sm font-medium">
+                Vaccine name
+              </Label>
+              <Input
+                id={`${datalistId}-name`}
                 type="text"
                 value={vaccineName}
                 onChange={(e) => setVaccineName(e.target.value)}
                 list={datalistId}
                 placeholder="e.g. Rabies"
                 autoComplete="off"
-                className="min-h-[48px] rounded-xl border border-ink/15 bg-cream px-3 font-normal"
+                className="min-h-[48px] bg-cream font-normal"
               />
               <datalist id={datalistId}>
                 {COMMON_VACCINES.map((v) => (
                   <option key={v} value={v} />
                 ))}
               </datalist>
-            </label>
-            <label className="flex flex-col gap-1 text-sm font-medium">
-              Date given
-              <input
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={`${datalistId}-date`} className="text-sm font-medium">
+                Date given
+              </Label>
+              <Input
+                id={`${datalistId}-date`}
                 type="date"
                 value={administeredAt}
                 onChange={(e) => setAdministeredAt(e.target.value)}
-                className="min-h-[48px] rounded-xl border border-ink/15 bg-cream px-3 font-normal"
+                className="min-h-[48px] bg-cream font-normal"
               />
-            </label>
-            <label className="flex flex-col gap-1 text-sm font-medium">
-              Provider
-              <input
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={`${datalistId}-provider`} className="text-sm font-medium">
+                Provider
+              </Label>
+              <Input
+                id={`${datalistId}-provider`}
                 type="text"
                 value={provider}
                 onChange={(e) => setProvider(e.target.value)}
                 placeholder="e.g. Riverside Animal Clinic"
                 autoComplete="off"
-                className="min-h-[48px] rounded-xl border border-ink/15 bg-cream px-3 font-normal"
+                className="min-h-[48px] bg-cream font-normal"
               />
-            </label>
+            </div>
             <p
               role="status"
               aria-live="polite"

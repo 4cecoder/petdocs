@@ -1,6 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Plus } from "lucide-react";
+import {
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@seridian/ui-kit";
 import { PetCard } from "@/components/pets/PetCard";
 import { FlowNav, WizardShell, useSteps } from "@/components/flow/Wizard";
 import { api, getOwnerId, isBackendConfigured, type Pet } from "@/lib/api";
@@ -158,18 +168,20 @@ export default function PetsPage() {
                 </div>
               }
             >
-              <label className="flex flex-col gap-1 text-sm font-medium">
-                Name
-                <input
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="pet-name">Name</Label>
+                <Input
+                  id="pet-name"
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   maxLength={60}
                   required
                   placeholder="Biscuit"
-                  className="min-h-[48px] rounded-xl border border-ink/15 bg-cream px-3"
+                  aria-invalid={!!nameProblem && name.trim() !== ""}
+                  className="min-h-[48px]"
                 />
-              </label>
+              </div>
               {nameProblem && name.trim() ? (
                 <p role="alert" className="mt-2 text-sm font-medium text-red-600">
                   {nameProblem}
@@ -204,30 +216,41 @@ export default function PetsPage() {
               }
             >
               <div className="grid gap-3 sm:grid-cols-2">
-                <label className="flex flex-col gap-1 text-sm font-medium">
-                  Species
-                  <select
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="pet-species">Species</Label>
+                  <Select
                     value={species}
-                    onChange={(e) => setSpecies(e.target.value as PetSpecies)}
-                    className="min-h-[48px] rounded-xl border border-ink/15 bg-cream px-3 capitalize"
+                    onValueChange={(value) => setSpecies(value as PetSpecies)}
                   >
-                    {PET_SPECIES.map((s) => (
-                      <option key={s} value={s} className="capitalize">
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1 text-sm font-medium">
-                  Breed <span className="font-normal text-ink-soft">(optional)</span>
-                  <input
+                    <SelectTrigger
+                      id="pet-species"
+                      className="min-h-[48px] w-full capitalize"
+                      aria-label="Species"
+                    >
+                      <SelectValue placeholder="Species" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PET_SPECIES.map((s) => (
+                        <SelectItem key={s} value={s} className="capitalize">
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="pet-breed">
+                    Breed <span className="font-normal text-ink-soft">(optional)</span>
+                  </Label>
+                  <Input
+                    id="pet-breed"
                     type="text"
                     value={breed}
                     onChange={(e) => setBreed(e.target.value)}
                     placeholder="Golden retriever"
-                    className="min-h-[48px] rounded-xl border border-ink/15 bg-cream px-3"
+                    className="min-h-[48px]"
                   />
-                </label>
+                </div>
               </div>
               {formError ? (
                 <p role="alert" className="mt-2 text-sm font-medium text-red-600">
@@ -253,8 +276,16 @@ export default function PetsPage() {
       </div>
 
       {!loading && !error && (pets === null || pets.length === 0) ? (
-        <div className="rounded-2xl border border-dashed border-ink/20 bg-white/60 p-8 text-center text-sm text-ink-soft">
-          No pets yet. Add your first pet to create its vault.
+        <div className="flex flex-col items-center rounded-2xl border border-dashed border-ink/20 bg-white/60 p-8 text-center text-sm text-ink-soft">
+          <p>No pets yet. Add your first pet to create its vault.</p>
+          <button
+            type="button"
+            onClick={handleToggle}
+            className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-brand-700 transition"
+          >
+            <Plus size={16} aria-hidden="true" />
+            Add your first pet
+          </button>
         </div>
       ) : null}
 

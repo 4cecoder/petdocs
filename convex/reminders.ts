@@ -7,6 +7,7 @@ import {
   query,
 } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { todayUtc } from "./outboxQuota";
 
 const kind = v.union(
   v.literal("vaccination"),
@@ -115,6 +116,21 @@ export const markSent = internalMutation({
     // Idempotent: only flip scheduled → sent (skip done/dismissed/already-sent).
     if (!reminder || reminder.status !== "scheduled") return null;
     await ctx.db.patch(args.reminderId, { status: "sent" });
+    return args.reminderId;
+  },
+});
+
+/**
+ * Stamp the day a quota-failed reminder last raised its in-app "queued"
+ * notification, so the hourly tick does not spam duplicates for the same
+ * reminder all day (the email retries stay scheduled regardless).
+ */
+export const markQueuedNotified = internalMutation({
+  args: { reminderId: v.id("reminders") },
+  handler: async (ctx, args) => {
+    const reminder = await ctx.db.get(args.reminderId);
+    if (!reminder) return null;
+    await ctx.db.patch(args.reminderId, { queuedNotifiedAt: Date.now() });
     return args.reminderId;
   },
 });
@@ -228,6 +244,30 @@ export const sendDue = internalAction({
               kind: "reminder_sent",
               title: `Reminder sent: ${title} for ${petName}`,
               body: `We emailed your reminder due ${new Date(dueAt).toLocaleDateString()}.`,
+              link: "/dashboard/reminders",
+            });
+          } catch {
+            // Notification failure must not fail the tick.
+          }
+        }
+      } else if (result.error === "quota") {
+        // Daily email quota is spent. The reminder stays scheduled (retried
+        // next tick) and the owner gets ONE in-app notification for it per
+        // UTC day — visible "queued" state instead of a silent failure.
+        const day = todayUtc(Date.now());
+        const alreadyToday =
+          reminder.queuedNotifiedAt !== undefined &&
+          todayUtc(reminder.queuedNotifiedAt) === day;
+        if (!alreadyToday) {
+          try {
+            await ctx.runMutation(internal.reminders.markQueuedNotified, {
+              reminderId: reminder._id,
+            });
+            await ctx.runMutation(internal.notifications.emit, {
+              ownerId: reminder.ownerId,
+              kind: "reminder_queued",
+              title: `Reminder email queued: ${title} for ${petName}`,
+              body: "Email delivery is at capacity today. Your reminder is safe in the app and we'll retry the email on the next sweep.",
               link: "/dashboard/reminders",
             });
           } catch {

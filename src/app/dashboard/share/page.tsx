@@ -1,6 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@seridian/ui-kit";
 import { PetArt } from "@/components/art/PetArt";
 import { ApartmentPacket } from "@/components/share/ApartmentPacket";
 import {
@@ -14,6 +24,13 @@ import {
 import { passportHref } from "@/lib/routes";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** A link queued for revocation behind a confirm dialog. */
+interface PendingRevoke {
+  linkId: string;
+  petId: string;
+  label: string;
+}
 
 function formatExpiry(expiresAt?: number): string {
   if (expiresAt == null) return "No expiry";
@@ -48,6 +65,7 @@ export default function SharePage() {
   const [emails, setEmails] = useState<ShareEmail[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [revokingId, setRevokingId] = useState<string | null>(null);
+  const [pendingRevoke, setPendingRevoke] = useState<PendingRevoke | null>(null);
 
   // Email-passport form state (#39).
   const [emailPetId, setEmailPetId] = useState<string>("");
@@ -393,7 +411,13 @@ export default function SharePage() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => handleRevoke(link._id, pet._id)}
+                      onClick={() =>
+                        setPendingRevoke({
+                          linkId: link._id,
+                          petId: pet._id,
+                          label: link.label || "Passport link",
+                        })
+                      }
                       disabled={revokingId === link._id}
                       className="min-h-[48px] shrink-0 rounded-xl border border-ink/15 bg-white px-4 text-sm font-semibold hover:bg-cream-dark disabled:opacity-60"
                     >
@@ -429,6 +453,39 @@ export default function SharePage() {
           ]}
         />
       </section>
+
+      {/* Destructive confirm: revoking kills the link for everyone instantly. */}
+      <AlertDialog
+        open={pendingRevoke !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingRevoke(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revoke this link?</AlertDialogTitle>
+            <AlertDialogDescription>
+              “{pendingRevoke?.label}” stops working immediately for everyone
+              who has it, and views already counted stay. This can&apos;t be
+              undone — create a new link anytime.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep link</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 text-white hover:bg-red-700"
+              onClick={() => {
+                if (pendingRevoke) {
+                  void handleRevoke(pendingRevoke.linkId, pendingRevoke.petId);
+                }
+                setPendingRevoke(null);
+              }}
+            >
+              Revoke link
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

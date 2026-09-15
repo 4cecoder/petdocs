@@ -1,8 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PetArt } from "@/components/art/PetArt";
-import { DocList, type VaultDoc as VaultDocRow } from "@/components/docs/DocList";
+import {
+  DocList,
+  type VaultDoc as VaultDocRow,
+} from "@/components/docs/DocList";
+import {
+  DocReviewDrawer,
+  type DocReviewTarget,
+} from "@/components/docs/DocReviewDrawer";
 import { api, getOwnerId, isBackendConfigured, type Pet } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -12,10 +19,35 @@ interface GlobalDoc {
   sortKey: number;
 }
 
+const POLL_INTERVAL_MS = 4000;
+const MAX_POLLS = 6;
+
 function formatBytes(size: number): string {
   if (size < 1024) return `${size} B`;
   if (size < 1024 * 1024) return `${Math.round(size / 1024)} KB`;
   return `${(size / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function toRow(docId: string, doc: {
+  _id: string;
+  name: string;
+  category?: string;
+  createdAt: number;
+  size: number;
+  status?: VaultDocRow["status"];
+  statusError?: string;
+  metadata?: VaultDocRow["metadata"];
+}): VaultDocRow {
+  return {
+    id: docId,
+    name: doc.name,
+    category: doc.category ?? "other",
+    date: new Date(doc.createdAt).toLocaleDateString(),
+    sizeLabel: formatBytes(doc.size),
+    status: doc.status,
+    statusError: doc.statusError,
+    metadata: doc.metadata,
+  };
 }
 
 /** Global filterable doc list. */
@@ -28,57 +60,75 @@ export default function DocsPage() {
   const [selected, setSelected] = useState<string | "all">("all");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reviewTarget, setReviewTarget] = useState<DocReviewTarget | null>(null);
+  const pollsRef = useRef(0);
+
+  const load = useCallback(
+    async (cancelled: { current: boolean }) => {
+      if (!ownerId || !backend) return;
+      setError(null);
+      const petRows = await api.pets.list(ownerId);
+      if (cancelled.current) return;
+      if (petRows.length === 0) {
+        setPets([]);
+        setAllDocs([]);
+        return;
+      }
+      const perPet = await Promise.all(
+        petRows.map(async (pet) => {
+          const docs = await api.documents.list(ownerId, pet._id);
+          return docs.map((doc) => ({
+            petId: pet._id,
+            sortKey: doc.createdAt,
+            row: {
+              ...toRow(`${pet._id}:${doc._id}`, doc),
+              name: `${pet.name}: ${doc.name}`,
+            } satisfies VaultDocRow,
+          }));
+        }),
+      );
+      if (cancelled.current) return;
+      setPets(petRows);
+      setAllDocs(perPet.flat().sort((a, b) => b.sortKey - a.sortKey));
+    },
+    [ownerId, backend],
+  );
 
   useEffect(() => {
     if (!ownerId || !backend) return;
-    let cancelled = false;
+    const cancelled = { current: false };
     setLoading(true);
-    setError(null);
-    api.pets
-      .list(ownerId)
-      .then((petRows) => {
-        if (cancelled) return null;
-        if (petRows.length === 0) {
-          setPets([]);
-          setAllDocs([]);
-          return null;
-        }
-        return Promise.all(
-          petRows.map(async (pet) => {
-            const docs = await api.documents.list(ownerId, pet._id);
-            return docs.map((doc) => ({
-              petId: pet._id,
-              sortKey: doc.createdAt,
-              row: {
-                id: `${pet._id}:${doc._id}`,
-                name: `${pet.name}: ${doc.name}`,
-                category: doc.category ?? "other",
-                date: new Date(doc.createdAt).toLocaleDateString(),
-                sizeLabel: formatBytes(doc.size),
-              } satisfies VaultDocRow,
-            }));
-          }),
-        ).then((perPet) => {
-          if (cancelled) return;
-          setPets(petRows);
-          setAllDocs(
-            perPet
-              .flat()
-              .sort((a, b) => b.sortKey - a.sortKey),
-          );
-        });
-      })
+    pollsRef.current = 0;
+    load(cancelled)
       .catch((e: unknown) => {
-        if (!cancelled)
+        if (!cancelled.current)
           setError(e instanceof Error ? e.message : "Could not load documents.");
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled.current) setLoading(false);
       });
     return () => {
-      cancelled = true;
+      cancelled.current = true;
     };
-  }, [ownerId, backend]);
+  }, [ownerId, backend, load]);
+
+  // Poll while any document is queued/processing so status chips settle.
+  useEffect(() => {
+    if (!ownerId || !backend) return;
+    const active = allDocs.some(
+      (d) => d.row.status === "uploaded" || d.row.status === "processing",
+    );
+    if (!active || pollsRef.current >= MAX_POLLS) return;
+    const cancelled = { current: false };
+    const timer = setTimeout(() => {
+      pollsRef.current += 1;
+      load(cancelled).catch(() => undefined);
+    }, POLL_INTERVAL_MS);
+    return () => {
+      cancelled.current = true;
+      clearTimeout(timer);
+    };
+  }, [allDocs, ownerId, backend, load]);
 
   const filtered = useMemo(
     () =>
@@ -97,6 +147,40 @@ export default function DocsPage() {
       // Allow optimistic removal even if mock/offline
     }
     setAllDocs((prev) => prev.filter((d) => d.row.id !== id));
+  }
+
+  function handleReview(row: VaultDocRow) {
+    const docId = row.id.includes(":") ? row.id.split(":")[1] : row.id;
+    setReviewTarget({
+      documentId: docId,
+      name: row.name,
+      status: row.status,
+      statusError: row.statusError,
+      metadata: row.metadata,
+    });
+  }
+
+  async function handleReviewSubmit(input: {
+    documentId: string;
+    type: "vaccination" | "vet_visit" | "medication" | "lab" | "other";
+    fields: { label: string; value: string }[];
+  }) {
+    if (!ownerId) return;
+    await api.documents.reviewSubmit({
+      ownerId,
+      documentId: input.documentId,
+      type: input.type,
+      fields: input.fields,
+    });
+    pollsRef.current = 0;
+    await load({ current: false });
+  }
+
+  async function handleRetry(documentId: string) {
+    if (!ownerId) return;
+    await api.documents.reprocess(ownerId, documentId);
+    pollsRef.current = 0;
+    await load({ current: false });
   }
 
   if (!ownerId || !backend) {
@@ -179,8 +263,16 @@ export default function DocsPage() {
             </p>
           </div>
         ) : (
-          <DocList docs={filtered} onTrash={handleTrash} />
+          <DocList docs={filtered} onTrash={handleTrash} onReview={handleReview} />
         )
+      ) : null}
+      {reviewTarget ? (
+        <DocReviewDrawer
+          target={reviewTarget}
+          onClose={() => setReviewTarget(null)}
+          onSubmit={handleReviewSubmit}
+          onRetry={handleRetry}
+        />
       ) : null}
     </div>
   );

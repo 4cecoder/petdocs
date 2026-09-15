@@ -46,7 +46,7 @@ export default function RefundsPage() {
             <p className="mt-2 text-sm text-ink-soft">
               Email support@petdocs.app from your account email with the
               charge date. We reply within 2 business days and refunds land
-              in 5 to 10 days via Stripe.
+              in 5 to 10 days via Polar, our payment processor.
             </p>
           </section>
         </div>
