@@ -11,6 +11,28 @@ import { v } from "convex/values";
 
 const RESEND_API = "https://api.resend.com/emails";
 
+/** Header names that would thread this email as a reply (#21). */
+const THREADING_HEADERS = /^(in-reply-to|references)$/i;
+
+/**
+ * #21: keep each email a standalone conversation. Keeps safe custom
+ * headers (e.g. a unique Message-ID), strips In-Reply-To/References even
+ * if a caller ever passes them, and bounds count/value length.
+ */
+export function sanitizeHeaders(
+  headers: Record<string, string>,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [rawKey, rawValue] of Object.entries(headers).slice(0, 10)) {
+    const key = rawKey.trim();
+    if (!key || THREADING_HEADERS.test(key)) continue;
+    const value = rawValue.trim();
+    if (!value) continue;
+    out[key] = value.slice(0, 998);
+  }
+  return out;
+}
+
 function stripHtml(html: string): string {
   return html
     .replace(/<[^>]*>/g, " ")
@@ -24,6 +46,7 @@ export const sendEmail = internalAction({
     subject: v.string(),
     html: v.string(),
     text: v.optional(v.string()),
+    headers: v.optional(v.record(v.string(), v.string())),
   },
   returns: v.object({ ok: v.boolean(), error: v.optional(v.string()) }),
   handler: async (_ctx, args): Promise<{ ok: boolean; error?: string }> => {
@@ -59,6 +82,7 @@ export const sendEmail = internalAction({
     );
 
     try {
+      const cleanHeaders = args.headers ? sanitizeHeaders(args.headers) : {};
       const res: Response = await fetch(RESEND_API, {
         method: "POST",
         headers: {
@@ -71,6 +95,11 @@ export const sendEmail = internalAction({
           subject,
           html,
           text,
+          // Custom headers (e.g. unique Message-ID) — threading headers
+          // never survive sanitizeHeaders (#21).
+          ...(Object.keys(cleanHeaders).length > 0
+            ? { headers: cleanHeaders }
+            : {}),
         }),
       });
 

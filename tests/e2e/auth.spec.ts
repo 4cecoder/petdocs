@@ -28,22 +28,14 @@ import {
  * sign-in form twice for the same email (60s per-email resend cooldown,
  * convex/magicLink.ts RESEND_COOLDOWN_MS).
  *
- * KNOWN PRODUCT BUG (documented, do not weaken these tests): a public
- * `magicLink:directSignIn` mutation (convex/magicLink.ts:338) lets ANY
- * email sign in without proving mailbox ownership. sign-in/page.tsx wires
- * it as (a) the "Continue to Dashboard (Instant Access)" button, (b) a
- * fallback on invalid/used/expired token verify, and (c) a fallback on
- * verify exceptions; DashboardGuard.tsx:59 also self-heals sessions with
- * it. The three negative tests below are marked test.fail(): they document
- * the regression while keeping the suite green. The moment the bypass is
- * removed they will PASS, Playwright will report them as unexpected passes,
- * and the test.fail() calls must be deleted.
+ * HARDENING (#17/#18, fixed): the former public `magicLink:directSignIn`
+ * mutation — wired as the "Continue to Dashboard (Instant Access)" button,
+ * as the invalid/used/expired verify fallback, and as the DashboardGuard
+ * self-heal — is deleted. Signing in REQUIRES a valid, unused, unexpired
+ * token tied to the email; a second verify of a consumed token returns the
+ * honest "already used" state and nothing signs in without it. The three
+ * negative tests below are plain passing tests since the bypass removal.
  */
-const DIRECT_SIGN_IN_BUG =
-  "BUG: magicLink:directSignIn (convex/magicLink.ts:338) bypasses mailbox " +
-  "ownership; sign-in/page.tsx falls back to it for invalid/used/expired " +
-  "tokens, so the strict negative assertions below cannot pass. Remove " +
-  "test.fail() when the bypass is removed.";
 
 test.describe("auth: real magic-link signup", () => {
   test("signup through the product flow lands in the authenticated dashboard", async ({
@@ -73,10 +65,7 @@ test.describe("auth: real magic-link signup", () => {
     expect(consumed!.usedAt).toBeGreaterThan(0);
   });
 
-  test("invalid token stays on sign-in with an error", {
-    annotation: [{ type: "issue", description: DIRECT_SIGN_IN_BUG }],
-  }, async ({ page }) => {
-    test.fail(true, DIRECT_SIGN_IN_BUG);
+  test("invalid token stays on sign-in with an error", async ({ page }) => {
     const email = uniqueEmail("auth-badtoken");
     await page.goto(
       `/sign-in?token=${randomToken()}&email=${encodeURIComponent(email)}`,
@@ -94,10 +83,7 @@ test.describe("auth: real magic-link signup", () => {
     await expect(page.getByRole("button", { name: /magic link/ })).toBeEnabled();
   });
 
-  test("expired token shows the expired error", {
-    annotation: [{ type: "issue", description: DIRECT_SIGN_IN_BUG }],
-  }, async ({ page }) => {
-    test.fail(true, DIRECT_SIGN_IN_BUG);
+  test("expired token shows the expired error", async ({ page }) => {
     // Seed a genuinely expired row through the dev CLI (internalMutation
     // magicLink:storeToken with a past expiresAt; no convex code changed).
     const email = uniqueEmail("auth-expired");
@@ -114,10 +100,7 @@ test.describe("auth: real magic-link signup", () => {
     expect(await getOwnerId(page)).toBeNull();
   });
 
-  test("magic links are single-use", {
-    annotation: [{ type: "issue", description: DIRECT_SIGN_IN_BUG }],
-  }, async ({ page }) => {
-    test.fail(true, DIRECT_SIGN_IN_BUG);
+  test("magic links are single-use", async ({ page }) => {
     const { email, token, ownerId } = await signUpViaUi(page, "auth-reuse");
     expect(ownerId).toMatch(/^[a-z0-9]+$/);
 

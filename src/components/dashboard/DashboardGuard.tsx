@@ -9,11 +9,9 @@ import {
   type ReactNode,
 } from "react";
 import {
-  api,
   clearSession,
   getOwnerId,
   getSessionEmail,
-  setSession,
 } from "@/lib/api";
 import { ROUTES } from "@/lib/routes";
 
@@ -54,31 +52,13 @@ export function DashboardAuthProvider({ children }: { children: ReactNode }) {
   const [ownerId, setOwnerId] = useState<string | null>(() => readOwnerId());
   const [loading, setLoading] = useState<boolean>(false);
 
+  // Sync the stored session once on mount. No self-heal (#17): the old
+  // directSignIn fallback let an email-only localStorage session regenerate
+  // an ownerId without ever proving mailbox ownership. A session email
+  // without a verified ownerId is signed out — it redirects to sign-in.
   useEffect(() => {
-    const currentOwner = readOwnerId();
-    const email = getSessionEmail();
-
-    if (!currentOwner && email) {
-      // Auto-recover session from stored email
-      setLoading(true);
-      api.auth
-        .directSignIn(email)
-        .then((res) => {
-          if (res.ok) {
-            setSession(email, res.ownerId);
-            setOwnerId(res.ownerId);
-          }
-        })
-        .catch(() => {
-          /* noop */
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } else {
-      setOwnerId(currentOwner);
-      setLoading(false);
-    }
+    setOwnerId(readOwnerId());
+    setLoading(false);
   }, []);
 
   function signOut() {
