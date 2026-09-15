@@ -1,0 +1,20 @@
+/*
+ * Integration shim for @seridian/ui-kit on petdocs app routes.
+ *
+ * The kit's compiled stylesheet is imported here into the `seridian-uikit`
+ * cascade layer, whose order is declared at the very top of globals.css —
+ * BEFORE the app's theme/base/utilities layers. Consequence: kit components
+ * get their full design-token look, but any conflicting app utility (the
+ * classic case is app `.hidden` + `.md:flex` nav markup) always wins, no
+ * matter the CSS load order.
+ *
+ * The unlayered body rule below restores petdocs' warm canvas, which the
+ * kit's base layer would otherwise repaint with its own tokens. Marketing
+ * routes never import this file, so they never load kit CSS at all.
+ */
+@import "@seridian/ui-kit/styles.css" layer(seridian-uikit);
+
+body {
+  background-color: var(--color-cream);
+  color: var(--color-ink);
+}

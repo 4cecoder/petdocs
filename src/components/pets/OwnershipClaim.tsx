@@ -2,6 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { ShieldCheck } from "lucide-react";
+import {
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@seridian/ui-kit";
 import { getOwnerId } from "@/lib/api";
 import { convexMutation } from "@/lib/convexHttp";
 
@@ -93,35 +102,39 @@ export function OwnershipClaim({
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="ownership-method" className="text-sm font-medium">
+          <Label htmlFor="ownership-method" className="text-sm font-medium">
             Method
-          </label>
-          <select
-            id="ownership-method"
-            value={method}
-            onChange={(e) => setMethod(e.target.value as ClaimMethod)}
-            className="min-h-[48px] w-full rounded-xl border border-ink/15 bg-cream px-3 text-sm"
-          >
-            {METHOD_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          </Label>
+          <Select value={method} onValueChange={(v) => setMethod(v as ClaimMethod)}>
+            <SelectTrigger
+              id="ownership-method"
+              className="min-h-[48px] w-full text-sm"
+              aria-label="Method"
+            >
+              <SelectValue placeholder="Method" />
+            </SelectTrigger>
+            <SelectContent>
+              {METHOD_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="ownership-evidence" className="text-sm font-medium">
+          <Label htmlFor="ownership-evidence" className="text-sm font-medium">
             Evidence
-          </label>
-          <input
+          </Label>
+          <Input
             id="ownership-evidence"
             type="text"
             value={evidence}
             onChange={(e) => setEvidence(e.target.value)}
             placeholder={EVIDENCE_PLACEHOLDER[method]}
             autoComplete="off"
-            className="min-h-[48px] w-full rounded-xl border border-ink/15 bg-cream px-3 text-sm"
+            className="min-h-[48px] w-full bg-cream text-sm"
           />
         </div>
 

@@ -1,5 +1,8 @@
 import { ConvexClientProvider } from "../ConvexClientProvider";
 import { QueryProvider } from "../QueryProvider";
+// Seridian ui-kit styles, layered so app utilities always win; loaded ONLY
+// for dashboard routes (marketing pages stay untouched).
+import "./dashboard.css";
 import {
   DashboardAuthProvider,
   DashboardGuard,
