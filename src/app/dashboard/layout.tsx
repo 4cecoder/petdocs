@@ -5,6 +5,8 @@ import {
   DashboardGuard,
 } from "@/components/dashboard/DashboardGuard";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { MobileBottomNav } from "@/components/nav/MobileBottomNav";
+import { PetAssistantFab } from "@/components/assistant/PetAssistantFab";
 
 /**
  * Shared shell for every `/dashboard/**` route. Auth is enforced here via
@@ -21,6 +23,8 @@ export default function DashboardRootLayout({
         <DashboardAuthProvider>
           <DashboardGuard>
             <DashboardLayout>{children}</DashboardLayout>
+            <MobileBottomNav />
+            <PetAssistantFab />
           </DashboardGuard>
         </DashboardAuthProvider>
       </ConvexClientProvider>

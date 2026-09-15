@@ -61,33 +61,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <main className="min-w-0 flex-1 pb-24 md:pb-8">{children}</main>
+        <main className="min-w-0 flex-1 pb-20 md:pb-6">{children}</main>
       </div>
-
-      {/* Bottom tab bar: primary nav on phones, mirrors Android bottom nav. */}
-      <nav
-        aria-label="Dashboard"
-        className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-6 border-t border-ink/10 bg-cream/95 backdrop-blur md:hidden"
-      >
-        {DASHBOARD_NAV.map((item) => {
-          const Icon = item.icon;
-          const active = isNavItemActive(pathname, item);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "flex min-h-[64px] flex-col items-center justify-center gap-1 text-[11px] font-medium",
-                active ? "text-brand-700" : "text-ink-soft",
-              )}
-            >
-              <Icon size={22} aria-hidden="true" />
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
     </div>
   );
 }
