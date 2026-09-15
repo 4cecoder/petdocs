@@ -4,12 +4,12 @@ on:
   push:
     branches: [main]
     paths:
-      - "android-app/**"
+      - "android/**"
       - ".github/workflows/android.yml"
   pull_request:
     branches: [main]
     paths:
-      - "android-app/**"
+      - "android/**"
       - ".github/workflows/android.yml"
   workflow_dispatch:
 
@@ -22,9 +22,12 @@ concurrency:
 
 jobs:
   build-debug:
-    name: Assemble debug APK
+    name: Test + assemble debug APK
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: android
     steps:
       - uses: actions/checkout@v4
 
@@ -40,18 +43,25 @@ jobs:
 
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
-        working-directory: android-app
+
+      # Unit tests include the Robolectric Compose UI tests for the sign-in
+      # flow and MockWebServer tests for the API layer — no emulator needed.
+      - name: Run unit tests
+        run: ./gradlew testDebugUnitTest --stacktrace
 
       # No signing, no Firebase secrets: MVP has no google-services.json,
-      # so this builds an unsigned debug APK only.
+      # so this builds an unsigned debug APK only. Version metadata is
+      # stamped from CI (see android/app/build.gradle.kts).
       - name: Assemble debug APK
-        run: ./gradlew assembleDebug --stacktrace
-        working-directory: android-app
+        run: >-
+          ./gradlew assembleDebug --stacktrace
+          -PappVersionCode=${{ github.run_number }}
+          -PappVersionName=0.1.0-beta
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: petdocs-android-debug-apk
-          path: android-app/app/build/outputs/apk/debug/*.apk
+          path: android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 14
