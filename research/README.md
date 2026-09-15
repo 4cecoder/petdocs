@@ -11,6 +11,7 @@ This directory contains competitive teardowns, product benchmarks, authenticated
 | [compliance.md](compliance.md) | **US Compliance & Vet-Friendliness** | AAHA record standards, VCPR implications, state board survey (strict states), ESIGN/UETA for manually-signed docs, CCPA/FTC privacy landscape, microchip rules, clinic-adoption checklist, phased roadmap. Closes #40. | Complete |
 | [lander-blueprint.md](lander-blueprint.md) | **Lander Blueprint (petlia.app teardown → petdocs)** | Section-by-section petlia.app lander teardown (live 2026-09-15 capture) and a sprint-scoped petdocs lander blueprint with component mapping. Closes #40. | Complete |
 | [product-direction.md](product-direction.md) | **Product Direction & Strategic Roadmap** | Owner notes from 2026-09-15: Two-sided clinic platform, structured signed documents, enterprise inbound API, and relationship-led pilots. | Active |
+| [integrations.md](integrations.md) | **Integration Research: Microchip Registries + Free APIs** | Peeva (partnership-only), ChipnDoodle (real free API, weak US coverage), US registry API landscape, breed DBs, VetVerifi vaccine verification, rabies/pet-law standards, recommendation matrix, and the ChipnDoodle-first Convex integration sketch. (#38) | Complete |
 | [screenshots/](screenshots/) | **Competitor UI Screenshots & Extracts** | In-app screen captures (dashboard, records, reminders, settings, pet profile) and scraped DOM text from live competitor audits. | Archive |
 
 ## Strategic Objectives for PetDocs
