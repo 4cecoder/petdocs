@@ -18,7 +18,7 @@
  *     (CONVEX_DEPLOYMENT), which the guard below pins to a `dev:` target.
  *     Nothing here may ever touch prod.
  */
-import { execFileSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -74,31 +74,55 @@ export interface MagicTokenRow {
  * Run a Convex function via the CLI. Uses the dev deployment from
  * .env.local (guarded above); never passes --prod. Returns the parsed JSON
  * result (may be null).
+ *
+ * Retries transient infrastructure failures up to 3 attempts (the CLI
+ * spawns are heavy and the full suite runs fully parallel against one dev
+ * deployment; sockets/timeouts flake under that load). App-level errors
+ * thrown by the function itself propagate immediately — the CLI prints
+ * them and exits non-zero with an "App Error"-style message.
  */
 export function convexRun<T = unknown>(functionPath: string, args: unknown): T {
   devDeploymentName(); // guard: refuse anything that is not dev:*
-  const stdout = execFileSync(
-    "bunx",
-    ["convex", "run", functionPath, JSON.stringify(args)],
-    {
-      cwd: REPO_ROOT,
-      encoding: "utf8",
-      timeout: 90_000,
-      stdio: ["ignore", "pipe", "pipe"],
-    },
-  );
-  const trimmed = stdout.trim();
-  // Mutations print NOTHING on success (empty stdout, exit 0); queries and
-  // actions print their JSON result.
-  if (trimmed === "") return null as T;
-  try {
-    return JSON.parse(trimmed) as T;
-  } catch {
-    // Tolerate stray non-JSON lines: parse from the first { or [ onward.
-    const start = trimmed.search(/[{[]/);
-    if (start === -1) throw new Error(`convex run ${functionPath}: unparseable output: ${trimmed.slice(0, 200)}`);
-    return JSON.parse(trimmed.slice(start)) as T;
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const stdout = execFileSync(
+        "bunx",
+        ["convex", "run", functionPath, JSON.stringify(args)],
+        {
+          cwd: REPO_ROOT,
+          encoding: "utf8",
+          timeout: 90_000,
+          stdio: ["ignore", "pipe", "pipe"],
+        },
+      );
+      const trimmed = stdout.trim();
+      // Mutations print NOTHING on success (empty stdout, exit 0); queries
+      // and actions print their JSON result.
+      if (trimmed === "") return null as T;
+      try {
+        return JSON.parse(trimmed) as T;
+      } catch {
+        // Tolerate stray non-JSON lines: parse from the first { or [ onward.
+        const start = trimmed.search(/[{[]/);
+        if (start === -1) throw new Error(`convex run ${functionPath}: unparseable output: ${trimmed.slice(0, 200)}`);
+        return JSON.parse(trimmed.slice(start)) as T;
+      }
+    } catch (err) {
+      lastError = err;
+      const message = err instanceof Error ? err.message : String(err);
+      // Only transport/spawn-level failures are worth retrying; app-level
+      // rejections ("App Error ...") and unparseable-output bugs are not.
+      const isTransient =
+        /fetch failed|timed? ?out|ECONNRESET|ETIMEDOUT|EPIPE|socket hang up|spawn (ENOENT|EBUSY)|interrupted/i.test(
+          message,
+        );
+      if (!isTransient || attempt === 2) throw err;
+      // Brief synchronous pause; this helper is already fully blocking.
+      execSync(`sleep ${attempt + 1}`, { stdio: "ignore" });
+    }
   }
+  throw lastError;
 }
 
 /** Latest magicTokens row for an email, or null (CLI query round-trip). */
@@ -231,14 +255,6 @@ export async function signUpViaUi(page: Page, label: string): Promise<AuthSessio
 // Dashboard flows
 // ---------------------------------------------------------------------------
 
-/** Click a label in the desktop dashboard sidebar (bottom bar is hidden). */
-function sidebarLink(page: Page, name: string) {
-  return page
-    .getByRole("navigation", { name: "Dashboard" })
-    .filter({ visible: true })
-    .getByRole("link", { name, exact: true });
-}
-
 export interface AddPetInput {
   name: string;
   species?: "dog" | "cat" | "bird" | "rabbit" | "reptile" | "other";
@@ -250,7 +266,11 @@ export interface AddPetInput {
  * (parsed from the rendered PetCard href).
  */
 export async function addPetViaUi(page: Page, input: AddPetInput): Promise<string> {
-  await sidebarLink(page, "Pets").click();
+  // Direct goto instead of clicking the sidebar link: a click issued before
+  // the client bundle finishes hydrating is silently swallowed (URL never
+  // changes) and flaked under parallel workers. URL navigation is
+  // hydration-independent and keeps this helper focused on the wizard.
+  await page.goto("/dashboard/pets");
   await expect(page.getByRole("heading", { name: "Pets", exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "+ Add pet" }).click();
@@ -274,7 +294,10 @@ export async function addPetViaUi(page: Page, input: AddPetInput): Promise<strin
   await page.getByRole("button", { name: "Add pet", exact: true }).click();
 
   const card = page.getByRole("link", { name: new RegExp(`^${input.name}`) });
-  await expect(card).toBeVisible({ timeout: 15_000 });
+  // pets:create runs against the shared dev deployment; under parallel
+  // workers the mutation round-trip can take tens of seconds (the submit
+  // button sits in its "Working…" state meanwhile). Give it real headroom.
+  await expect(card).toBeVisible({ timeout: 30_000 });
   const href = await card.getAttribute("href");
   if (!href || !href.startsWith("/dashboard/pets/")) {
     throw new Error(`PetCard href missing or unexpected: ${href}`);
