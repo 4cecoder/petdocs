@@ -504,7 +504,7 @@ export default function PetDetailPage({
           <PetArt name="happy" size={80} />
           <div>
             <h1 className="font-display text-2xl font-bold">Pet profile</h1>
-            <p className="text-sm text-ink-soft">ID: {petId} (wiring lands with Convex)</p>
+            <p className="text-sm text-ink-soft">Pet ID: {petId}</p>
           </div>
         </header>
 

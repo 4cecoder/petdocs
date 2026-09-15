@@ -114,6 +114,11 @@ export interface Reminder {
   status: string;
 }
 
+/** Result of contact:submit — mirrors convex/contact.ts. */
+export type ContactSubmitResult =
+  | { ok: true }
+  | { ok: false; reason: "rate_limited" };
+
 export interface ShareLink {
   _id: string;
   petId: string;
@@ -241,6 +246,17 @@ export const api = {
       convexQuery<Passport | null>("shareLinks:resolve", { token }),
     recordView: (token: string) =>
       convexMutation<number | null>("shareLinks:recordView", { token }),
+  },
+
+  contact: {
+    submit: (input: {
+      name: string;
+      email: string;
+      message: string;
+      /** Honeypot — leave empty; real users never see this field. */
+      website?: string;
+    }) =>
+      convexMutation<ContactSubmitResult>("contact:submit", input),
   },
 };
 

@@ -123,10 +123,10 @@ describe("convexHttp", () => {
     );
   });
 
-  it("throws when Convex URL is not configured", async () => {
+  it("throws a neutral message when the backend URL is not configured", async () => {
     delete process.env.NEXT_PUBLIC_CONVEX_URL;
     await expect(convexQuery("pets:get", {})).rejects.toThrow(
-      "Convex is not configured",
+      "Service is not available right now",
     );
     expect(fetchMock).not.toHaveBeenCalled();
   });

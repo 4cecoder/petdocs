@@ -9,6 +9,7 @@
  */
 
 import type * as admin from "../admin.js";
+import type * as contact from "../contact.js";
 import type * as crons from "../crons.js";
 import type * as documents from "../documents.js";
 import type * as http from "../http.js";
@@ -36,6 +37,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
+  contact: typeof contact;
   crons: typeof crons;
   documents: typeof documents;
   http: typeof http;

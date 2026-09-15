@@ -73,6 +73,21 @@ test.describe("smoke", () => {
     ).toBeVisible();
   });
 
+  test("contact renders form and footer badge", { tag: "@smoke" }, async ({
+    page,
+  }) => {
+    await page.goto("/contact");
+    await expect(
+      page.getByRole("heading", { name: "Get in touch" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /send message/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /made by seridian\.dev/i }),
+    ).toBeVisible();
+  });
+
   test("sign-in renders email form", { tag: "@smoke" }, async ({ page }) => {
     await page.goto("/sign-in");
     await expect(

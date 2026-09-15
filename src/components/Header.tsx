@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 const navLinks = [
   { href: ROUTES.howItWorks, label: "How it works" },
   { href: ROUTES.pricing, label: "Pricing" },
+  { href: ROUTES.contact, label: "Contact" },
   { href: ROUTES.signIn, label: "Sign in" },
 ];
 
