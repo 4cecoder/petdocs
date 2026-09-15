@@ -192,4 +192,9 @@ http.route({
   }),
 });
 
+// --- #39 BEGIN passport email-share QR route — defined in passportHttp.ts (passport agent owns this block; android agent owns the rest of http.ts) ---
+import { passportRoutes } from "./passportHttp";
+for (const route of passportRoutes) http.route(route);
+// --- #39 END ---
+
 export default http;

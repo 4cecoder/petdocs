@@ -8,6 +8,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 
+- Passport email share (#39): dashboard share tool emails a pet passport (recipient plus optional note) with branded HTML summary card, big link, and hosted QR image at /api/passport/[token]/qr.svg; token reuse per pet plus 60s per-recipient cooldown plus shareEmails send history with link status; pure-JS QR renderer in convex/qr.ts; 11 convex tests plus passport-share e2e spec; mock upload lego fixed to origin-relative URL so flows run on any PORT. Real-send verification pending (Resend daily quota exhausted; #35 quota gating not yet on this branch, sends recorded honestly as failed)
 - MVP scaffold: Next.js 16 web shell plus Convex backend plus Kotlin Android plus docs 01 to 07 plus CI smoke
 - Wiring: magic-link auth plus pets CRUD plus vault upload plus reminders plus share tokens plus live passport plus Android session gate
 - Trust: ownership KYC claims plus deterministic AI plus export and delete plus audit plus docs 15

@@ -126,6 +126,30 @@ export interface ShareLink {
   isActive: boolean;
 }
 
+/** One passport email send (#39), mirrored from convex/passportShare.ts. */
+export interface ShareEmail {
+  _id: string;
+  petId: string;
+  petName: string;
+  recipientEmail: string;
+  note?: string;
+  status: "sent" | "failed";
+  error?: string;
+  linkActive: boolean;
+  createdAt: number;
+}
+
+export type EmailPassportResult =
+  | { ok: false; error: string }
+  | {
+      ok: true;
+      reused: boolean;
+      token: string;
+      linkId: string;
+      delivered: boolean;
+      deliveryError?: string;
+    };
+
 export interface Passport {
   scope: string;
   pet: { name: string; species: string; breed?: string; birthdate?: number };
@@ -241,6 +265,15 @@ export const api = {
       convexQuery<Passport | null>("shareLinks:resolve", { token }),
     recordView: (token: string) =>
       convexMutation<number | null>("shareLinks:recordView", { token }),
+    emailPassport: (input: {
+      ownerId: string;
+      petId: string;
+      recipientEmail: string;
+      note?: string;
+      origin?: string;
+    }) => convexAction<EmailPassportResult>("passportShare:emailPassport", input),
+    listEmails: (ownerId: string) =>
+      convexQuery<ShareEmail[]>("passportShare:listEmails", { ownerId }),
   },
 };
 
