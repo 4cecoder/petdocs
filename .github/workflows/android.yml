@@ -38,8 +38,10 @@ jobs:
           java-version: "17"
           cache: gradle
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      # android-actions/setup-android@v3 is currently broken on these runners
+      # ("Failed to find package 'tools'"); ubuntu-latest ships the Android
+      # SDK preinstalled with licenses accepted, and AGP auto-installs any
+      # missing platform/build-tools from there.
 
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
