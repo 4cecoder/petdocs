@@ -1,0 +1,86 @@
+# PetDocs iOS — XcodeGen project definition (generates PetDocs.xcodeproj).
+# Regenerate with: xcodegen generate
+#
+# Mirrors adventurers-portal ios/Adventurers/project.yml. NOTE on signing:
+# Associated Domains (applinks — required for universal links
+# https://petdocs.seridian.dev/signin) CANNOT be provisioned on a personal
+# (free) Apple team — Xcode fails with "Personal development teams … do not
+# support the Associated Domains capability". Browser→app handoff therefore
+# ships via the CUSTOM SCHEME registered below (CFBundleURLTypes →
+# petdocs://), which needs no entitlement. When the app moves to a PAID
+# team (TestFlight milestone M4), re-add the entitlements block:
+#   entitlements:
+#     path: App/PetDocs.entitlements
+#     properties:
+#       com.apple.developer.associated-domains:
+#         - applinks:petdocs.seridian.dev
+# and publish the AASA file for that host (see docs/ios-macos-plan.md §3).
+name: PetDocs
+packages:
+  PetDocsKit:
+    path: .
+options:
+  bundleIdPrefix: dev.seridian.petdocs
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+targets:
+  PetDocs:
+    type: application
+    platform: iOS
+    bundleId: dev.seridian.petdocs.ios
+    sources:
+      - path: App
+    dependencies:
+      - package: PetDocsKit
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: petdocs
+        CFBundleShortVersionString: 0.1.0
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        # Custom scheme for magic-link sign-in handoff
+        # (petdocs://signin?token=…). No entitlement required — works on
+        # personal teams.
+        CFBundleURLTypes:
+          - CFBundleURLName: dev.seridian.petdocs.signin
+            CFBundleURLSchemes:
+              - petdocs
+        # App Store / TestFlight: this build uses only standard HTTPS +
+        # keychain, no non-exempt crypto.
+        ITSAppUsesNonExemptEncryption: false
+    settings:
+      base:
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        SWIFT_VERSION: "5.0"
+        MARKETING_VERSION: 0.1.0
+        CURRENT_PROJECT_VERSION: 1
+        TARGETED_DEVICE_FAMILY: "1"
+  PetDocsUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: PetDocs
+    settings:
+      base:
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: dev.seridian.petdocs.ios.UITests
+schemes:
+  PetDocs:
+    build:
+      targets:
+        PetDocs: all
+        PetDocsUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - PetDocsUITests
