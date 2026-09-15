@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { requireWithinLimit } from "./billing";
 
 const scope = v.union(
   v.literal("passport"),
@@ -27,6 +28,8 @@ export const createToken = mutation({
   handler: async (ctx, args) => {
     const pet = await ctx.db.get(args.petId);
     if (!pet || pet.ownerId !== args.ownerId) throw new Error("Pet not found");
+    // Freemium gate: plan limits by tier (free = 1 active share link).
+    await requireWithinLimit(ctx, args.ownerId, "shareLinks");
     // 256-bit random token, hex-encoded. Store a prefix for lookup safety;
     // full token is the capability — never log it.
     const bytes = new Uint8Array(32);

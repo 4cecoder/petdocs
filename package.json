@@ -19,17 +19,21 @@
     "test:convex": "vitest run --project convex",
     "test:e2e": "playwright test",
     "test:e2e:smoke": "playwright test --grep @smoke",
+    "test:regression": "playwright test tests/e2e/regression.spec.ts",
+    "hooks:install": "git config core.hooksPath .githooks",
     "seed": "bunx convex run seed:seedDemo",
     "convex:dev": "bunx convex dev",
     "convex:deploy": "bunx convex deploy"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.101.4",
     "convex": "^1.44.0",
     "lucide-react": "^1.31.0",
     "next": "^16.3.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "@tanstack/react-query": "^5.101.4"
+    "unpdf": "^1.8.1",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@edge-runtime/vm": "^5.0.0",
