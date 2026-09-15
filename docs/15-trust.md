@@ -40,5 +40,5 @@ How PetDocs proves ownership, handles AI honestly, keeps data minimal, and respo
 ## Incident note
 
 - Revoke links first: on suspected leak, revoke active `shareLinks` for the affected pet before anything else.
-- Rotate keys: rotate Resend plus Stripe plus Convex deploy keys, then force new magic links.
+- Rotate keys: rotate Resend plus Polar plus Convex deploy keys, then force new magic links.
 - Notify affected owners at support@petdocs.app with what leaked, what was revoked, and what to check.

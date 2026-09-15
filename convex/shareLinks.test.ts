@@ -13,13 +13,15 @@ describe("shareLinks", () => {
     t = convexTest({ schema, modules });
   });
 
-  async function setup() {
+  async function setup(tier?: "plus" | "family") {
     const ownerId = await t.run(async (ctx) =>
       ctx.db.insert("owners", {
         externalId: `ext-${Date.now()}-${Math.random()}`,
         name: "Owner",
         email: "secret-owner@example.com",
         createdAt: Date.now(),
+        // Paid tier for tests that exceed the free share-link limit (1).
+        ...(tier ? { billingTier: tier } : {}),
       }),
     );
     const petId = await t.mutation(api.pets.create, {
@@ -77,7 +79,7 @@ describe("shareLinks", () => {
   });
 
   test("recordView increments viewCount; maxViews enforced", async () => {
-    const { ownerId, petId } = await setup();
+    const { ownerId, petId } = await setup("plus");
     const open = await t.mutation(api.shareLinks.createToken, {
       ownerId, petId, scope: "passport",
     });

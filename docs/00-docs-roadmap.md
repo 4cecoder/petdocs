@@ -14,7 +14,7 @@ Where docs stand, what is missing, and what may retire. Read this before adding 
 | 06-roadmap.md | Build order v0.1 to v1.0 | current |
 | 07-feature-parity.md | Web, Android, backend parity | current |
 | 08-design-system.md | PetArt, tokens, components | current |
-| 09-stripe-compliance.md | Billing rules, checkout, tax, refunds | needs-refresh with webhook build guide |
+| 09-billing-compliance.md | Billing rules, checkout, tax, refunds (Polar.sh) | current, webhook guide in docs/billing.md |
 | 10-resend-setup.md | Magic links, reminders, domain DNS | current |
 | 11-ai-ocr.md | OCR catalog UC-1 to UC-10, parsers | current |
 | 12-demo-day.md | 5 min script, seed, objections | needs-refresh if seed changes |
@@ -31,7 +31,6 @@ Missing docs picked from real gaps in Have. No placeholders beyond this list.
 
 | Needed doc | Why |
 |------------|-----|
-| Stripe webhook build guide | 09 states rules only, no handler, raw body, dedupe, or test plan |
 | Server OCR runbook | 11 catalogs use cases, no server pipeline, costs, or fallback |
 | B2B2C partner onboarding | 02 prices clinic plans, no invite, subsidy, or support flow |
 | Incident playbook detail | 15 names response, no severity levels, pages, or comms template |

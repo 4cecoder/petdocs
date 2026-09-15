@@ -11,7 +11,7 @@ Mirrors `adventurers-portal` patterns where they earn it; drops everything enter
   `dashboard/layout.tsx` wraps auth guard + shell
 - Netlify + `@netlify/plugin-nextjs` for web; Convex hosted backend
 - DROP from portal: telephony/IVR, arena AI (transformers/three/tiptap/tesseract),
-  finance (stripe/mercury), Firebase, vendored ui-kit (use Tailwind + lucide + local `cn()`)
+  finance (billing/mercury), Firebase, vendored ui-kit (use Tailwind + lucide + local `cn()`)
 
 ## 2. Repo structure (create first → last)
 ```

@@ -11,8 +11,8 @@ Set each key on every Convex deployment. Convex env only, never Netlify. Never c
 | `RESEND_API_KEY` | yes | yes | magic links, reminders, replies, test email |
 | `RESEND_FROM` | yes | yes | owner-facing sender, must use verified domain |
 | `RESEND_WEBHOOK_SECRET` | yes | yes | Svix verify for inbound |
-| `STRIPE_SECRET_KEY` | test key | live key | billing, planned webhook |
-| `STRIPE_WEBHOOK_SECRET` | test secret | live secret | webhook verify, planned |
+| `POLAR_ACCESS_TOKEN` | test key | live key | billing checkout (`docs/billing.md`) |
+| `POLAR_WEBHOOK_SECRET` | test secret | live secret | webhook verify (`/polar/webhook`) |
 | `SITE_URL` | `http://localhost:3000` | public app URL | magic link and reminder links |
 | `ADMIN_EMAILS` | dev emails | Angela plus devs | bootstrap superadmin |
 
@@ -31,7 +31,7 @@ Base is the Convex HTTP Actions URL from the Convex dashboard. Copy paths from t
 | Method | Path | Status | Secret |
 |---|---|---|---|
 | POST | `/resend/inbound` | live | `RESEND_WEBHOOK_SECRET` |
-| POST | `/stripe/webhook` | planned | `STRIPE_WEBHOOK_SECRET` |
+| POST | `/polar/webhook` | live | `POLAR_WEBHOOK_SECRET` |
 
 ## Test inbox and test email
 
@@ -60,7 +60,7 @@ Always does: invite staff with least privilege, review ownership claims, revoke 
 ## Incident steps
 
 1. Revoke active `shareLinks` for the affected pet first.
-2. Rotate keys: Resend, Stripe, Convex deploy key. Set per deployment.
+2. Rotate keys: Resend, Polar, Convex deploy key. Set per deployment.
 3. Force new magic links by asking owners to sign in again.
 4. Audit: export `adminAudit`, confirm each `support` and `admin`, demote the rest.
 5. Notify affected owners from support@ with what leaked, what was revoked, what to check.

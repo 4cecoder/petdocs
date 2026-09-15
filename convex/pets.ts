@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { requireWithinLimit } from "./billing";
 
 /**
  * Helper: resolve the calling owner from auth identity.
@@ -61,6 +62,8 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const name = args.name.trim();
     if (!name) throw new Error("Pet name is required");
+    // Freemium gate: plan limits by tier (free = 1 active pet, docs/billing.md).
+    await requireWithinLimit(ctx, args.ownerId, "pets");
     return await ctx.db.insert("pets", {
       ownerId: args.ownerId,
       name,

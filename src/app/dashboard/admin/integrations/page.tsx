@@ -34,13 +34,19 @@ interface ResendStatus {
 
 interface IntegrationsStatus {
   resend: ResendStatus;
-  stripe: { keySet: boolean; webhookSecretSet: boolean };
+  polar: {
+    accessTokenSet: boolean;
+    webhookSecretSet: boolean;
+    orgIdSet: boolean;
+    productPlusSet: boolean;
+    productFamilySet: boolean;
+  };
   site: { siteUrl: string; convexDeployment: string };
   email: ResendStatus;
 }
 
 const RESEND_PATH = "/resend/inbound";
-const STRIPE_PATH = "/stripe/webhook";
+const POLAR_PATH = "/polar/webhook";
 
 function StatusLine({ set, label }: { set: boolean; label: string }) {
   return (
@@ -248,33 +254,42 @@ export default function AdminIntegrationsPage() {
         </section>
 
         <section
-          aria-label="Stripe"
+          aria-label="Polar"
           className="rounded-2xl border border-ink/10 bg-white p-4"
         >
           <h2 className="flex items-center gap-2 font-display font-bold">
             <CreditCard className="h-4 w-4 text-ink-soft" aria-hidden="true" />
-            Stripe
+            Polar
           </h2>
           {data == null ? (
             <p className="mt-1 text-sm text-ink-soft">Loading status...</p>
           ) : (
             <div className="mt-2 flex flex-col gap-1.5">
-              <StatusLine set={data.stripe.keySet} label="Secret key" />
+              <StatusLine set={data.polar.accessTokenSet} label="Access token" />
               <StatusLine
-                set={data.stripe.webhookSecretSet}
+                set={data.polar.webhookSecretSet}
                 label="Webhook secret"
               />
+              <StatusLine set={data.polar.orgIdSet} label="Organization ID" />
+              <StatusLine
+                set={data.polar.productPlusSet}
+                label="Plus product"
+              />
+              <StatusLine
+                set={data.polar.productFamilySet}
+                label="Family product"
+              />
               <p className="text-sm text-ink-soft">
-                Billing is not live yet. Keys are checked so webhook setup can
-                proceed.
+                Setup guide lives in docs/billing.md. Webhook endpoint:
+                /polar/webhook.
               </p>
               <a
-                href="https://dashboard.stripe.com/"
+                href="https://polar.sh/dashboard"
                 target="_blank"
                 rel="noreferrer"
                 className="mt-1 text-sm font-semibold text-brand-700 underline"
               >
-                Open Stripe dashboard
+                Open Polar dashboard
               </a>
             </div>
           )}
@@ -348,9 +363,9 @@ export default function AdminIntegrationsPage() {
           {[
             { key: "resend", label: "Resend inbound", path: RESEND_PATH },
             {
-              key: "stripe",
-              label: "Stripe webhook (planned)",
-              path: STRIPE_PATH,
+              key: "polar",
+              label: "Polar webhook",
+              path: POLAR_PATH,
             },
           ].map((row) => (
             <li

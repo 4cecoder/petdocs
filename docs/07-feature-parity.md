@@ -84,6 +84,6 @@ Patterns reused, never domain code. Status: `stolen` = in this repo ·
 | Passwordless auth + guards | `magicLink` (vaylo clean version) + `LoginScreen` + `DashboardGuard` (adventurers portal) | stolen |
 | Share-token contracts + sign route | contracts share-token + `/sign/[token]` (adventurers portal) | stolen |
 | Push + polling | `notifications` + FCM + `MessagePollWorker` (adventurers) | planned |
-| Stripe webhook billing | `billing.ts` (vaylo, adventurers) | planned |
+| Polar webhook billing | `convex/polar.ts` + `convex/polarHttp.ts` | done |
 | Cron scheduling (lease/backoff) | `crons.ts` + scheduling (adventurers portal) | planned |
 | Shell + routes + UI kit + CSP + CI | `DashboardLayout` + `routes` + `ui-kit` + CSP + `pr.yml` (adventurers portal) | stolen |

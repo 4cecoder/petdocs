@@ -13,19 +13,22 @@ describe("pets", () => {
     t = convexTest({ schema, modules });
   });
 
-  async function createOwner(email = "ada@example.com") {
+  async function createOwner(email = "ada@example.com", tier?: "plus" | "family") {
     return await t.run(async (ctx) => {
       return await ctx.db.insert("owners", {
         externalId: `ext-${email}`,
         name: "Test Owner",
         email,
         createdAt: Date.now(),
+        // Freemium tiers: free owners hit the 1-active-pet limit, so tests
+        // that create several pets grant a paid tier (docs/billing.md).
+        ...(tier ? { billingTier: tier } : {}),
       });
     });
   }
 
   test("create + listByOwner returns owner's pets", async () => {
-    const ownerA = await createOwner("a@example.com");
+    const ownerA = await createOwner("a@example.com", "plus");
     const ownerB = await createOwner("b@example.com");
     await t.mutation(api.pets.create, { ownerId: ownerA, name: "Fido", species: "dog" });
     await t.mutation(api.pets.create, { ownerId: ownerA, name: "Whiskers", species: "cat" });
