@@ -260,7 +260,12 @@ export async function addPetViaUi(page: Page, input: AddPetInput): Promise<strin
   await page.getByRole("button", { name: "Continue", exact: true }).click();
 
   if (input.species) {
-    await page.getByLabel("Species").selectOption(input.species);
+    // The species field is a @seridian/ui-kit dropdown (Radix Select): open
+    // the combobox, then pick the option from the rendered listbox.
+    const speciesTrigger = page.getByLabel("Species");
+    await expect(speciesTrigger).toBeVisible();
+    await speciesTrigger.click();
+    await page.getByRole("option", { name: input.species }).click();
   }
   if (input.breed) {
     await page.getByLabel("Breed").fill(input.breed);

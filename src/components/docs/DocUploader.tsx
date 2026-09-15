@@ -2,6 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Camera, FileText } from "lucide-react";
+import {
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@seridian/ui-kit";
 import { DOC_CATEGORIES, validateDocUpload } from "@/lib/validators";
 import { api, getOwnerId, isBackendConfigured, uploadDoc, type Pet } from "@/lib/api";
 import { FlowNav, WizardShell, useSteps } from "@/components/flow/Wizard";
@@ -212,21 +221,28 @@ export function DocUploader({
                 Sign in to save to the vault.
               </p>
             ) : (
-              <label className="flex flex-col gap-1 text-sm font-medium">
-                Pet
-                <select
-                  value={selectedPetId}
-                  onChange={(e) => setSelectedPetId(e.target.value)}
-                  className="min-h-[48px] rounded-xl border border-ink/15 bg-cream px-3"
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="doc-pet">Pet</Label>
+                <Select
+                  value={selectedPetId || undefined}
+                  onValueChange={(value) => setSelectedPetId(value)}
                 >
-                  <option value="">Select a pet…</option>
-                  {(pets ?? []).map((p) => (
-                    <option key={p._id} value={p._id}>
-                      {p.name} · {p.species}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  <SelectTrigger
+                    id="doc-pet"
+                    className="min-h-[48px] w-full"
+                    aria-label="Pet"
+                  >
+                    <SelectValue placeholder="Select a pet…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(pets ?? []).map((p) => (
+                      <SelectItem key={p._id} value={p._id}>
+                        {p.name} · {p.species}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
           </div>
           <div className="mt-4">
@@ -349,32 +365,43 @@ export function DocUploader({
                 ) : null}
               </div>
             ) : null}
-            <label className="flex flex-col gap-1 text-sm font-medium">
-              Document type
-              <select
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="doc-category">Document type</Label>
+              <Select
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                onValueChange={(value) => setCategory(value)}
                 disabled={uploading}
-                className="min-h-[48px] rounded-xl border border-ink/15 bg-cream px-3"
               >
-                {DOC_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c.replace(/_/g, " ")}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-sm font-medium">
-              Notes <span className="font-normal text-ink-soft">(optional)</span>
-              <input
+                <SelectTrigger
+                  id="doc-category"
+                  className="min-h-[48px] w-full"
+                  aria-label="Document type"
+                >
+                  <SelectValue placeholder="Document type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {DOC_CATEGORIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c.replace(/_/g, " ")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="doc-notes">
+                Notes <span className="font-normal text-ink-soft">(optional)</span>
+              </Label>
+              <Input
+                id="doc-notes"
                 type="text"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 disabled={uploading}
                 placeholder="e.g. Annual checkup at Riverside"
-                className="min-h-[48px] rounded-xl border border-ink/15 bg-cream px-3"
+                className="min-h-[48px]"
               />
-            </label>
+            </div>
             {file ? (
               <p className="flex items-center gap-1.5 truncate text-sm text-ink-soft">
                 <FileText

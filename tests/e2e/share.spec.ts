@@ -16,12 +16,11 @@ test.describe("share: public passport", () => {
     const name = `Maple${Date.now().toString(36)}`;
     await addPetViaUi(page, { name, species: "cat", breed: "E2E Tabby" });
 
-    // ShareButton 3-step wizard on the pet profile.
+    // ShareButton 3-step wizard lives in the profile's Share tool panel.
     await page.getByRole("link", { name: new RegExp(`^${name}`) }).click();
     await expect(page.getByRole("heading", { level: 1, name })).toHaveText(name);
+    await page.getByRole("tab", { name: /Share/ }).click();
     await page.getByLabel(/Who.s this link for/).fill("E2E Vet");
-    // The ShareButton wizard renders before the Upload section, which has
-    // its own (disabled) Continue; DOM order makes .first() the wizard's.
     await page.getByRole("button", { name: "Continue", exact: true }).first().click();
     await page.getByRole("radio", { name: /7 days/ }).check();
     await page.getByRole("button", { name: "Make link" }).click();
@@ -70,8 +69,12 @@ test.describe("share: public passport", () => {
       ).toBeVisible({ timeout: 4_000 });
     }).toPass({ timeout: 30_000, intervals: [2_000, 4_000] });
 
-    // Revoke through the owner UI.
+    // Revoke through the owner UI (destructive action now asks for confirm).
     await petSection.getByRole("button", { name: "Revoke", exact: true }).click();
+    await page
+      .getByRole("alertdialog")
+      .getByRole("button", { name: "Revoke link" })
+      .click();
     await expect(page.getByText("No active links yet.")).toBeVisible({ timeout: 15_000 });
 
     // The revoked link is dead for the public visitor too.

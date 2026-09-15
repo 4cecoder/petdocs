@@ -3,6 +3,18 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, FileText } from "lucide-react";
+import {
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@seridian/ui-kit";
+// Kit styles for this (dashboard-adjacent) onboarding flow only; the shared
+// dashboard shim layers them so app utilities win. Marketing pages never load these.
+import "../dashboard/dashboard.css";
 import { PET_SPECIES, validatePetName } from "@/lib/validators";
 import { ROUTES } from "@/lib/routes";
 import { FlowNav, WizardShell, useSteps } from "@/components/flow/Wizard";
@@ -64,12 +76,9 @@ export default function OnboardingPage() {
           }
         >
           <form onSubmit={handlePetContinue} className="flex flex-col gap-3">
-            <label
-              htmlFor="onboarding-pet-name"
-              className="flex flex-col gap-1 font-medium"
-            >
-              Pet&apos;s name
-              <input
+            <div className="flex flex-col gap-1.5 font-medium">
+              <Label htmlFor="onboarding-pet-name">Pet&apos;s name</Label>
+              <Input
                 id="onboarding-pet-name"
                 value={petName}
                 onChange={(e) => setPetName(e.target.value)}
@@ -81,27 +90,31 @@ export default function OnboardingPage() {
                     ? "onboarding-pet-name-error"
                     : "onboarding-photo-note"
                 }
-                className="min-h-[48px] rounded-xl border border-ink/15 bg-white px-4"
+                className="min-h-[48px] bg-white"
               />
-            </label>
-            <label
-              htmlFor="onboarding-species"
-              className="flex flex-col gap-1 font-medium"
-            >
-              Species
-              <select
-                id="onboarding-species"
+            </div>
+            <div className="flex flex-col gap-1.5 font-medium">
+              <Label htmlFor="onboarding-species">Species</Label>
+              <Select
                 value={species}
-                onChange={(e) => setSpecies(e.target.value)}
-                className="min-h-[48px] rounded-xl border border-ink/15 bg-white px-3"
+                onValueChange={(value) => setSpecies(value)}
               >
-                {PET_SPECIES.map((s) => (
-                  <option key={s} value={s} className="capitalize">
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <SelectTrigger
+                  id="onboarding-species"
+                  className="min-h-[48px] w-full"
+                  aria-label="Species"
+                >
+                  <SelectValue placeholder="Species" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PET_SPECIES.map((s) => (
+                    <SelectItem key={s} value={s} className="capitalize">
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             {showNameError ? (
               <p
                 id="onboarding-pet-name-error"
