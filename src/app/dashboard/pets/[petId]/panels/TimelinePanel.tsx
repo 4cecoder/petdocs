@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FilePlus2 } from "lucide-react";
 import {
   EmptyState,
@@ -103,13 +104,13 @@ export default function TimelinePanel({
   visits,
   docs,
   petName,
-  onAddDocument,
+  documentsHref,
 }: {
   vaccines: Vaccination[];
   visits: VetVisit[];
   docs: VaultDoc[];
   petName: string;
-  onAddDocument: () => void;
+  documentsHref: string;
 }) {
   const timeline = buildTimeline(vaccines, visits, docs, petName);
 
@@ -130,14 +131,13 @@ export default function TimelinePanel({
           title="Quiet for now"
           description="Uploads, vet visits, and vaccine boosters will appear here as they happen."
           actions={
-            <button
-              type="button"
-              onClick={onAddDocument}
+            <Link
+              href={documentsHref}
               className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-brand-700 transition"
             >
               <FilePlus2 size={16} aria-hidden="true" />
               Add a document
-            </button>
+            </Link>
           }
         />
       ) : (

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import {
   Calendar,
   ChevronRight,
@@ -13,7 +15,6 @@ import {
 } from "lucide-react";
 import { Progress } from "@seridian/ui-kit";
 import { AddToCalendarButton } from "@/components/calendar/AddToCalendarButton";
-import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import type { CalendarEventInput } from "@/lib/calendar";
 import { formatAge, getSpeciesEmoji } from "./fmt";
@@ -40,8 +41,9 @@ export function PetHero({
   vaccineCount,
   activeMedCount,
   medCount,
-  onShare,
-  onAddDocument,
+  shareHref,
+  documentsHref,
+  remindersHref,
   onEdit,
 }: {
   pet: Pet;
@@ -58,8 +60,9 @@ export function PetHero({
   vaccineCount: number;
   activeMedCount: number;
   medCount: number;
-  onShare: () => void;
-  onAddDocument: () => void;
+  shareHref: string;
+  documentsHref: string;
+  remindersHref: string;
   onEdit: () => void;
 }) {
   return (
@@ -106,13 +109,13 @@ export function PetHero({
                       : "All checkups clear"}
                   </dd>
                 </div>
-                <a
-                  href={ROUTES.dashboard.reminders}
+                <Link
+                  href={remindersHref}
                   className="ml-1 inline-flex shrink-0 items-center gap-0.5 font-semibold text-brand-700 hover:underline"
                 >
                   Manage
                   <ChevronRight size={12} aria-hidden="true" />
-                </a>
+                </Link>
                 {nextAppointment?.calendar ? (
                   <AddToCalendarButton
                     variant="menu"
@@ -173,22 +176,20 @@ export function PetHero({
 
         {/* Quick actions */}
         <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={onShare}
+          <Link
+            href={shareHref}
             className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-ink/15 bg-white px-3.5 py-2 text-sm font-semibold text-ink shadow-xs hover:bg-cream transition"
           >
             <Share2 size={16} aria-hidden="true" />
             <span>Share passport</span>
-          </button>
-          <button
-            type="button"
-            onClick={onAddDocument}
+          </Link>
+          <Link
+            href={documentsHref}
             className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-ink/15 bg-white px-3.5 py-2 text-sm font-semibold text-ink shadow-xs hover:bg-cream transition"
           >
             <Upload size={16} aria-hidden="true" />
             <span>Add Document</span>
-          </button>
+          </Link>
           <button
             type="button"
             onClick={onEdit}
@@ -207,7 +208,7 @@ export function PetHero({
             <Sparkles size={16} aria-hidden="true" className="text-amber-500" />
             <h2 className="text-sm font-bold text-ink">Profile completeness</h2>
             <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-bold text-brand-800">
-              {profileScore}%
+              {profileScore}% Complete
             </span>
           </div>
           <span className="text-xs font-medium text-ink-soft">

@@ -15,12 +15,20 @@ export class ShareLego {
 
   /**
    * Generates a share link using the ShareButton 3-step wizard on a pet profile.
+   * The wizard lives on the pet's /share sub-page, so when a pet tool
+   * navigation is present we route there first.
    */
   async generateShareLink(options?: {
     recipient?: string;
     expiry?: "24h" | "7d" | "30d";
   }): Promise<{ token: string; shareUrl: string }> {
     const { recipient = "Boarder", expiry = "7d" } = options ?? {};
+
+    // From the pet hub: the wizard is one hop away on the Share tool page.
+    const petToolNav = this.page.getByRole("navigation", { name: "Pet tools" });
+    if (await petToolNav.isVisible({ timeout: 1000 }).catch(() => false)) {
+      await petToolNav.getByRole("link", { name: "Share", exact: true }).click();
+    }
 
     // Step 0: Who
     const recipientInput = this.page.locator("#share-recipient");

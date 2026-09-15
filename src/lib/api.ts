@@ -281,16 +281,58 @@ export const api = {
       convexQuery<Vaccination[]>("vaccinations:listByPet", { ownerId, petId }),
     dueSoon: (ownerId: string, daysAhead = 30) =>
       convexQuery<Vaccination[]>("vaccinations:dueSoon", { ownerId, daysAhead }),
+    create: (input: {
+      ownerId: string;
+      petId: string;
+      vaccineName: string;
+      dueAt?: number;
+      provider?: string;
+      notes?: string;
+    }) => convexMutation<string>("vaccinations:create", input),
+    markAdministered: (input: {
+      ownerId: string;
+      vaccinationId: string;
+      administeredAt?: number;
+      documentId?: string;
+    }) => convexMutation<string>("vaccinations:markAdministered", input),
   },
 
   medications: {
     list: (ownerId: string, petId: string) =>
       convexQuery<Medication[]>("medications:listByPet", { ownerId, petId }),
+    create: (input: {
+      ownerId: string;
+      petId: string;
+      name: string;
+      dosage: string;
+      frequency:
+        | "once_daily"
+        | "twice_daily"
+        | "weekly"
+        | "monthly"
+        | "as_needed";
+      startAt?: number;
+      endAt?: number;
+      instructions?: string;
+      documentId?: string;
+    }) => convexMutation<string>("medications:create", input),
   },
 
   visits: {
     list: (ownerId: string, petId: string) =>
       convexQuery<VetVisit[]>("vetVisits:listByPet", { ownerId, petId }),
+    create: (input: {
+      ownerId: string;
+      petId: string;
+      visitedAt: number;
+      reason: string;
+      clinicName?: string;
+      vetName?: string;
+      diagnosis?: string;
+      notes?: string;
+      weightKg?: number;
+      documentIds?: string[];
+    }) => convexMutation<string>("vetVisits:create", input),
   },
 
   reminders: {
@@ -298,6 +340,15 @@ export const api = {
       convexQuery<Reminder[]>("reminders:listByOwner", { ownerId, upcomingOnly }),
     listByPet: (ownerId: string, petId: string) =>
       convexQuery<Reminder[]>("reminders:listByPet", { ownerId, petId }),
+    create: (input: {
+      ownerId: string;
+      petId: string;
+      kind: "vaccination" | "medication" | "vet_visit" | "custom";
+      title: string;
+      dueAt: number;
+      relatedVaccinationId?: string;
+      relatedMedicationId?: string;
+    }) => convexMutation<string>("reminders:create", input),
     setStatus: (ownerId: string, reminderId: string, status: "done" | "dismissed") =>
       convexMutation<string>("reminders:setStatus", { ownerId, reminderId, status }),
   },
@@ -356,6 +407,7 @@ export async function uploadDoc(input: {
   petId: string;
   file: File;
   category?: string;
+  notes?: string;
   uploadedBy: string;
 }): Promise<string> {
   const problem = validateDocUpload({ mime: input.file.type, size: input.file.size });
@@ -376,6 +428,7 @@ export async function uploadDoc(input: {
     mime: input.file.type,
     size: input.file.size,
     category: input.category ?? "other",
+    notes: input.notes?.trim() ? input.notes.trim() : undefined,
     uploadedBy: input.uploadedBy,
   });
 }

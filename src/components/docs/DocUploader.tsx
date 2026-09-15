@@ -38,7 +38,7 @@ export function DocUploader({
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [category, setCategory] = useState<string>("vaccine_record");
-  // TODO: picks up a notes field in the UI; uploadDoc has no notes param so this stays client-side only for now.
+  // Notes persist with the document row (documents:create notes arg).
   const [notes, setNotes] = useState("");
   // Drafted vaccine fields from Smart fill. Human confirms via Apply before
   // anything is stored here, and nothing writes to Convex yet.
@@ -140,6 +140,7 @@ export function DocUploader({
         petId: effectivePetId,
         file,
         category,
+        notes,
         uploadedBy: resolvedOwner,
       });
       setStatus(`Saved ${file.name} to the vault.`);

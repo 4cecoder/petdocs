@@ -328,7 +328,24 @@ test.describe("regression: authorization spot-checks", () => {
   test("unauthenticated dashboard routes bounce to sign-in", async ({
     page,
   }) => {
-    for (const path of ["/dashboard", "/dashboard/pets", "/dashboard/share"]) {
+    // Includes the pet tool sub-pages (issue #41): deep links must bounce
+    // to sign-in exactly like the pages they nest under.
+    const petSubroutes = [
+      "vaccinations",
+      "medications",
+      "visits",
+      "documents",
+      "share",
+      "reminders",
+    ]
+      .map((sub) => `/dashboard/pets/pet-x/${sub}`)
+      .concat(["/dashboard/pets/pet-x"]);
+    for (const path of [
+      "/dashboard",
+      "/dashboard/pets",
+      "/dashboard/share",
+      ...petSubroutes,
+    ]) {
       await page.goto(path);
       await expect(page).toHaveURL(/\/sign-in/);
       expect(await getOwnerId(page)).toBeNull();

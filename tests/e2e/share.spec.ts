@@ -16,10 +16,13 @@ test.describe("share: public passport", () => {
     const name = `Maple${Date.now().toString(36)}`;
     await addPetViaUi(page, { name, species: "cat", breed: "E2E Tabby" });
 
-    // ShareButton 3-step wizard lives in the profile's Share tool panel.
+    // ShareButton 3-step wizard, now on the pet's Share tool sub-page.
     await page.getByRole("link", { name: new RegExp(`^${name}`) }).click();
     await expect(page.getByRole("heading", { level: 1, name })).toHaveText(name);
-    await page.getByRole("tab", { name: /Share/ }).click();
+    const petToolNav = page.getByRole("navigation", { name: "Pet tools" });
+    await expect(petToolNav).toBeVisible();
+    await petToolNav.getByRole("link", { name: "Share", exact: true }).click();
+    await expect(page).toHaveURL(/\/dashboard\/pets\/[^/]+\/share$/);
     await page.getByLabel(/Who.s this link for/).fill("E2E Vet");
     await page.getByRole("button", { name: "Continue", exact: true }).first().click();
     await page.getByRole("radio", { name: /7 days/ }).check();
