@@ -5,6 +5,7 @@ import { Suspense, useEffect, useRef, useState, type FormEvent } from "react";
 import { Check, Clock, PawPrint } from "lucide-react";
 import { ConvexHttpError, api, setSession } from "@/lib/api";
 import { ROUTES } from "@/lib/routes";
+import { MadeBySeridian } from "@/components/brand/MadeBySeridian";
 
 type VerifyStatus = "idle" | "verifying" | "success" | "error";
 
@@ -192,7 +193,7 @@ function SignInForm() {
           disabled={busy}
           className="min-h-[48px] rounded-2xl bg-brand-600 px-4 py-3 font-semibold text-white hover:bg-brand-700 disabled:opacity-60 shadow-sm"
         >
-          {sent ? "Resend magic link email" : "Email me a magic link instead"}
+          {sent ? "Send the magic link again" : "Email me a magic link instead"}
         </button>
         {backendDown && (
           <p role="alert" className="text-sm font-medium text-amber-700">
@@ -246,6 +247,9 @@ function SignInForm() {
           </div>
         )}
       </form>
+      <div className="mt-10 flex justify-center">
+        <MadeBySeridian />
+      </div>
     </main>
   );
 }

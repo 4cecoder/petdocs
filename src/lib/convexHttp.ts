@@ -34,7 +34,7 @@ async function callConvex<T>(
   args: Record<string, unknown>,
 ): Promise<T> {
   const base = getConvexUrl();
-  if (!base) throw new ConvexHttpError("Convex is not configured");
+  if (!base) throw new ConvexHttpError("Service is not available right now");
   let res: Response;
   try {
     res = await fetch(`${base}/api/${kind}`, {

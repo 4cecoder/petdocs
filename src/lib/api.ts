@@ -140,6 +140,11 @@ export interface Reminder {
   status: string;
 }
 
+/** Result of contact:submit — mirrors convex/contact.ts. */
+export type ContactSubmitResult =
+  | { ok: true }
+  | { ok: false; reason: "rate_limited" };
+
 /** Mirrors convex/outboxQuota.ts status (daily email quota snapshot). */
 export interface EmailQuotaStatus {
   day: string;
@@ -331,6 +336,17 @@ export const api = {
     }) => convexAction<EmailPassportResult>("passportShare:emailPassport", input),
     listEmails: (ownerId: string) =>
       convexQuery<ShareEmail[]>("passportShare:listEmails", { ownerId }),
+  },
+
+  contact: {
+    submit: (input: {
+      name: string;
+      email: string;
+      message: string;
+      /** Honeypot — leave empty; real users never see this field. */
+      website?: string;
+    }) =>
+      convexMutation<ContactSubmitResult>("contact:submit", input),
   },
 };
 

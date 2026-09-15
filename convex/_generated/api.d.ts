@@ -10,6 +10,7 @@
 
 import type * as admin from "../admin.js";
 import type * as billing from "../billing.js";
+import type * as contact from "../contact.js";
 import type * as crons from "../crons.js";
 import type * as docPipeline from "../docPipeline.js";
 import type * as docPipelineAdmin from "../docPipelineAdmin.js";
@@ -51,6 +52,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   billing: typeof billing;
+  contact: typeof contact;
   crons: typeof crons;
   docPipeline: typeof docPipeline;
   docPipelineAdmin: typeof docPipelineAdmin;

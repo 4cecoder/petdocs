@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PawPrint } from "lucide-react";
 import { ROUTES } from "@/lib/routes";
+import { MadeBySeridian } from "@/components/brand/MadeBySeridian";
 
 export function Footer() {
   return (
@@ -17,12 +18,15 @@ export function Footer() {
           <Link href={ROUTES.pricing} className="hover:text-ink">
             Pricing
           </Link>
+          <Link href={ROUTES.contact} className="hover:text-ink">
+            Contact
+          </Link>
           <Link href={ROUTES.signIn} className="hover:text-ink">
             Sign in
           </Link>
         </nav>
       </div>
-      <div className="mx-auto max-w-6xl px-6 pb-6">
+      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 pb-6 md:flex-row">
         <nav
           aria-label="Legal"
           className="flex items-center justify-center gap-3 text-xs text-ink-soft md:justify-start"
@@ -39,6 +43,7 @@ export function Footer() {
             Refunds
           </Link>
         </nav>
+        <MadeBySeridian />
       </div>
     </footer>
   );

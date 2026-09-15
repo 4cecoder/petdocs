@@ -6,6 +6,7 @@ import { PawPrint } from "lucide-react";
 import { DASHBOARD_NAV, isNavItemActive } from "@/lib/dashboardNav";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
+import { MadeBySeridian } from "@/components/brand/MadeBySeridian";
 import { useDashboardAuth } from "./DashboardGuard";
 import { NotificationsBell } from "./NotificationsBell";
 
@@ -59,6 +60,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </Link>
             );
           })}
+          <div className="mt-4 border-t border-ink/10 pt-4">
+            <MadeBySeridian />
+          </div>
         </nav>
 
         <main className="min-w-0 flex-1 pb-20 md:pb-6">{children}</main>

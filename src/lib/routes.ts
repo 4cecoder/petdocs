@@ -10,6 +10,7 @@ export const ROUTES = {
   home: "/",
   howItWorks: "/how-it-works",
   pricing: "/pricing",
+  contact: "/contact",
   legal: {
     terms: "/legal/terms",
     privacy: "/legal/privacy",

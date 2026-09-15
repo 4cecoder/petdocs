@@ -384,6 +384,23 @@ export default defineSchema({
     .index("by_owner", ["ownerId"])
     .index("by_owner_and_read", ["ownerId", "readAt"]),
 
+  /**
+   * Public contact-form submissions (/contact). Store-first: every accepted
+   * message is persisted here even when the staff-inbox forward fails, so
+   * nothing is lost if mail is not configured yet. Rate capped in
+   * convex/contact.ts (per-email daily cap + global daily cap).
+   */
+  contactMessages: defineTable({
+    name: v.string(),
+    email: v.string(),
+    message: v.string(),
+    status: v.union(v.literal("new"), v.literal("handled")),
+    forwarded: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_email", ["email"])
+    .index("by_createdAt", ["createdAt"]),
+
   // Daily outbound email counter (one row per UTC day, e.g. day "2026-09-15").
   // Keyed by day so rollover at UTC midnight is just a fresh row at sent=0.
   outboxQuota: defineTable({
