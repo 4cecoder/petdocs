@@ -9,6 +9,7 @@ This directory contains competitive teardowns, product benchmarks, authenticated
 | [petlita-lovable.md](petlita-lovable.md) | **Petlia Teardown (`petlia.lovable.app` / `petlia.app`)** | Deep-dive product teardown, technical stack analysis (Lovable + Vite + Supabase + Pawla AI), head-to-head feature matrix, and architectural comparison with PetDocs. | Complete |
 | [petlia.md](petlia.md) | **Petlia Live In-App Session Notes** | Live authenticated user session audit (pre-launch waitlist, raw file upload limitations, Google-only auth, broken profile nav). | Complete |
 | [product-direction.md](product-direction.md) | **Product Direction & Strategic Roadmap** | Owner notes from 2026-09-15: Two-sided clinic platform, structured signed documents, enterprise inbound API, and relationship-led pilots. | Active |
+| [integrations.md](integrations.md) | **Integration Research: Microchip Registries + Free APIs** | Peeva (partnership-only), ChipnDoodle (real free API, weak US coverage), US registry API landscape, breed DBs, VetVerifi vaccine verification, rabies/pet-law standards, recommendation matrix, and the ChipnDoodle-first Convex integration sketch. (#38) | Complete |
 | [screenshots/](screenshots/) | **Competitor UI Screenshots & Extracts** | In-app screen captures (dashboard, records, reminders, settings, pet profile) and scraped DOM text from live competitor audits. | Archive |
 
 ## Strategic Objectives for PetDocs
