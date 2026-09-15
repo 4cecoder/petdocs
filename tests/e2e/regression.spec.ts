@@ -19,13 +19,10 @@ import {
  *
  * Status legend:
  *   - Green tests  : the guard already exists on main; these pin it.
- *   - test.fail()  : the bug is NOT yet fixed on main (issues #17/#18,
- *                    fix branch sec/auth-hardening). Following the exact
- *                    pattern of auth.spec.ts, the test is ENCODED as an
- *                    expected failure with the issue reference. The moment
- *                    the fix lands these tests will pass, Playwright will
- *                    report them as unexpected passes, and the test.fail()
- *                    call must be deleted (never delete the test itself).
+ *   - Fixed bugs   : tests written while a bug was still open are flipped
+ *                    to plain (passing) assertions the moment the fix
+ *                    lands; the bug reference stays in the annotation for
+ *                    history. Never delete a regression test itself.
  *
  * Backend-exercising specs drive the REAL dev deployment through the
  * running Next server, exactly like tests/e2e/helpers.ts documents:
@@ -34,11 +31,17 @@ import {
  * dev-only Direct Sign-In Link panel as the only source of the raw token.
  */
 
-const DIRECT_SIGN_IN_BUG =
-  "BUG (#17/#18): magicLink:directSignIn (convex/magicLink.ts) bypasses " +
-  "mailbox ownership; sign-in/page.tsx falls back to it for invalid/used/" +
-  "expired tokens, so these strict negative assertions cannot pass yet. " +
-  "Remove the test.fail() call when the bypass is removed (keep the test).";
+/**
+ * FIXED in #30 (sec/auth-hardening): magicLink:directSignIn (convex/
+ * magicLink.ts) used to bypass mailbox ownership and sign-in/page.tsx
+ * fell back to it for invalid/used/expired tokens. The bypass is gone
+ * and single-use verification is enforced, so these strict negative
+ * assertions run as ordinary (passing) regression guards now.
+ */
+const DIRECT_SIGN_IN_FIXED =
+  "FIXED (#17/#18, via #30): magic-link tokens are single-use, expire " +
+  "honestly, and are scoped to the email that requested them. Kept as a " +
+  "permanent regression guard.";
 
 // ---------------------------------------------------------------------------
 // Public Convex HTTP API helpers (same wire format the product client uses)
@@ -133,9 +136,8 @@ function uniqueName(prefix: string): string {
 
 test.describe("regression: magic-link negatives", () => {
   test("a used magic link shows an honest error and never grants access", {
-    annotation: [{ type: "issue", description: DIRECT_SIGN_IN_BUG }],
+    annotation: [{ type: "issue", description: DIRECT_SIGN_IN_FIXED }],
   }, async ({ page }) => {
-    test.fail(true, DIRECT_SIGN_IN_BUG);
     const { email, token, ownerId } = await signUpViaUi(page, "regr-reuse");
     expect(ownerId).toMatch(/^[a-z0-9]+$/);
     const firstUse = magicTokenRow(email);
@@ -160,9 +162,8 @@ test.describe("regression: magic-link negatives", () => {
   });
 
   test("an expired magic link is rejected", {
-    annotation: [{ type: "issue", description: DIRECT_SIGN_IN_BUG }],
+    annotation: [{ type: "issue", description: DIRECT_SIGN_IN_FIXED }],
   }, async ({ page }) => {
-    test.fail(true, DIRECT_SIGN_IN_BUG);
     // Seed a genuinely expired row via the dev CLI (no convex code changed).
     const email = uniqueEmail("regr-expired");
     const token = storeExpiredMagicToken(email);
@@ -179,9 +180,8 @@ test.describe("regression: magic-link negatives", () => {
   });
 
   test("a magic link is rejected when opened with a different email", {
-    annotation: [{ type: "issue", description: DIRECT_SIGN_IN_BUG }],
+    annotation: [{ type: "issue", description: DIRECT_SIGN_IN_FIXED }],
   }, async ({ page }) => {
-    test.fail(true, DIRECT_SIGN_IN_BUG);
     // Mint a real token for email A, but do NOT click its link.
     const { email, token } = await requestMagicLinkViaUi(
       page,
@@ -210,6 +210,9 @@ test.describe("regression: magic-link negatives", () => {
 // ---------------------------------------------------------------------------
 
 test.describe("regression: authorization spot-checks", () => {
+  // Two full signups + wizard + ~10 backend round-trips against the shared
+  // dev deployment; 60s default is not enough when workers run in parallel.
+  test.setTimeout(120_000);
   /**
    * Two real accounts, one pet each, driven end to end. A share capability
    * for pet A must resolve pet A only, and owner B must be unable to mint,
