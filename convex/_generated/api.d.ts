@@ -17,6 +17,7 @@ import type * as magicLink from "../magicLink.js";
 import type * as mail from "../mail.js";
 import type * as medications from "../medications.js";
 import type * as notifications from "../notifications.js";
+import type * as outboxQuota from "../outboxQuota.js";
 import type * as ownership from "../ownership.js";
 import type * as pets from "../pets.js";
 import type * as privacy from "../privacy.js";
@@ -44,6 +45,7 @@ declare const fullApi: ApiFromModules<{
   mail: typeof mail;
   medications: typeof medications;
   notifications: typeof notifications;
+  outboxQuota: typeof outboxQuota;
   ownership: typeof ownership;
   pets: typeof pets;
   privacy: typeof privacy;

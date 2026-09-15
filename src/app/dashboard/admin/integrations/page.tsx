@@ -15,6 +15,8 @@ import {
 import { convexMutation, convexQuery } from "@/lib/convexHttp";
 import { getSessionEmail } from "@/lib/api";
 import { ROUTES } from "@/lib/routes";
+import { humanDuration, msUntilUtcMidnight, utcDayKey } from "@/lib/utils";
+import { useToast } from "@/components/ui/toast";
 
 type MeRole = "owner" | "support" | "admin" | "superadmin";
 
@@ -26,10 +28,19 @@ interface Me {
   createdAt: number;
 }
 
+interface QuotaStatus {
+  day: string;
+  sent: number;
+  limit: number;
+  remaining: number;
+  exhausted: boolean;
+}
+
 interface ResendStatus {
   keySet: boolean;
   fromSet: boolean;
   from?: string;
+  quota?: QuotaStatus;
 }
 
 interface IntegrationsStatus {
@@ -58,7 +69,54 @@ function StatusLine({ set, label }: { set: boolean; label: string }) {
   );
 }
 
+/**
+ * Daily quota meter: used/limit with a fill bar. Colors escalate green →
+ * amber (≥70%) → red (exhausted). Reset time is UTC midnight, where the
+ * backend's counter rolls to a fresh day key.
+ */
+function QuotaMeter({ quota }: { quota: QuotaStatus }) {
+  const pct = Math.min(
+    100,
+    Math.round((quota.sent / Math.max(1, quota.limit)) * 100),
+  );
+  const barColor =
+    quota.exhausted || pct >= 100
+      ? "bg-red-500"
+      : pct >= 70
+        ? "bg-amber-500"
+        : "bg-green-500";
+  return (
+    <div className="mt-3 rounded-xl bg-cream p-3">
+      <div className="flex items-center justify-between gap-2 text-sm">
+        <span className="font-semibold">Daily quota</span>
+        <span className="tabular-nums">
+          {quota.sent}/{quota.limit} sent
+        </span>
+      </div>
+      <div
+        role="progressbar"
+        aria-label="Daily email quota used"
+        aria-valuemin={0}
+        aria-valuemax={quota.limit}
+        aria-valuenow={quota.sent}
+        className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-white"
+      >
+        <div
+          className={`h-full rounded-full transition-[width] ${barColor}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <p className="mt-1.5 text-xs text-ink-soft">
+        {quota.exhausted
+          ? "At capacity. Email sending pauses until the counter resets at UTC midnight."
+          : `Resets at UTC midnight (in ~${humanDuration(msUntilUtcMidnight())}).`}
+      </p>
+    </div>
+  );
+}
+
 export default function AdminIntegrationsPage() {
+  const toast = useToast();
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,7 +146,9 @@ export default function AdminIntegrationsPage() {
           try {
             const s = await convexQuery<IntegrationsStatus>(
               "integrations:status",
-              { adminEmail: email },
+              // Day key scopes the quota snapshot; the query itself never
+              // reads the wall clock.
+              { adminEmail: email, day: utcDayKey() },
             );
             if (cancelled) return;
             setData(s);
@@ -176,6 +236,16 @@ export default function AdminIntegrationsPage() {
         to,
       });
       setSendStatus("Test email queued. Check the inbox in a minute.");
+      // Honest heads-up when the day's budget is already spent: the test is
+      // queued but Resend will refuse it until the UTC reset.
+      if (data?.resend.quota?.exhausted) {
+        toast.show({
+          title: "Email queue is at capacity",
+          description:
+            "The test email is queued, but delivery may wait until the daily quota resets at UTC midnight.",
+          variant: "warning",
+        });
+      }
     } catch {
       setSendStatus("Could not queue that test. Check the address.");
     } finally {
@@ -235,6 +305,9 @@ export default function AdminIntegrationsPage() {
                   ? `Sending as ${data.resend.from}. Magic links and reminders are live.`
                   : "Add the missing value in Convex env, then reload."}
               </p>
+              {data.resend.quota ? (
+                <QuotaMeter quota={data.resend.quota} />
+              ) : null}
               <a
                 href="https://resend.com/emails"
                 target="_blank"

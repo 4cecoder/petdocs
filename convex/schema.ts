@@ -180,6 +180,7 @@ export default defineSchema({
       v.literal("done"),
       v.literal("dismissed"),
     ),
+    queuedNotifiedAt: v.optional(v.number()),
     relatedVaccinationId: v.optional(v.id("vaccinations")),
     relatedMedicationId: v.optional(v.id("medications")),
     relatedVisitId: v.optional(v.id("vetVisits")),
@@ -298,6 +299,7 @@ export default defineSchema({
     kind: v.union(
       v.literal("passport_view"),
       v.literal("reminder_sent"),
+      v.literal("reminder_queued"),
       v.literal("claim_filed"),
       v.literal("inbound_mail"),
       v.literal("transfer_redeemed"),
@@ -311,4 +313,13 @@ export default defineSchema({
   })
     .index("by_owner", ["ownerId"])
     .index("by_owner_and_read", ["ownerId", "readAt"]),
+
+  // Daily outbound email counter (one row per UTC day, e.g. day "2026-09-15").
+  // Keyed by day so rollover at UTC midnight is just a fresh row at sent=0.
+  outboxQuota: defineTable({
+    day: v.string(),
+    sent: v.number(),
+    exhaustedAt: v.optional(v.number()),
+    updatedAt: v.number(),
+  }).index("by_day", ["day"]),
 });

@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState, type FormEvent } from "react";
-import { Check, PawPrint } from "lucide-react";
+import { Check, Clock, PawPrint } from "lucide-react";
 import { ConvexHttpError, api, setSession } from "@/lib/api";
 import { ROUTES } from "@/lib/routes";
 
@@ -34,6 +34,10 @@ function SignInForm() {
   // replacement link after a failure needs just one tap.
   const [email, setEmail] = useState(() => linkEmail ?? "");
   const [sent, setSent] = useState(false);
+  // Honest delivery state: when the daily email quota is spent we still say
+  // { ok: true } happened (anti-enumeration), but tell the user the inbox
+  // delivery may be delayed instead of "check your inbox".
+  const [atCapacity, setAtCapacity] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [directLink, setDirectLink] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -102,6 +106,7 @@ function SignInForm() {
     setFormError(null);
     setBackendDown(false);
     setDirectLink(null);
+    setAtCapacity(false);
     setSubmitting(true);
     try {
       const origin =
@@ -109,6 +114,17 @@ function SignInForm() {
       const res = await api.auth.requestMagicLink(email.trim(), origin);
       if (res.previewUrl) {
         setDirectLink(res.previewUrl);
+      }
+      // Quota exhaustion is global (not account-specific), so surfacing it
+      // leaks nothing about who has an account. Best-effort query: if the
+      // status call fails we fall back to the regular "check your inbox".
+      try {
+        const quota = await api.email.quotaStatus();
+        if (quota.exhausted) {
+          setAtCapacity(true);
+        }
+      } catch {
+        /* status unavailable: keep the default success copy */
       }
       setSent(true);
     } catch (err) {
@@ -190,10 +206,25 @@ function SignInForm() {
         )}
         <p role="status" aria-live="polite" className="text-sm text-ink-soft">
           {sent && !backendDown ? (
-            <span className="inline-flex items-center gap-1.5">
-              <Check size={16} aria-hidden="true" /> Check your inbox. Click
-              the link to sign in.
-            </span>
+            atCapacity ? (
+              <span className="inline-flex items-start gap-1.5 text-amber-700">
+                <Clock
+                  size={16}
+                  aria-hidden="true"
+                  className="mt-0.5 shrink-0"
+                />
+                <span>
+                  Email delivery is at capacity right now. Your link is still
+                  valid, so try again shortly; the daily counter resets at
+                  midnight UTC.
+                </span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5">
+                <Check size={16} aria-hidden="true" /> Check your inbox. Click
+                the link to sign in.
+              </span>
+            )
           ) : (
             " "
           )}
