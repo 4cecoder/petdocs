@@ -1,3 +1,8 @@
+/* Cascade-layer order for @seridian/ui-kit: declare its layer FIRST so any
+   app utility (e.g. `.hidden` vs kit's own `.hidden`) always wins once the
+   kit stylesheet is imported into `seridian-uikit` by dashboard.css. */
+@layer seridian-uikit;
+
 @import "tailwindcss";
 
 @theme {
