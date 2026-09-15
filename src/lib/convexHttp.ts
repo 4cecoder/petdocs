@@ -15,9 +15,16 @@ export class ConvexHttpError extends Error {
   }
 }
 
+const PROD_FALLBACK_URL = "https://hallowed-falcon-806.convex.cloud";
+
 /** Deployment URL or null when unconfigured (renders demo/empty states). */
 export function getConvexUrl(): string | null {
-  const url = process.env.NEXT_PUBLIC_CONVEX_URL;
+  const isBrowser = typeof window !== "undefined";
+  const url =
+    process.env.NEXT_PUBLIC_CONVEX_URL ||
+    (isBrowser && window.location.hostname.includes("seridian.dev")
+      ? PROD_FALLBACK_URL
+      : null);
   return url && url.startsWith("http") ? url : null;
 }
 

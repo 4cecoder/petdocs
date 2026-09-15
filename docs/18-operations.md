@@ -18,10 +18,10 @@ Set each key on every Convex deployment. Convex env only, never Netlify. Never c
 
 ```bash
 bunx convex env set RESEND_API_KEY re_your_key
-bunx convex env set RESEND_FROM "PetDocs <hello@yourdomain.com>"
+bunx convex env set RESEND_FROM "PetDocs <no-reply@seridian.dev>"
 bunx convex env set RESEND_WEBHOOK_SECRET whsec_your_secret
-bunx convex env set SITE_URL https://your-app-url
-bunx convex env set ADMIN_EMAILS "you@yourdomain.com"
+bunx convex env set SITE_URL https://petdocs.seridian.dev
+bunx convex env set ADMIN_EMAILS "angela@seridian.dev,dev@seridian.dev"
 ```
 
 ## Webhook endpoints
@@ -35,11 +35,11 @@ Base is the Convex HTTP Actions URL from the Convex dashboard. Copy paths from t
 
 ## Test inbox and test email
 
-1. Create mailboxes in `/dashboard/admin/mail`: `support@` and `hello@` on your domain.
-2. Send a personal email to `support@yourdomain.com`. It appears in the team inbox within a minute.
+1. Create mailboxes in `/dashboard/admin/mail`: `support@seridian.dev` and `hello@seridian.dev` on your domain.
+2. Send a personal email to `support@seridian.dev`. It appears in the team inbox within a minute.
 3. If it misses: check Resend Inbound logs, Convex logs for verify failures, secret on same deployment as URL.
-4. Superadmin test: open `/dashboard/admin/integrations`, enter your Resend account email, Send test.
-5. Until domain is verified, Resend delivers only to the account owner address. Test with that address first.
+4. Superadmin test: open `/dashboard/admin/integrations`, enter your email, click Send test.
+5. With `seridian.dev` verified in Resend, outbound emails deliver to any external recipient in production.
 
 ## Notifications, who gets what
 

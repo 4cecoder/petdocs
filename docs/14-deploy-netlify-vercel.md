@@ -26,7 +26,7 @@ Backend secrets (`RESEND_API_KEY`, `RESEND_FROM`) are Convex-only. Set per Conve
 
 ```bash
 bunx convex env set RESEND_API_KEY "re_xxx" --deployment demo
-bunx convex env set RESEND_FROM "PetDocs <hello@yourdomain.com>" --deployment demo
+bunx convex env set RESEND_FROM "PetDocs <no-reply@seridian.dev>" --deployment demo
 ```
 
 ## 2. Netlify path
@@ -74,19 +74,24 @@ bunx convex deploy  # demo/prod, human-run only, never from CI
 
 ## 5. Custom domains and sender alignment
 
-- Add the custom domain in the host (Netlify: Domain settings, Vercel: Project Settings > Domains) with DNS as instructed.
-- Set `SITE_URL` (app base URL used in links/emails) to the exact public URL of that environment.
-- Set `RESEND_FROM` to an address on the verified sending domain for that environment (for example `PetDocs <hello@yourdomain.com>`).
-- Mismatch symptom: magic links or passport links point at the wrong host, or Resend rejects the sender. Fix by realigning all three to the same environment domain.
+PetDocs production runs on **`https://petdocs.seridian.dev`** with transactional email sending from **`PetDocs <no-reply@seridian.dev>`** (verified on `seridian.dev`).
+
+- Add the custom domain in the host (Netlify: Domain settings, Vercel: Project Settings > Domains) with DNS CNAME / ALIAS as instructed.
+- Set `SITE_URL` (app base URL used in magic links and reminders) to the exact public URL of that environment.
+  - Production: `SITE_URL=https://petdocs.seridian.dev`
+  - Local dev: `SITE_URL=http://localhost:3000`
+- Set `RESEND_FROM` to an address on the verified sending domain:
+  - Production / Dev: `RESEND_FROM="PetDocs <no-reply@seridian.dev>"`
+- Mismatch symptom: magic links or passport links point at the wrong host (`localhost` instead of production), or Resend rejects the sender. Fix by realigning `SITE_URL` and `RESEND_FROM` in your Convex deployment environment variables.
 
 ## 6. Preview URL x backend matrix
 
-| Frontend | `NEXT_PUBLIC_CONVEX_URL` points at | Use |
-|---|---|---|
-| Localhost (`bun run dev`) | dev Convex deployment | Daily dev |
-| PR preview (Netlify Deploy Preview or Vercel Preview) | dev, or demo for data-safe review | Code review, never prod data |
-| Branch deploy (`demo` branch) | demo Convex deployment | Stakeholder demo and seed data |
-| Production (`main`) | prod Convex deployment | Real users only |
+| Frontend | Live URL / Host | `NEXT_PUBLIC_CONVEX_URL` points at | Use |
+|---|---|---|---|
+| Localhost (`bun run dev`) | `http://localhost:3000` | dev Convex deployment | Daily dev |
+| PR preview (Netlify Deploy Preview or Vercel Preview) | ephemeral preview URL | dev, or demo for data-safe review | Code review, never prod data |
+| Branch deploy (`demo` branch) | `demo.petdocs.seridian.dev` (or branch URL) | demo Convex deployment | Stakeholder demo and seed data |
+| Production (`main`) | **`https://petdocs.seridian.dev`** | prod Convex deployment | Real users only |
 
 Rule: previews never point at prod Convex. Production frontend only points at prod Convex.
 

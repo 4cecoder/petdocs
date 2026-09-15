@@ -10,6 +10,9 @@ For Agnela (stakeholder — business model owner). Built for the pet industry.
 
 > Upload once, prove vaccination in <30s, share via link/QR, never miss a booster.
 
+**Live Production:** [https://petdocs.seridian.dev](https://petdocs.seridian.dev)  
+**Sender:** `PetDocs <no-reply@seridian.dev>` (verified domain `seridian.dev` via Resend)
+
 Shoes boxes + email threads + 3 vet portals → one vault + shareable pet passport.
 
 ## MVP scope (v0.1, 6–8 wks)
@@ -34,6 +37,9 @@ Explicitly out of MVP: OCR auto-extract (reserve field), wallet passes, multi-ow
 | [docs/04-data-model.md](docs/04-data-model.md) | Convex schema + queries/mutations |
 | [docs/05-ux-frontend.md](docs/05-ux-frontend.md) | Routes, screens, components, onboarding |
 | [docs/06-roadmap.md](docs/06-roadmap.md) | Build order, phases v0.1→v1.0 |
+| [docs/10-resend-setup.md](docs/10-resend-setup.md) | Resend email setup, magic links, `no-reply@seridian.dev` |
+| [docs/14-deploy-netlify-vercel.md](docs/14-deploy-netlify-vercel.md) | Netlify/Vercel deploy, custom domains, live site |
+| [research/README.md](research/README.md) | Competitive intelligence & teardowns (Petlia, Lovable, etc.) |
 
 ## Quickstart (once scaffolded)
 
@@ -48,8 +54,10 @@ and [AGENTS.md](AGENTS.md) for bun-only rules + gates.
 
 ## Status
 
-Repo: [github.com/4cecoder/petdocs](https://github.com/4cecoder/petdocs) (public — Actions build jobs free).
-Docs index: [docs/README.md](docs/README.md) (docs/01–07).
+- **Live Production:** [https://petdocs.seridian.dev](https://petdocs.seridian.dev)
+- **Repo:** [github.com/4cecoder/petdocs](https://github.com/4cecoder/petdocs) (public — Actions build jobs free).
+- **Docs index:** [docs/README.md](docs/README.md) (comprehensive product and engineering docs).
+- **Research index:** [research/README.md](research/README.md) (competitive teardowns, including [petlia.lovable.app](research/petlita-lovable.md)).
 
 Scaffolded: web shell (marketing + dashboard + `/p/[shareToken]`) + Convex
 schema/functions + magic-link auth + seed + CI. Next: `android-app/` +
@@ -59,7 +67,7 @@ Flow-by-flow parity (web ↔ Android ↔ backend): [docs/07-feature-parity.md](d
 
 ## Deploy
 
-Standard Next.js 16 app, deployable to Netlify and Vercel with zero code changes. Full guide: [docs/14-deploy-netlify-vercel.md](docs/14-deploy-netlify-vercel.md).
+Standard Next.js 16 app deployed to production at **`https://petdocs.seridian.dev`**. Deployable to Netlify and Vercel with zero code changes. Full guide: [docs/14-deploy-netlify-vercel.md](docs/14-deploy-netlify-vercel.md).
 
 ```bash
 bun install --frozen-lockfile

@@ -35,6 +35,7 @@ function SignInForm() {
   const [email, setEmail] = useState(() => linkEmail ?? "");
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [directLink, setDirectLink] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [backendDown, setBackendDown] = useState(false);
   const [verifyStatus, setVerifyStatus] = useState<VerifyStatus>(
@@ -94,11 +95,17 @@ function SignInForm() {
     e.preventDefault();
     setFormError(null);
     setBackendDown(false);
+    setDirectLink(null);
     setSubmitting(true);
     try {
-      // Always resolves { ok: true } (anti-enumeration on the backend), so a
-      // "check your inbox" confirmation is correct for every valid submit.
-      await api.auth.requestMagicLink(email.trim());
+      // Pass the client's current origin so magic links match the exact
+      // port/host in dev, preview, or custom domains.
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : undefined;
+      const res = await api.auth.requestMagicLink(email.trim(), origin);
+      if (res.previewUrl) {
+        setDirectLink(res.previewUrl);
+      }
       setSent(true);
     } catch (err) {
       if (err instanceof ConvexHttpError) {
@@ -188,6 +195,22 @@ function SignInForm() {
             " "
           )}
         </p>
+        {directLink && (
+          <div className="rounded-2xl border border-brand-200 bg-brand-50/60 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-brand-700">
+              Direct Sign-In Link
+            </p>
+            <p className="mt-1 text-xs text-ink-soft">
+              Skip email delivery and complete sign-in immediately:
+            </p>
+            <a
+              href={directLink}
+              className="mt-3 inline-flex items-center justify-center rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700"
+            >
+              Sign in directly &rarr;
+            </a>
+          </div>
+        )}
       </form>
     </main>
   );

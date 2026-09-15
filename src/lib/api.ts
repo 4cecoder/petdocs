@@ -12,9 +12,7 @@ import {
 } from "./convexHttp";
 import { validateDocUpload } from "./validators";
 
-export const isBackendConfigured =
-  typeof process !== "undefined" &&
-  !!process.env.NEXT_PUBLIC_CONVEX_URL;
+export const isBackendConfigured = !!getConvexUrl();
 
 // ---------------------------------------------------------------------------
 // Session (demo shape until magic-link verify lands: email + ownerId)
@@ -150,8 +148,11 @@ export interface Passport {
 // ---------------------------------------------------------------------------
 export const api = {
   auth: {
-    requestMagicLink: (email: string) =>
-      convexAction<{ ok: true }>("magicLink:requestMagicLink", { email }),
+    requestMagicLink: (email: string, origin?: string) =>
+      convexAction<{ ok: boolean; previewUrl?: string }>(
+        "magicLink:requestMagicLink",
+        origin ? { email, origin } : { email },
+      ),
     verifyMagicLink: (email: string, token: string) =>
       convexMutation<{ ok: true; ownerId: string } | { ok: false; error: string }>(
         "magicLink:verifyMagicLink",
@@ -173,6 +174,14 @@ export const api = {
       weightKg?: number;
       microchipId?: string;
     }) => convexMutation<string>("pets:create", input),
+    update: (input: {
+      ownerId: string;
+      petId: string;
+      name?: string;
+      breed?: string;
+      weightKg?: number;
+      microchipId?: string;
+    }) => convexMutation<string>("pets:update", input),
     archive: (ownerId: string, petId: string) =>
       convexMutation<string>("pets:archive", { ownerId, petId }),
   },

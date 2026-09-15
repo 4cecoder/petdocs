@@ -40,9 +40,9 @@ Set each key on every Convex deployment. Convex env only, never Netlify:
 
 ```bash
 bunx convex env set RESEND_API_KEY re_your_key
-bunx convex env set RESEND_FROM "PetDocs <hello@yourdomain.com>"
+bunx convex env set RESEND_FROM "PetDocs <no-reply@seridian.dev>"
 bunx convex env set RESEND_WEBHOOK_SECRET whsec_your_secret
-bunx convex env set ADMIN_EMAILS "you@yourdomain.com"
+bunx convex env set ADMIN_EMAILS "angela@seridian.dev"
 ```
 
 * `RESEND_API_KEY`: send and reply delivery.

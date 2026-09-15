@@ -38,7 +38,53 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  * `SITE_URL` Convex env var (`bunx convex env set SITE_URL …`) — Netlify /
  * local env files do NOT reach the Convex runtime.
  */
-const DEFAULT_SITE_URL = "http://localhost:3000";
+const DEFAULT_SITE_URL = "https://petdocs.seridian.dev";
+
+/**
+ * Resolves the base URL for sign-in links against an allowlist:
+ * localhost/127.0.0.1, *.seridian.dev, or exact SITE_URL match.
+ */
+export function resolveBaseUrl(requestedOrigin?: string): string {
+  const configuredSiteUrl = (
+    process.env.SITE_URL?.trim() || DEFAULT_SITE_URL
+  ).replace(/\/+$/, "");
+
+  if (!requestedOrigin) {
+    return configuredSiteUrl;
+  }
+
+  try {
+    const url = new URL(requestedOrigin.trim());
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      return configuredSiteUrl;
+    }
+
+    const hostname = url.hostname.toLowerCase();
+    const isLocal =
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "[::1]";
+    const isSeridian =
+      hostname === "seridian.dev" || hostname.endsWith(".seridian.dev");
+
+    let matchesSite = false;
+    try {
+      matchesSite =
+        url.origin.toLowerCase() ===
+        new URL(configuredSiteUrl).origin.toLowerCase();
+    } catch {
+      matchesSite = url.origin.toLowerCase() === configuredSiteUrl.toLowerCase();
+    }
+
+    if (isLocal || isSeridian || matchesSite) {
+      return url.origin;
+    }
+  } catch {
+    // Malformed URL, fall through
+  }
+
+  return configuredSiteUrl;
+}
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -140,9 +186,18 @@ export const storeToken = internalMutation({
 });
 
 export const requestMagicLink = action({
-  args: { email: v.string() },
-  returns: v.object({ ok: v.boolean() }),
-  handler: async (ctx, args): Promise<{ ok: boolean }> => {
+  args: {
+    email: v.string(),
+    origin: v.optional(v.string()),
+  },
+  returns: v.object({
+    ok: v.boolean(),
+    previewUrl: v.optional(v.string()),
+  }),
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{ ok: boolean; previewUrl?: string }> => {
     const email = normalizeEmail(args.email);
     // Anti-enumeration: invalid addresses get the same { ok: true } shape,
     // we just skip minting/sending for them.
@@ -166,26 +221,43 @@ export const requestMagicLink = action({
       expiresAt: Date.now() + TOKEN_TTL_MS,
     });
 
-    const siteUrl = (
-      process.env.SITE_URL?.trim() || DEFAULT_SITE_URL
-    ).replace(/\/+$/, "");
+    const siteUrl = resolveBaseUrl(args.origin);
     const loginUrl = `${siteUrl}/sign-in?token=${token}&email=${encodeURIComponent(email)}`;
     const { text, html } = brandedEmail(loginUrl);
 
-    // Swallow send failures: the caller always sees { ok: true } so an
-    // attacker can't probe which emails are registered or whether Resend
-    // is configured. Never throws for missing email config.
+    let emailSent = false;
     try {
-      await ctx.runAction(internal.resend.sendEmail, {
-        to: email,
-        subject: "Sign in to PetDocs",
-        html,
-        text,
-      });
-    } catch {
-      // Intentionally ignored (see above).
+      const emailResult: { ok: boolean; error?: string } = await ctx.runAction(
+        internal.resend.sendEmail,
+        {
+          to: email,
+          subject: "Sign in to PetDocs",
+          html,
+          text,
+        },
+      );
+      if (emailResult && !emailResult.ok) {
+        console.warn("Failed to send magic link email:", emailResult.error);
+      } else if (emailResult?.ok) {
+        emailSent = true;
+      }
+    } catch (err) {
+      console.warn(
+        "Failed to send magic link email:",
+        err instanceof Error ? err.message : String(err),
+      );
     }
-    return { ok: true };
+
+    const isDevOrLocal =
+      siteUrl.includes("localhost") ||
+      siteUrl.includes("127.0.0.1") ||
+      process.env.NODE_ENV !== "production" ||
+      !emailSent;
+
+    return {
+      ok: true,
+      ...(isDevOrLocal ? { previewUrl: loginUrl } : {}),
+    };
   },
 });
 

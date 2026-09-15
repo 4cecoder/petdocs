@@ -31,8 +31,9 @@ All product and engineering docs. Start with 00, then follow your path below.
 | [17-company-email.md](17-company-email.md) | Shared team inbox, inbound routing, limits. |
 | [18-operations.md](18-operations.md) | Superadmin operations runbook, incoming, lands in parallel. |
 | [CHANGELOG.md](../CHANGELOG.md) | Release notes per deploy, incoming, lands in parallel. |
+| [../research/README.md](../research/README.md) | Competitive intelligence, benchmarks, and teardowns (Petlia, etc.). |
 
-Notes: 13 has no doc file today and is held as a reserved number. 18 and CHANGELOG are incoming and land in parallel with this index.
+Notes: 13 has no doc file today and is held as a reserved number. 18 and CHANGELOG are incoming and land in parallel with this index. Competitor research lives in `../research/`.
 
 ## How docs map to GitHub issues and milestones
 

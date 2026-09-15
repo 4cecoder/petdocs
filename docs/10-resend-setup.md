@@ -1,101 +1,148 @@
 # 10 — Resend Setup (magic links + reminders)
 
-## For Agnela (product owner, no code needed)
+## Active Production Configuration
 
-You own two things. Engineering owns the rest.
+| Setting | Value | Notes |
+|---|---|---|
+| **Production Site URL** | `https://petdocs.seridian.dev` | `SITE_URL` env on production Convex |
+| **Verified Sending Domain** | `seridian.dev` | Verified via DNS (DKIM, SPF, DMARC) in Resend |
+| **Sender Name & Address** | `PetDocs <no-reply@seridian.dev>` | Configured via `RESEND_FROM` |
+| **Email Types Handled** | User registration, magic links, setup, reminders | Triggered by `convex/resend.ts` |
 
-1. A free Resend account at resend.com. Copy the API key (starts with
-   `re_`) and send it to engineering over a private channel. That alone
-   unlocks test mode: magic links reach your own inbox in about 30 seconds,
-   so you can feel the whole flow today.
-2. The sending domain. In Resend, add the domain petdocs sends from, add the
-   DNS records Resend shows (whoever holds the domain DNS can do this in
-   about 15 minutes), press Verify. Then tell engineering which address to
-   send from, like `PetDocs <hello@yourdomain.com>`.
+Registration and setup emails originate exclusively from **`PetDocs <no-reply@seridian.dev>`**. Because `seridian.dev` is fully verified, emails deliver to any external recipient without test-mode restrictions.
 
-How you know it works: the admin dashboard shows a green
-"Sending as ..." card. If it says no key yet, magic links silently do
-nothing, which is expected until step 1 is done.
+---
 
-## Technical detail
+## For Angela (Product Owner Overview)
 
-petdocs sends two emails through Resend, both via the shared sender
-`convex/resend.ts` (`sendEmail` internal action):
+Resend powers all transactional email for PetDocs:
 
-- Magic links: `convex/magicLink.ts` `requestMagicLink` (subject `Sign in to PetDocs`)
-- Reminders: `convex/reminders.ts` `sendDue` (subject `Reminder: {title} for {pet}`)
+1. **Passwordless Sign-In (Magic Links):** When pet parents register or sign in, they enter their email and receive a 1-click login link within seconds. No passwords to remember or compromise.
+2. **Booster & Health Reminders:** Scheduled reminder emails automatically alert owners when vaccinations, flea/tick medications, or annual exams are due.
+3. **Sender Reputation:** All emails show the sender as `PetDocs <no-reply@seridian.dev>`. Verified domain records ensure high inbox placement (preventing emails from landing in spam).
 
-Server only. Never import `resend.ts` / `magicLink.ts` from `src/`.
+The superadmin dashboard (`/dashboard/admin/integrations`) displays an active status indicator showing whether Resend is configured and sending.
 
-## 1. Domain setup
+---
 
-1. Resend dashboard → Domains → Add domain, enter your sending domain.
-2. Add every DNS record Resend shows (typically an SPF TXT, a DKIM TXT set,
-   and a DMARC TXT), then press Verify in Resend.
-3. Wait for status Verified before sending from that domain.
+## Technical Details
 
-`RESEND_FROM` must use the verified domain, for example:
+All outbound emails route through the internal Convex action `sendEmail` in `convex/resend.ts`:
 
-```bash
-bunx convex env set RESEND_FROM "PetDocs <hello@yourdomain.com>"
+- **Magic Links:** `convex/magicLink.ts` -> `requestMagicLink` (subject: `Sign in to PetDocs`)
+- **Vaccine/Med Reminders:** `convex/reminders.ts` -> `sendDue` (subject: `Reminder: {title} for {pet}`)
+
+> [!IMPORTANT]
+> Email sending is strictly server-side. Never import `convex/resend.ts` or `convex/magicLink.ts` from client-side code under `src/`.
+
+---
+
+## Live Signup Flow & Verification Steps
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Pet Owner
+    participant Web as PetDocs Frontend (petdocs.seridian.dev)
+    participant Convex as Convex Backend
+    participant Resend as Resend API
+    participant Mail as User's Inbox
+
+    User->>Web: Enters email on /sign-in or /onboarding
+    Web->>Convex: requestMagicLink({ email })
+    Note over Convex: Validates rate limit (60s cooldown)<br/>Generates raw random token<br/>Stores SHA-256 hash in magicTokens (15m expiry)
+    Convex->>Resend: sendEmail({ from: "PetDocs <no-reply@seridian.dev>", to: email, link })
+    Resend-->>Convex: 200 OK (email id)
+    Convex-->>Web: { ok: true }
+    Web-->>User: "Check your email" screen
+    Resend->>Mail: Delivers email from no-reply@seridian.dev
+    User->>Mail: Opens email, clicks "Sign in to PetDocs"
+    Mail->>Web: GET /sign-in?token=...&email=...
+    Web->>Convex: verifyMagicLink({ token, email })
+    Note over Convex: Hashes token, matches DB hash<br/>Checks expiration & marks token used<br/>Provisions user if new
+    Convex-->>Web: Session token / auth success
+    Web-->>User: Redirects to /dashboard
 ```
 
-## 2. Test-mode caveat
+### Step-by-Step Flow Breakdown:
 
-Until your domain is verified (and while the key is restricted), Resend only
-delivers to the account owner address. A magic link requested for any other
-address returns `{ ok: true }` but nothing arrives. Always test with your own
-Resend account email first.
+1. **User Request:** The user visits [`https://petdocs.seridian.dev/sign-in`](https://petdocs.seridian.dev/sign-in) and enters their email.
+2. **Backend Token Generation:** `convex/magicLink.ts:requestMagicLink` generates a cryptographically secure random token. Only the **SHA-256 hash** of this token is persisted in the `magicTokens` table with a 15-minute expiration timestamp.
+3. **Anti-Abuse Gating:** If a token was requested within the last 60 seconds (`RESEND_COOLDOWN_MS`), the backend suppresses redundant email dispatches while still returning `{ ok: true }` to prevent user enumeration.
+4. **Dispatch via Resend:** Convex calls Resend's REST API using `RESEND_API_KEY` with sender `PetDocs <no-reply@seridian.dev>`. The email contains an authenticated URL:
+   `https://petdocs.seridian.dev/sign-in?token=<RAW_TOKEN>&email=<USER_EMAIL>`
+5. **Verification & Session Grant:** When the user clicks the magic link, `verifyMagicLink` recalculates the SHA-256 hash of `<RAW_TOKEN>`, ensures it is unused and unexpired, registers or looks up the `users` record, and returns a verified session.
 
-## 3. Env per deployment
+---
 
-Convex env is separate from Netlify env. Set each key on every Convex
-deployment (dev and prod separately). Never commit secrets.
+## Deployment Environment Variables
+
+Convex environment variables are decoupled from Netlify/frontend variables. Set these variables per deployment using the Convex CLI.
+
+### Production Environment (`https://petdocs.seridian.dev`)
 
 ```bash
-bunx convex env set RESEND_API_KEY re_your_key
-bunx convex env set RESEND_FROM "PetDocs <hello@yourdomain.com>"
-bunx convex env set SITE_URL http://localhost:3000   # prod: https://your-app-url
+bunx convex env set RESEND_API_KEY "re_live_xxxxxxxxxxxxxxxxxxxxxxxx"
+bunx convex env set RESEND_FROM "PetDocs <no-reply@seridian.dev>"
+bunx convex env set SITE_URL "https://petdocs.seridian.dev"
 ```
 
-`SITE_URL` defaults to `http://localhost:3000` when unset. It builds the
-magic-link URL (`/sign-in?token=...&email=...`) and the reminder
-`Open petdocs` button link.
+### Development Environment (Localhost)
 
-## 4. How to test
+```bash
+bunx convex env set RESEND_API_KEY "re_test_xxxxxxxxxxxxxxxxxxxxxxxx"
+bunx convex env set RESEND_FROM "PetDocs <no-reply@seridian.dev>"
+bunx convex env set SITE_URL "http://localhost:3000"
+```
 
-1. Run `bunx convex dev` and open the app sign-in page.
-2. Submit your own Resend account email via `requestMagicLink`.
-3. Check your inbox (and spam). The response is always `{ ok: true }` by
-   design, so the inbox is the only signal.
-4. Check Convex dashboard → Logs for `Resend error {status}` lines if mail
-   does not arrive. Common causes: wrong deployment env, unverified domain,
-   `RESEND_FROM` on a domain you do not own.
-5. For reminders: create a reminder due within 24h, then run the
-   `internal.reminders.sendDue` action from the Convex playground and confirm
-   the count plus inbox delivery.
+*Note: If `SITE_URL` is omitted, it defaults to `http://localhost:3000`.*
 
-## 5. Rate limits and cooldowns already in code
+---
 
-- Magic links: 60s resend cooldown per email (`RESEND_COOLDOWN_MS`), 15-min
-  single-use tokens (SHA-256 hash stored, raw token never stored).
-- `requestMagicLink` always returns `{ ok: true }`, even for invalid emails,
-  cooldown hits, or send failures, to avoid account enumeration.
-- Reminders: hourly cron tick (`convex/crons.ts`), 24h horizon; a reminder
-  flips `scheduled` to `sent` only when `sendEmail` returns `{ ok: true }`,
-  so failures stay scheduled and retry next hour.
-- Resend also enforces its own per-plan sending limits. See the Resend
-  dashboard if volume grows.
+## Domain DNS Verification (`seridian.dev`)
 
-## 6. What breaks without keys (verified in code)
+In the Resend Dashboard under **Domains**:
 
-- `sendEmail` never throws for missing config. It returns
-  `{ ok: false, error }` (missing `RESEND_API_KEY` or `RESEND_FROM`,
-  empty recipient, empty content, non-2xx with `Resend error {status}`,
-  network failure). It never logs secrets.
-- Login does not crash without keys: `requestMagicLink` catches send
-  failures and still returns `{ ok: true }`. Truthfully, sign-in still
-  stalls because no email arrives, so the user can never get the link.
-- `verifyMagicLink` sends no email and is unaffected by Resend config.
-- Reminders without keys: `sendDue` returns `0`, rows stay `scheduled`,
-  next hourly tick retries.
+1. **Domain:** `seridian.dev`
+2. **Required DNS Records:**
+   - **DKIM:** TXT record `resend._domainkey.seridian.dev`
+   - **SPF:** TXT or MX record configuring `send.seridian.dev` / `include:resend.com`
+   - **DMARC:** TXT record `_dmarc.seridian.dev` (`v=DMARC1; p=none; ...`)
+3. **Status Check:** Verify that Resend displays **Verified** in green. Outbound emails will only reliably clear DMARC checks once verified.
+
+---
+
+## Verification & Testing Runbook
+
+### 1. Test Live Magic Link Sign-In
+1. Navigate to [`https://petdocs.seridian.dev/sign-in`](https://petdocs.seridian.dev/sign-in).
+2. Enter any standard external email address (Gmail, Outlook, iCloud).
+3. Confirm delivery within 10–30 seconds.
+4. Verify headers in your email client:
+   - **From:** `PetDocs <no-reply@seridian.dev>`
+   - **Mailed-By:** `resend.com` / `seridian.dev`
+   - **Signed-By:** `seridian.dev`
+5. Click the sign-in button and confirm seamless transition into the PetDocs dashboard.
+
+### 2. Verify Delivery in Resend Dashboard
+- Open [Resend Dashboard → Emails](https://resend.com/emails).
+- Inspect the recent delivery event for `Sign in to PetDocs`.
+- Check status: `Delivered`, `Opened`, or `Clicked`.
+
+### 3. Verify Scheduled Reminders
+To test reminder dispatches without waiting for the hourly cron tick:
+1. Create a pet reminder in the dashboard with a due date within the next 24 hours.
+2. Run the internal action via the Convex Dashboard playground or CLI:
+   ```bash
+   bunx convex run reminders:sendDue
+   ```
+3. Confirm that the reminder email arrives from `PetDocs <no-reply@seridian.dev>` and that the reminder record flips from `scheduled` to `sent`.
+
+---
+
+## Failure Handling & Security Guarantees
+
+- **Account Enumeration Protection:** `requestMagicLink` returns `{ ok: true }` regardless of whether the email is existing, new, or throttled.
+- **Fail-Safe Dispatches:** `sendEmail` catches missing credentials or network errors cleanly and returns `{ ok: false, error }` rather than crashing user transactions.
+- **Secrets Isolation:** API keys and webhook secrets are never logged or exposed to client bundles.
+- **Single-Use Tokens:** Raw tokens are never written to the database. Tokens cannot be reused once claimed.
