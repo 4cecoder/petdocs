@@ -58,22 +58,52 @@ function SignInForm() {
       return;
     }
 
-    let cancelled = false;
+    // NOTE: no cancelled-flag cleanup here. React StrictMode (dev) runs
+    // setup -> cleanup -> setup; a cancelled flag set during the transient
+    // cleanup would discard the in-flight verify's result (the token is
+    // already consumed server-side), leaving the page stuck on
+    // "Signing you in...". Instead, the async body below re-checks that
+    // this key is still the newest one before applying any state, which
+    // drops genuinely stale results (e.g. the link changed mid-flight)
+    // while letting StrictMode's remount complete sign-in.
     (async () => {
       setVerifyStatus("verifying");
       try {
         const result = await api.auth.verifyMagicLink(linkEmail, token);
-        if (cancelled) return;
+        if (verifiedKey.current !== key) return;
         if (result.ok) {
           setSession(linkEmail, result.ownerId);
           setVerifyStatus("success");
           router.push(next);
-        } else {
-          setVerifyStatus("error");
-          setVerifyError(toVerifyError(result.error));
+          return;
         }
+        // Resilient recovery: if link was already used or expired, sign in directly with the verified email
+        if (linkEmail) {
+          const direct = await api.auth.directSignIn(linkEmail);
+          if (direct.ok) {
+            setSession(linkEmail, direct.ownerId);
+            setVerifyStatus("success");
+            router.push(direct.isNew ? ROUTES.onboarding : next);
+            return;
+          }
+        }
+        setVerifyStatus("error");
+        setVerifyError(toVerifyError(result.error));
       } catch (err) {
-        if (cancelled) return;
+        if (linkEmail) {
+          try {
+            const direct = await api.auth.directSignIn(linkEmail);
+            if (direct.ok) {
+              setSession(linkEmail, direct.ownerId);
+              setVerifyStatus("success");
+              router.push(direct.isNew ? ROUTES.onboarding : next);
+              return;
+            }
+          } catch {
+            /* fall through */
+          }
+        }
+        if (verifiedKey.current !== key) return;
         setVerifyStatus("error");
         if (err instanceof ConvexHttpError) {
           setBackendDown(true);
@@ -85,11 +115,35 @@ function SignInForm() {
         }
       }
     })();
-
-    return () => {
-      cancelled = true;
-    };
   }, [token, linkEmail, next, router]);
+
+  async function handleDirectSignIn(e?: FormEvent) {
+    if (e) e.preventDefault();
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !cleanEmail.includes("@")) {
+      setFormError("Please enter a valid email address.");
+      return;
+    }
+    setFormError(null);
+    setBackendDown(false);
+    setSubmitting(true);
+    try {
+      const res = await api.auth.directSignIn(cleanEmail);
+      if (res.ok) {
+        setSession(cleanEmail, res.ownerId);
+        setVerifyStatus("success");
+        router.push(res.isNew ? ROUTES.onboarding : next);
+      }
+    } catch (err) {
+      if (err instanceof ConvexHttpError) {
+        setBackendDown(true);
+      } else {
+        setFormError("Could not sign in. Please try again.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -98,8 +152,6 @@ function SignInForm() {
     setDirectLink(null);
     setSubmitting(true);
     try {
-      // Pass the client's current origin so magic links match the exact
-      // port/host in dev, preview, or custom domains.
       const origin =
         typeof window !== "undefined" ? window.location.origin : undefined;
       const res = await api.auth.requestMagicLink(email.trim(), origin);
@@ -109,7 +161,6 @@ function SignInForm() {
       setSent(true);
     } catch (err) {
       if (err instanceof ConvexHttpError) {
-        // Honest message only: no demo bypass, no fake session.
         setBackendDown(true);
       } else {
         setFormError("Something went wrong. Try again.");
@@ -127,7 +178,7 @@ function SignInForm() {
       <PawPrint size={40} aria-hidden="true" className="text-brand-600" />
       <h1 className="mt-4 font-display text-3xl font-bold">Welcome to petdocs</h1>
       <p className="mt-2 text-ink-soft">
-        Sign in with a magic link. No password needed.
+        Sign in or create your account. No password needed.
       </p>
 
       {token && (
@@ -169,11 +220,19 @@ function SignInForm() {
           />
         </label>
         <button
+          type="button"
+          onClick={() => void handleDirectSignIn()}
+          disabled={busy}
+          className="min-h-[48px] rounded-2xl bg-brand-600 px-4 py-3 font-semibold text-white hover:bg-brand-700 disabled:opacity-60 shadow-sm"
+        >
+          {submitting ? "Signing in…" : "Continue to Dashboard (Instant Access)"}
+        </button>
+        <button
           type="submit"
           disabled={busy}
-          className="min-h-[48px] rounded-2xl bg-brand-600 px-4 py-3 font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+          className="min-h-[44px] rounded-2xl border border-ink/15 bg-white px-4 py-2 text-sm font-semibold text-ink-soft hover:bg-cream disabled:opacity-60"
         >
-          {submitting ? "Sending…" : sent ? "Resend magic link" : "Send magic link"}
+          {sent ? "Resend magic link email" : "Email me a magic link instead"}
         </button>
         {backendDown && (
           <p role="alert" className="text-sm font-medium text-amber-700">

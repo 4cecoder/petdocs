@@ -78,7 +78,7 @@ export function PetAssistantFab() {
     {
       id: "intro",
       sender: "bot",
-      text: "Hi there! I'm Pawla, your PetDocs Health Assistant. Ask me about vaccine protocols, travel passports, emergency prep, or preventive care.",
+      text: "Hi there! I'm Radar, your PetDocs Health Assistant. Ask me about vaccine protocols, travel passports, emergency prep, or preventive care.",
     },
   ]);
   const [inputQuery, setInputQuery] = useState("");
@@ -223,7 +223,7 @@ export function PetAssistantFab() {
                   </div>
                   <div>
                     <h2 id="assistant-title" className="font-display font-bold text-base text-ink flex items-center gap-1.5">
-                      Pawla <span className="text-xs px-2 py-0.5 rounded-full bg-brand-100 text-brand-700 font-semibold">Pet Health Guide</span>
+                      Radar <span className="text-xs px-2 py-0.5 rounded-full bg-brand-100 text-brand-700 font-semibold">Pet Health Guide</span>
                     </h2>
                     <p className="text-xs text-ink-soft">Instant pet care tips & direct actions</p>
                   </div>

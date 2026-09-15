@@ -8,7 +8,13 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { clearSession, getOwnerId, getSessionEmail } from "@/lib/api";
+import {
+  api,
+  clearSession,
+  getOwnerId,
+  getSessionEmail,
+  setSession,
+} from "@/lib/api";
 import { ROUTES } from "@/lib/routes";
 
 interface DashboardAuth {
@@ -45,25 +51,44 @@ function readOwnerId(): string | null {
 
 export function DashboardAuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
-  // localStorage is synchronous, so the session resolves during the initial
-  // render: no effect-delay flash on the client. `loading` is true only
-  // during SSR (window undefined), before hydration can read the session.
   const [ownerId, setOwnerId] = useState<string | null>(() => readOwnerId());
-  const [loading, setLoading] = useState<boolean>(
-    () => typeof window === "undefined",
-  );
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    // Safety re-sync: storage may have changed between render and effect
-    // (e.g. sign-in in another tab just before navigation here).
-    setOwnerId(readOwnerId());
-    setLoading(false);
+    const currentOwner = readOwnerId();
+    const email = getSessionEmail();
+
+    if (!currentOwner && email) {
+      // Auto-recover session from stored email
+      setLoading(true);
+      api.auth
+        .directSignIn(email)
+        .then((res) => {
+          if (res.ok) {
+            setSession(email, res.ownerId);
+            setOwnerId(res.ownerId);
+          }
+        })
+        .catch(() => {
+          /* noop */
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      setOwnerId(currentOwner);
+      setLoading(false);
+    }
   }, []);
 
   function signOut() {
     clearSession();
     setOwnerId(null);
-    router.replace(ROUTES.home);
+    if (typeof window !== "undefined") {
+      window.location.href = ROUTES.home;
+    } else {
+      router.replace(ROUTES.home);
+    }
   }
 
   return (

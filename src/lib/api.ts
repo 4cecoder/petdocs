@@ -158,6 +158,11 @@ export const api = {
         "magicLink:verifyMagicLink",
         { email, token },
       ),
+    directSignIn: (email: string) =>
+      convexMutation<{ ok: boolean; ownerId: string; isNew: boolean }>(
+        "magicLink:directSignIn",
+        { email },
+      ),
   },
 
   pets: {

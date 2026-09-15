@@ -319,3 +319,42 @@ export const verifyMagicLink = mutation({
     return { ok: true as const, ownerId };
   },
 });
+
+/**
+ * Direct sign-in / instant registration mutation.
+ * Creates an account if new or signs in immediately, returning ownerId.
+ */
+export const directSignIn = mutation({
+  args: { email: v.string() },
+  returns: v.object({
+    ok: v.boolean(),
+    ownerId: v.id("owners"),
+    isNew: v.boolean(),
+  }),
+  handler: async (ctx, args) => {
+    const email = normalizeEmail(args.email);
+    if (!EMAIL_RE.test(email)) {
+      throw new Error("Please enter a valid email address.");
+    }
+
+    const existing = await ctx.db
+      .query("owners")
+      .withIndex("by_externalId", (q) => q.eq("externalId", email))
+      .first();
+
+    if (existing) {
+      return { ok: true, ownerId: existing._id, isNew: false };
+    }
+
+    const prefix = email.split("@")[0]?.trim();
+    const name = prefix ? prefix : email;
+    const ownerId = await ctx.db.insert("owners", {
+      externalId: email,
+      email,
+      name,
+      createdAt: Date.now(),
+    });
+
+    return { ok: true, ownerId, isNew: true };
+  },
+});
