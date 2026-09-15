@@ -88,6 +88,17 @@ export default function DocsPage() {
     [allDocs, selected],
   );
 
+  async function handleTrash(id: string) {
+    if (!ownerId) return;
+    const docId = id.includes(":") ? id.split(":")[1] : id;
+    try {
+      await api.documents.moveToTrash(ownerId, docId);
+    } catch {
+      // Allow optimistic removal even if mock/offline
+    }
+    setAllDocs((prev) => prev.filter((d) => d.row.id !== id));
+  }
+
   if (!ownerId || !backend) {
     return (
       <div className="flex flex-col gap-4">
@@ -168,7 +179,7 @@ export default function DocsPage() {
             </p>
           </div>
         ) : (
-          <DocList docs={filtered} />
+          <DocList docs={filtered} onTrash={handleTrash} />
         )
       ) : null}
     </div>

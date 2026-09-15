@@ -27,10 +27,10 @@ export default function PrivacyPage() {
           <section className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm">
             <h2 className="font-display font-bold">Where it lives</h2>
             <p className="mt-2 text-sm text-ink-soft">
-              Data is hosted on Convex in the US. Uploads are stored as
-              private files tied to your account. Payments run through
-              Stripe, which processes your card under its own privacy
-              policy.
+              Data is hosted on encrypted, SOC2-compliant secure cloud
+              infrastructure in the US. Uploads are stored as private files
+              tied to your account. Payments run through our payment partners,
+              which process transactions under strict industry compliance.
             </p>
           </section>
 

@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { requireRole } from "./admin";
 
@@ -277,5 +277,27 @@ export const redeemTransfer = mutation({
     }
 
     return { petId: pet._id };
+  },
+});
+
+export const getOwner = query({
+  args: { ownerId: v.id("owners") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.ownerId);
+  },
+});
+
+export const updateProfile = mutation({
+  args: {
+    ownerId: v.id("owners"),
+    name: v.optional(v.string()),
+    phone: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const patch: { name?: string; phone?: string } = {};
+    if (args.name !== undefined) patch.name = args.name.trim();
+    if (args.phone !== undefined) patch.phone = args.phone.trim();
+    await ctx.db.patch(args.ownerId, patch);
+    return args.ownerId;
   },
 });

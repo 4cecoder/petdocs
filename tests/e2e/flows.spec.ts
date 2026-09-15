@@ -43,27 +43,29 @@ test.describe("flows", () => {
     await expect(page).toHaveURL(/\/sign-in/);
   });
 
-  test("bogus passport token shows no-backend placeholder", async ({
-    page,
-  }) => {
-    // Truthful no-backend copy from p/[shareToken]/page.tsx: with
-    // NEXT_PUBLIC_CONVEX_URL unset, PlaceholderPassport renders (not the
-    // "expired or revoked" state, which needs a configured backend).
+  test("bogus passport token shows no pet data", async ({ page }) => {
+    // A bogus token must never render a pet. Exact state depends on env:
+    // with NEXT_PUBLIC_CONVEX_URL unset, PlaceholderPassport renders (the
+    // truthful no-backend copy); with a backend configured, resolve()
+    // returns null and the "expired or revoked" state renders. Accept
+    // either, but assert the pet-less invariant.
     await page.goto("/p/bogus-token");
     await expect(
       page.getByRole("heading", { name: "Shared pet profile" }),
     ).toBeVisible();
-    await expect(page.getByText("Link: bogus-token")).toBeVisible();
-    await expect(
-      page.getByText(
-        "Verified records will appear here once the owner connects their vault.",
-      ),
-    ).toBeVisible();
+
+    const placeholder = page.getByText("Link: bogus-token");
+    const deadLink = page.getByText("This link is expired or revoked.");
+    await expect(placeholder.or(deadLink)).toBeVisible();
   });
 
   test("legal pages interlink terms to privacy", async ({ page }) => {
     await page.goto("/legal/terms");
-    const legalNav = page.getByRole("navigation", { name: "Legal" });
+    // The Legal nav renders twice (in main and in the footer); scope to
+    // main to keep the locator strict.
+    const legalNav = page
+      .getByRole("main")
+      .getByRole("navigation", { name: "Legal" });
     const privacyLink = legalNav.getByRole("link", { name: "Privacy" });
     await expect(privacyLink).toBeVisible();
     await expect(privacyLink).toHaveAttribute("href", "/legal/privacy");

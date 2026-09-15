@@ -15,8 +15,11 @@ export default defineConfig({
   retries: CI ? 2 : 0,
   workers: CI ? 1 : undefined,
   reporter: CI ? "github" : "list",
-  timeout: 30_000,
-  expect: { timeout: 8_000 },
+  timeout: 60_000,
+  // Convex round-trips (actions can attempt an email send) and the in-spec
+  // `bunx convex run` CLI calls used by the backend-exercising specs can
+  // take several seconds each; give expects generous headroom.
+  expect: { timeout: 15_000 },
 
   use: {
     baseURL,

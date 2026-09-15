@@ -1,4 +1,4 @@
-import { FileText } from "lucide-react";
+import { FileText, Trash2 } from "lucide-react";
 
 export interface VaultDoc {
   id: string;
@@ -11,9 +11,11 @@ export interface VaultDoc {
 export function DocList({
   docs,
   emptyHint = "No documents yet. Snap a vaccine cert photo to start.",
+  onTrash,
 }: {
   docs: VaultDoc[];
   emptyHint?: string;
+  onTrash?: (id: string) => void;
 }) {
   if (docs.length === 0) {
     return (
@@ -48,6 +50,16 @@ export function DocList({
               {doc.sizeLabel ? ` · ${doc.sizeLabel}` : ""}
             </p>
           </div>
+          {onTrash ? (
+            <button
+              type="button"
+              aria-label={`Move ${doc.name} to trash`}
+              onClick={() => onTrash(doc.id)}
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-ink-soft hover:bg-cream hover:text-red-600 transition"
+            >
+              <Trash2 size={18} aria-hidden="true" />
+            </button>
+          ) : null}
         </li>
       ))}
     </ul>

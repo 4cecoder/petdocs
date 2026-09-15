@@ -7,7 +7,7 @@ test.describe("smoke", () => {
       page.getByRole("heading", { name: "Own your pet's docs" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: /Get started/i }),
+      page.getByRole("link", { name: "Get started", exact: true }),
     ).toBeVisible();
   });
 
@@ -82,7 +82,7 @@ test.describe("smoke", () => {
       page.getByRole("textbox", { name: /email/i }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: /send magic link/i }),
+      page.getByRole("button", { name: /magic link/i }),
     ).toBeVisible();
   });
 

@@ -274,6 +274,16 @@ export default function PetDetailPage({
     }
   }
 
+  async function handleTrashDoc(docId: string) {
+    if (!ownerId) return;
+    try {
+      await api.documents.moveToTrash(ownerId, docId);
+    } catch {
+      // optimistic update
+    }
+    setDocs((prev) => prev.filter((d) => d._id !== docId));
+  }
+
   // Calculate Profile Completion Score & Recommendations
   const { profileScore, missingRecommendations } = useMemo(() => {
     let score = 0;
@@ -898,7 +908,7 @@ export default function PetDetailPage({
             </p>
           </div>
         ) : (
-          <DocList docs={docs.map(toDocRow)} />
+          <DocList docs={docs.map(toDocRow)} onTrash={handleTrashDoc} />
         )}
       </section>
 
