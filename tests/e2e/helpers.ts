@@ -226,7 +226,14 @@ export async function requestMagicLinkViaUi(page: Page, email: string): Promise<
 
   // Backend round-trip proof: the inbox status only appears once the action
   // resolved, and the dev direct-link panel carries the raw token.
-  await expect(page.getByText("Check your inbox")).toBeVisible({ timeout: 20_000 });
+  // A dev deployment may exhaust its daily email quota during a parallel
+  // suite. The backend still minted a valid preview link, so either honest
+  // success state proves the request completed.
+  await expect(
+    page
+      .getByRole("status")
+      .filter({ hasText: /Check your inbox|Email delivery is at capacity/i }),
+  ).toBeVisible({ timeout: 20_000 });
   const directHeading = page.getByText("Direct Sign-In Link");
   await expect(directHeading).toBeVisible({ timeout: 10_000 });
 
