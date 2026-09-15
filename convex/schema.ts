@@ -12,6 +12,43 @@ const docCategory = v.union(
   v.literal("other"),
 );
 
+/**
+ * Doc pipeline status machine:
+ * uploaded -> processing -> ready | needsReview | needsOcr | failed(error)
+ * Rows created before the pipeline have no status (optional field); the UI
+ * treats missing status as legacy "ready".
+ */
+export const docPipelineStatus = v.union(
+  v.literal("uploaded"),
+  v.literal("processing"),
+  v.literal("ready"),
+  v.literal("needsReview"),
+  v.literal("needsOcr"),
+  v.literal("failed"),
+);
+
+export const docPipelineType = v.union(
+  v.literal("vaccination"),
+  v.literal("vet_visit"),
+  v.literal("medication"),
+  v.literal("lab"),
+  v.literal("other"),
+);
+
+export const extractedField = v.object({
+  label: v.string(),
+  value: v.string(),
+});
+
+export const docPipelineMetadata = v.object({
+  type: docPipelineType,
+  confidence: v.number(),
+  fields: v.array(extractedField),
+  needsReview: v.boolean(),
+  ocrUsed: v.optional(v.boolean()),
+  processedAt: v.number(),
+});
+
 export default defineSchema({
   owners: defineTable({
     externalId: v.string(),
@@ -97,6 +134,9 @@ export default defineSchema({
     tags: v.optional(v.array(v.string())),
     notes: v.optional(v.string()),
     extractedText: v.optional(v.string()),
+    status: v.optional(docPipelineStatus),
+    statusError: v.optional(v.string()),
+    metadata: v.optional(docPipelineMetadata),
     linkedVaccinationId: v.optional(v.id("vaccinations")),
     linkedVisitId: v.optional(v.id("vetVisits")),
     uploadedBy: v.string(),
@@ -109,7 +149,8 @@ export default defineSchema({
     .index("by_petId", ["petId"])
     .index("by_petId_and_category", ["petId", "category"])
     .index("by_isTrash", ["isTrash"])
-    .index("by_isFavorite", ["isFavorite"]),
+    .index("by_isFavorite", ["isFavorite"])
+    .index("by_status", ["status"]),
 
   vaccinations: defineTable({
     ownerId: v.id("owners"),
