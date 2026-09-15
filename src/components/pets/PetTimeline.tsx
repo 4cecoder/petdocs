@@ -6,6 +6,8 @@ import {
   Syringe,
   type LucideIcon,
 } from "lucide-react";
+import { AddToCalendarButton } from "@/components/calendar/AddToCalendarButton";
+import type { CalendarEventInput } from "@/lib/calendar";
 
 export interface TimelineEvent {
   id: string;
@@ -13,6 +15,8 @@ export interface TimelineEvent {
   kind: "vaccine" | "visit" | "upload" | "medication" | "reminder";
   title: string;
   detail?: string;
+  /** When set, renders a compact one-click add-to-calendar control. */
+  calendar?: CalendarEventInput;
 }
 
 const KIND_ICON: Record<TimelineEvent["kind"], LucideIcon> = {
@@ -56,6 +60,11 @@ export function PetTimeline({ events }: { events: TimelineEvent[] }) {
             <p className="font-semibold">{event.title}</p>
             {event.detail ? (
               <p className="text-sm text-ink-soft">{event.detail}</p>
+            ) : null}
+            {event.calendar ? (
+              <div className="mt-1.5">
+                <AddToCalendarButton event={event.calendar} variant="menu" />
+              </div>
             ) : null}
           </li>
         );

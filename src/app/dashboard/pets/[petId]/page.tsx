@@ -16,11 +16,17 @@ import {
   X,
 } from "lucide-react";
 import { PetArt } from "@/components/art/PetArt";
+import { AddToCalendarButton } from "@/components/calendar/AddToCalendarButton";
 import { DocList, type VaultDoc as VaultDocRow } from "@/components/docs/DocList";
 import { DocUploader } from "@/components/docs/DocUploader";
 import { OwnershipClaim } from "@/components/pets/OwnershipClaim";
 import { PetTimeline, type TimelineEvent } from "@/components/pets/PetTimeline";
 import { ShareButton } from "@/components/share/ShareButton";
+import {
+  reminderCalendarEvent,
+  vaccinationDueCalendarEvent,
+  vetVisitCalendarEvent,
+} from "@/lib/calendar";
 import {
   api,
   getOwnerId,
@@ -88,11 +94,26 @@ function buildTimeline(
   vaccines: Vaccination[],
   visits: VetVisit[],
   docs: VaultDoc[],
+  petName: string,
 ): TimelineEvent[] {
   const stamped: Array<{ ts: number; event: TimelineEvent }> = [];
 
   for (const v of vaccines) {
     const ts = v.administeredAt ?? v.dueAt ?? 0;
+    // Only pending due dates get a calendar entry — administered shots are
+    // history, not something to schedule.
+    const calendar =
+      !v.administeredAt && v.dueAt !== undefined
+        ? (vaccinationDueCalendarEvent(
+            {
+              id: v._id,
+              vaccineName: v.vaccineName,
+              dueAt: v.dueAt,
+              provider: v.provider,
+            },
+            petName,
+          ) ?? undefined)
+        : undefined;
     stamped.push({
       ts,
       event: {
@@ -105,6 +126,7 @@ function buildTimeline(
           : v.dueAt
             ? `Due ${formatDate(v.dueAt)}`
             : undefined,
+        calendar,
       },
     });
   }
@@ -121,6 +143,17 @@ function buildTimeline(
           [visit.clinicName, visit.vetName, visit.diagnosis]
             .filter(Boolean)
             .join(" · ") || undefined,
+        calendar: vetVisitCalendarEvent(
+          {
+            id: visit._id,
+            visitedAt: visit.visitedAt,
+            reason: visit.reason,
+            clinicName: visit.clinicName,
+            vetName: visit.vetName,
+            diagnosis: visit.diagnosis,
+          },
+          petName,
+        ),
       },
     });
   }
@@ -497,6 +530,28 @@ export default function PetDetailPage({
     };
   }, [vaccines]);
 
+  // First due/overdue vaccine with a due date — powers the card's
+  // add-to-calendar control.
+  const nextDueVaccineEvent = useMemo(() => {
+    const next = vaccines
+      .filter(
+        (v) =>
+          v.dueAt !== undefined &&
+          (v.status === "due" || v.status === "overdue"),
+      )
+      .sort((a, b) => (a.dueAt ?? 0) - (b.dueAt ?? 0))[0];
+    if (!next || next.dueAt === undefined) return null;
+    return vaccinationDueCalendarEvent(
+      {
+        id: next._id,
+        vaccineName: next.vaccineName,
+        dueAt: next.dueAt,
+        provider: next.provider,
+      },
+      pet?.name ?? "your pet",
+    );
+  }, [vaccines, pet]);
+
   if (!ownerId || !backend) {
     return (
       <div className="flex flex-col gap-6">
@@ -572,7 +627,7 @@ export default function PetDetailPage({
     );
   }
 
-  const timeline = buildTimeline(vaccines, visits, docs);
+  const timeline = buildTimeline(vaccines, visits, docs, pet.name);
 
   return (
     <div className="flex flex-col gap-8 pb-10">
@@ -717,13 +772,29 @@ export default function PetDetailPage({
             </p>
           </div>
 
-          <Link
-            href={ROUTES.dashboard.reminders}
-            className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline"
-          >
-            <span>Manage appointments</span>
-            <ChevronRight size={14} />
-          </Link>
+          <div className="mt-4 flex items-center justify-between">
+            <Link
+              href={ROUTES.dashboard.reminders}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline"
+            >
+              <span>Manage appointments</span>
+              <ChevronRight size={14} />
+            </Link>
+            {upcomingAppointments[0] ? (
+              <AddToCalendarButton
+                variant="menu"
+                event={reminderCalendarEvent(
+                  {
+                    id: upcomingAppointments[0]._id,
+                    title: upcomingAppointments[0].title,
+                    dueAt: upcomingAppointments[0].dueAt,
+                    kind: upcomingAppointments[0].kind,
+                  },
+                  pet.name,
+                )}
+              />
+            ) : null}
+          </div>
         </div>
 
         {/* Card 2: Vaccine Expirations */}
@@ -760,8 +831,13 @@ export default function PetDetailPage({
             </p>
           </div>
 
-          <div className="mt-4 text-xs font-medium text-ink-soft">
-            {vaccines.length} total vaccines logged
+          <div className="mt-4 flex items-center justify-between">
+            <span className="text-xs font-medium text-ink-soft">
+              {vaccines.length} total vaccines logged
+            </span>
+            {nextDueVaccineEvent ? (
+              <AddToCalendarButton event={nextDueVaccineEvent} variant="menu" />
+            ) : null}
           </div>
         </div>
 
