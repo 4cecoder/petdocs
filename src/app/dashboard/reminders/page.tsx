@@ -13,7 +13,9 @@ function toItem(reminder: Reminder, petName: string, now: number): ReminderItem 
     id: reminder._id,
     title: reminder.title,
     petName,
-    dueLabel: new Date(reminder.dueAt).toLocaleDateString(),
+    // Pinned locale: render output must not depend on server vs browser
+    // locale, or a future SSR of this tree becomes a hydration mismatch.
+    dueLabel: new Date(reminder.dueAt).toLocaleDateString("en-US"),
     dueAt: reminder.dueAt,
     overdue: reminder.dueAt < now,
   };

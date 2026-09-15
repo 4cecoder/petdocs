@@ -42,7 +42,9 @@ function toRow(docId: string, doc: {
     id: docId,
     name: doc.name,
     category: doc.category ?? "other",
-    date: new Date(doc.createdAt).toLocaleDateString(),
+    // Pinned locale: render output must not depend on server vs browser
+    // locale, or a future SSR of this tree becomes a hydration mismatch.
+    date: new Date(doc.createdAt).toLocaleDateString("en-US"),
     sizeLabel: formatBytes(doc.size),
     status: doc.status,
     statusError: doc.statusError,
