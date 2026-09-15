@@ -17,6 +17,12 @@ import {
 } from "lucide-react";
 import { clearSession, getOwnerId, getSessionEmail } from "@/lib/api";
 import { convexMutation, convexQuery } from "@/lib/convexHttp";
+import {
+  COUNTRY_CODES,
+  formatFullPhone,
+  parseStoredPhone,
+  ProfileFormSchema,
+} from "@/lib/phoneValidation";
 import { ROUTES } from "@/lib/routes";
 
 interface OwnerProfile {
@@ -33,9 +39,11 @@ export default function SettingsPage() {
   const ownerId = getOwnerId();
   const sessionEmail = getSessionEmail() || "";
 
-  const [profile, setProfile] = useState<OwnerProfile | null>(null);
   const [nameInput, setNameInput] = useState("");
-  const [phoneInput, setPhoneInput] = useState("");
+  const [countryCode, setCountryCode] = useState("+1");
+  const [nationalNumber, setNationalNumber] = useState("");
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
 
@@ -57,9 +65,10 @@ export default function SettingsPage() {
     convexQuery<OwnerProfile | null>("ownership:getOwner", { ownerId })
       .then((data) => {
         if (data) {
-          setProfile(data);
           setNameInput(data.name || "");
-          setPhoneInput(data.phone || "");
+          const parsed = parseStoredPhone(data.phone);
+          setCountryCode(parsed.countryCode);
+          setNationalNumber(parsed.nationalNumber);
         }
       })
       .catch(() => {
@@ -70,13 +79,40 @@ export default function SettingsPage() {
   async function handleSaveProfile(e: React.FormEvent) {
     e.preventDefault();
     if (!ownerId || savingProfile) return;
+
+    setPhoneError(null);
+    setNameError(null);
+
+    // Zod validation
+    const validation = ProfileFormSchema.safeParse({
+      name: nameInput,
+      phone: {
+        countryCode,
+        nationalNumber,
+      },
+    });
+
+    if (!validation.success) {
+      const fieldErrors = validation.error.flatten().fieldErrors;
+      if (fieldErrors.name?.[0]) setNameError(fieldErrors.name[0]);
+      if (validation.error.format().phone?.nationalNumber?._errors?.[0]) {
+        setPhoneError(
+          validation.error.format().phone?.nationalNumber?._errors[0] ||
+            "Invalid phone format",
+        );
+      }
+      return;
+    }
+
+    const formattedPhone = formatFullPhone(countryCode, nationalNumber);
+
     setSavingProfile(true);
     setProfileSaved(false);
     try {
       await convexMutation("ownership:updateProfile", {
         ownerId,
         name: nameInput.trim(),
-        phone: phoneInput.trim(),
+        phone: formattedPhone,
       });
       setProfileSaved(true);
       setTimeout(() => setProfileSaved(false), 3000);
@@ -203,6 +239,11 @@ export default function SettingsPage() {
                 placeholder="Your Name"
                 className="mt-1 min-h-[44px] w-full rounded-xl border border-ink/15 bg-cream px-3.5 text-sm font-medium focus:border-brand-500 focus:bg-white focus:outline-none"
               />
+              {nameError && (
+                <p role="alert" className="mt-1 text-xs font-semibold text-red-600">
+                  {nameError}
+                </p>
+              )}
             </div>
           </div>
 
@@ -221,16 +262,34 @@ export default function SettingsPage() {
               <label className="text-xs font-semibold text-ink-soft">
                 Mobile Number (SMS Alerts)
               </label>
-              <div className="mt-1 flex min-h-[44px] items-center gap-2 rounded-xl border border-ink/15 bg-cream px-3.5 text-sm focus-within:border-brand-500 focus-within:bg-white">
-                <Phone size={16} className="text-ink-soft" />
+              <div className="mt-1 flex min-h-[44px] items-center gap-1.5 rounded-xl border border-ink/15 bg-cream px-2 text-sm focus-within:border-brand-500 focus-within:bg-white">
+                <select
+                  aria-label="Country Code"
+                  value={countryCode}
+                  onChange={(e) => setCountryCode(e.target.value)}
+                  className="rounded-lg bg-transparent py-1.5 pl-1.5 pr-1 text-xs font-medium text-ink focus:outline-none cursor-pointer"
+                >
+                  {COUNTRY_CODES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.flag} {c.code} ({c.country})
+                    </option>
+                  ))}
+                </select>
+                <div className="h-5 w-px bg-ink/10" />
+                <Phone size={14} className="shrink-0 text-ink-soft ml-1" />
                 <input
                   type="tel"
-                  value={phoneInput}
-                  onChange={(e) => setPhoneInput(e.target.value)}
-                  placeholder="+1 (555) 000-0000"
-                  className="w-full bg-transparent focus:outline-none"
+                  value={nationalNumber}
+                  onChange={(e) => setNationalNumber(e.target.value)}
+                  placeholder="(555) 000-0000"
+                  className="w-full bg-transparent px-1 text-sm focus:outline-none"
                 />
               </div>
+              {phoneError && (
+                <p role="alert" className="mt-1 text-xs font-semibold text-red-600">
+                  {phoneError}
+                </p>
+              )}
             </div>
           </div>
 

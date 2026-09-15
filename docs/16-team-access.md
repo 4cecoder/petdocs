@@ -39,7 +39,7 @@ Auditor: stats plus audit read only. No owner lists. No revokes. No reviews.
 ## Offboarding
 
 - Deactivate in one tap in Team access. Row stays for audit history. Vault stays.
-- Rotate shared secrets checklist: Resend key, Stripe keys, Convex deploy key, then force new magic links. See `15-trust.md` incident note.
+- Rotate shared secrets checklist: Resend key, Polar keys, Convex deploy key, then force new magic links. See `15-trust.md` incident note.
 
 ## Rules
 

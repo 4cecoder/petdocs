@@ -27,7 +27,7 @@
 
 ## v0.2 → v1.0 (after validation)
 - v0.2: OCR backfill (`extractedText` + search), co-owner invites, groomer-verify view, visit-summary ingest, QR collar tag.
-- v1.0: subscriptions (Stripe), clinic B2B2C dashboard, insurer partnerships, travel packs, booking-platform API.
+- v1.0: subscriptions (Polar.sh), clinic B2B2C dashboard, insurer partnerships, travel packs, booking-platform API.
 
 ## Definition of done (MVP)
 `bun run lint + typecheck + test + build` green; smoke passes locally + prod;

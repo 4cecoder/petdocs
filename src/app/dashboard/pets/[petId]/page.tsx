@@ -18,6 +18,10 @@ import { ShareButton } from "@/components/share/ShareButton";
 import { EditPetDialog } from "./EditPetDialog";
 import { PetHero, type VaccineSummary } from "./PetHero";
 import {
+  reminderCalendarEvent,
+  vaccinationDueCalendarEvent,
+} from "@/lib/calendar";
+import {
   api,
   getOwnerId,
   isBackendConfigured,
@@ -275,6 +279,28 @@ export default function PetDetailPage({
     };
   }, [vaccines]);
 
+  // First due/overdue vaccine with a due date — powers the card's
+  // add-to-calendar control.
+  const nextDueVaccineEvent = useMemo(() => {
+    const next = vaccines
+      .filter(
+        (v) =>
+          v.dueAt !== undefined &&
+          (v.status === "due" || v.status === "overdue"),
+      )
+      .sort((a, b) => (a.dueAt ?? 0) - (b.dueAt ?? 0))[0];
+    if (!next || next.dueAt === undefined) return null;
+    return vaccinationDueCalendarEvent(
+      {
+        id: next._id,
+        vaccineName: next.vaccineName,
+        dueAt: next.dueAt,
+        provider: next.provider,
+      },
+      pet?.name ?? "your pet",
+    );
+  }, [vaccines, pet]);
+
   if (!ownerId || !backend) {
     return (
       <div className="flex flex-col gap-6">
@@ -358,11 +384,21 @@ export default function PetDetailPage({
         profileScore={profileScore}
         missingCount={missingRecommendations.length}
         upcomingCount={upcomingAppointments.length}
+        nextVaccineEvent={nextDueVaccineEvent}
         nextAppointment={
           upcomingAppointments.length > 0
             ? {
                 title: upcomingAppointments[0].title,
                 dueAt: upcomingAppointments[0].dueAt,
+                calendar: reminderCalendarEvent(
+                  {
+                    id: upcomingAppointments[0]._id,
+                    title: upcomingAppointments[0].title,
+                    dueAt: upcomingAppointments[0].dueAt,
+                    kind: upcomingAppointments[0].kind,
+                  },
+                  pet.name,
+                ),
               }
             : null
         }
@@ -427,6 +463,7 @@ export default function PetDetailPage({
               vaccines={vaccines}
               visits={visits}
               docs={docs}
+              petName={pet.name}
               onAddDocument={() => openTool("documents")}
             />
           </TabsContent>

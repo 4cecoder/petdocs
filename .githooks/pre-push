@@ -1,0 +1,18 @@
+#!/bin/sh
+# pre-push: full vitest suite + the @smoke e2e suite against a PRIVATE dev
+# server on PORT=3111 (never touches a dev server already running on :3000).
+#
+# Install once per clone/worktree:  bun run hooks:install
+# Skippable in emergencies:         git push --no-verify
+#                                   (CI reruns everything on the PR.)
+#
+# Budget: under ~90s warm. Requires Playwright browsers
+# (`bunx playwright install chromium`, one time).
+set -e
+cd "$(git rev-parse --show-toplevel)"
+
+echo "pre-push: vitest run..."
+bun run test
+
+echo "pre-push: playwright @smoke on PORT=3111..."
+PORT=3111 bun run test:e2e:smoke

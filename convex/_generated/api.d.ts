@@ -9,7 +9,10 @@
  */
 
 import type * as admin from "../admin.js";
+import type * as billing from "../billing.js";
 import type * as crons from "../crons.js";
+import type * as docPipeline from "../docPipeline.js";
+import type * as docPipelineAdmin from "../docPipelineAdmin.js";
 import type * as documents from "../documents.js";
 import type * as http from "../http.js";
 import type * as integrations from "../integrations.js";
@@ -17,8 +20,16 @@ import type * as magicLink from "../magicLink.js";
 import type * as mail from "../mail.js";
 import type * as medications from "../medications.js";
 import type * as notifications from "../notifications.js";
+import type * as outboxQuota from "../outboxQuota.js";
 import type * as ownership from "../ownership.js";
 import type * as pets from "../pets.js";
+import type * as pipeline_classify from "../pipeline/classify.js";
+import type * as pipeline_fetchSource from "../pipeline/fetchSource.js";
+import type * as pipeline_ocr from "../pipeline/ocr.js";
+import type * as pipeline_textExtract from "../pipeline/textExtract.js";
+import type * as pipeline_types from "../pipeline/types.js";
+import type * as polar from "../polar.js";
+import type * as polarHttp from "../polarHttp.js";
 import type * as privacy from "../privacy.js";
 import type * as reminders from "../reminders.js";
 import type * as resend from "../resend.js";
@@ -36,7 +47,10 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
+  billing: typeof billing;
   crons: typeof crons;
+  docPipeline: typeof docPipeline;
+  docPipelineAdmin: typeof docPipelineAdmin;
   documents: typeof documents;
   http: typeof http;
   integrations: typeof integrations;
@@ -44,8 +58,16 @@ declare const fullApi: ApiFromModules<{
   mail: typeof mail;
   medications: typeof medications;
   notifications: typeof notifications;
+  outboxQuota: typeof outboxQuota;
   ownership: typeof ownership;
   pets: typeof pets;
+  "pipeline/classify": typeof pipeline_classify;
+  "pipeline/fetchSource": typeof pipeline_fetchSource;
+  "pipeline/ocr": typeof pipeline_ocr;
+  "pipeline/textExtract": typeof pipeline_textExtract;
+  "pipeline/types": typeof pipeline_types;
+  polar: typeof polar;
+  polarHttp: typeof polarHttp;
   privacy: typeof privacy;
   reminders: typeof reminders;
   resend: typeof resend;

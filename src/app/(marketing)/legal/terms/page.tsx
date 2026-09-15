@@ -30,7 +30,7 @@ export default function TermsPage() {
               Free covers 1 pet. Plus is $6.99 per month or $69 per year for
               up to 5 pets. Family is $9.99 per month for up to 10 pets.
               Travel packets are a one time $9 purchase. Prices are in USD.
-              We bill through Stripe and show the full price and renewal date
+              We bill through Polar and show the full price and renewal date
               before you pay.
             </p>
           </section>

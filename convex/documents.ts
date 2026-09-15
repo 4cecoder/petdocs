@@ -1,5 +1,10 @@
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
+import {
+  docPipelineType,
+  extractedField,
+} from "./schema";
 
 const docCategory = v.union(
   v.literal("vaccine_record"),
@@ -55,7 +60,7 @@ export const create = mutation({
     if (args.size <= 0 || args.size > MAX_BYTES) {
       throw new Error("File must be non-empty and under 10MB");
     }
-    return await ctx.db.insert("documents", {
+    const documentId = await ctx.db.insert("documents", {
       ownerId: args.ownerId,
       petId: args.petId,
       name: args.name,
@@ -65,8 +70,98 @@ export const create = mutation({
       category: args.category,
       notes: args.notes,
       uploadedBy: args.uploadedBy,
+      status: "uploaded",
       createdAt: Date.now(),
     });
+    // Kick off the extraction/OCR/classification pipeline (issue #23).
+    await ctx.scheduler.runAfter(0, internal.docPipeline.processDocument, {
+      documentId,
+    });
+    return documentId;
+  },
+});
+
+/**
+ * Owner-facing retry: re-arm a failed/needsOcr/needsReview document and
+ * re-run the pipeline. Refuses while a run is already in flight.
+ */
+export const reprocess = mutation({
+  args: {
+    ownerId: v.id("owners"),
+    documentId: v.id("documents"),
+  },
+  handler: async (ctx, args) => {
+    const doc = await ctx.db.get(args.documentId);
+    if (!doc || doc.ownerId !== args.ownerId || doc.isTrash) {
+      throw new Error("Document not found");
+    }
+    if (doc.status === "processing" || doc.status === "uploaded") {
+      throw new Error("Document is already being processed");
+    }
+    await ctx.db.patch(args.documentId, {
+      status: "uploaded",
+      statusError: undefined,
+    });
+    await ctx.scheduler.runAfter(0, internal.docPipeline.processDocument, {
+      documentId: args.documentId,
+    });
+    return args.documentId;
+  },
+});
+
+/**
+ * Review-drawer submit: the owner confirms/edits the extracted fields and
+ * type. Their confirmation counts as ground truth (confidence 1).
+ */
+export const reviewSubmit = mutation({
+  args: {
+    ownerId: v.id("owners"),
+    documentId: v.id("documents"),
+    type: docPipelineType,
+    fields: v.array(extractedField),
+  },
+  handler: async (ctx, args) => {
+    const doc = await ctx.db.get(args.documentId);
+    if (!doc || doc.ownerId !== args.ownerId || doc.isTrash) {
+      throw new Error("Document not found");
+    }
+    if (doc.status === "processing") {
+      throw new Error("Document is still being processed");
+    }
+    const cleanFields = args.fields
+      .filter((f) => f.label.trim() && f.value.trim())
+      .slice(0, 16)
+      .map((f) => ({
+        label: f.label.trim().slice(0, 80),
+        value: f.value.trim().slice(0, 500),
+      }));
+    await ctx.db.patch(args.documentId, {
+      status: "ready",
+      statusError: undefined,
+      metadata: {
+        type: args.type,
+        confidence: 1,
+        fields: cleanFields,
+        needsReview: false,
+        ocrUsed: doc.metadata?.ocrUsed,
+        processedAt: Date.now(),
+      },
+    });
+    return args.documentId;
+  },
+});
+
+/** Current pipeline status of one document (for drawers/retry UI). */
+export const getStatus = query({
+  args: { ownerId: v.id("owners"), documentId: v.id("documents") },
+  handler: async (ctx, args) => {
+    const doc = await ctx.db.get(args.documentId);
+    if (!doc || doc.ownerId !== args.ownerId || doc.isTrash) return null;
+    return {
+      status: doc.status,
+      statusError: doc.statusError,
+      metadata: doc.metadata,
+    };
   },
 });
 
