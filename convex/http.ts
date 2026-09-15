@@ -4,10 +4,12 @@ import { internal } from "./_generated/api";
 // --- Polar webhook registration (billing surface) — logic lives in
 // --- convex/polarHttp.ts; keep this block 3 lines when rebasing.
 import { polarWebhook } from "./polarHttp";
+import type { Id } from "./_generated/dataModel";
+import { bearerTokenOf, tokenHashOf } from "./mobileAuth";
 
-// Public HTTP surface (resend webhooks, share oEmbed later).
-// Auth for /p/[token] stays in shareLinks.resolve - no HTTP routes needed
-// for MVP beyond this placeholder.
+// Public HTTP surface: mobile app auth + build downloads (#24, #42),
+// Resend inbound webhooks. Auth for /p/[token] stays in shareLinks.resolve
+// - no HTTP routes needed for the passport beyond these.
 const http = httpRouter();
 
 // Svix verification for Resend inbound, ported small from portal
@@ -202,5 +204,124 @@ for (const route of passportRoutes) http.route(route);
 
 // --- Polar webhook (billing surface): single route, owned by polarHttp.ts.
 http.route({ path: "/polar/webhook", method: "POST", handler: polarWebhook });
+
+// ---------------------------------------------------------------------------
+// Mobile app API (#24) + build downloads (#42). Handlers stay thin: parse →
+// run the internal function → map to a status code. Tokens are only ever
+// hashed before they reach the data layer and are never logged.
+// ---------------------------------------------------------------------------
+
+async function jsonBody(req: Request): Promise<Record<string, unknown> | null> {
+  try {
+    const body: unknown = await req.json();
+    return asRecord(body);
+  } catch {
+    return null;
+  }
+}
+
+/** Bearer token → session hash → query. Null when unauthenticated. */
+async function sessionHashFrom(req: Request): Promise<string | null> {
+  const token = bearerTokenOf(req);
+  if (!token) return null;
+  return await tokenHashOf(token);
+}
+
+// POST /api/auth/request { email } → honest send/quota state (#24).
+http.route({
+  path: "/api/auth/request",
+  method: "POST",
+  handler: httpAction(async (ctx, req) => {
+    const body = await jsonBody(req);
+    const email = asString(body?.email);
+    if (!email) return jsonResponse({ error: "email is required" }, 400);
+    const result = await ctx.runAction(internal.mobileAuth.requestAuthCode, {
+      email,
+    });
+    return jsonResponse(result, 200);
+  }),
+});
+
+// POST /api/auth/verify { email, token } → { sessionToken, ownerId }.
+http.route({
+  path: "/api/auth/verify",
+  method: "POST",
+  handler: httpAction(async (ctx, req) => {
+    const body = await jsonBody(req);
+    const email = asString(body?.email);
+    const token = asString(body?.token);
+    if (!email || !token) {
+      return jsonResponse({ ok: false, error: "email and token are required" }, 400);
+    }
+    const result = await ctx.runMutation(
+      internal.mobileAuth.verifyAndCreateSession,
+      { email, token },
+    );
+    return jsonResponse(result, result.ok ? 200 : 401);
+  }),
+});
+
+// GET /api/me (Bearer) → { ownerId, email, pets[] }.
+http.route({
+  path: "/api/me",
+  method: "GET",
+  handler: httpAction(async (ctx, req) => {
+    const tokenHash = await sessionHashFrom(req);
+    if (!tokenHash) return jsonResponse({ error: "Unauthorized" }, 401);
+    const me = await ctx.runQuery(internal.mobileAuth.me, { tokenHash });
+    if (!me) return jsonResponse({ error: "Unauthorized" }, 401);
+    return jsonResponse(me, 200);
+  }),
+});
+
+// GET /api/pets/{petId} (Bearer) → read-only vitals + recent records.
+http.route({
+  pathPrefix: "/api/pets/",
+  method: "GET",
+  handler: httpAction(async (ctx, req) => {
+    const petId = new URL(req.url).pathname
+      .split("/api/pets/")[1]
+      ?.split("/")[0];
+    if (!petId) return jsonResponse({ error: "petId is required" }, 400);
+    const tokenHash = await sessionHashFrom(req);
+    if (!tokenHash) return jsonResponse({ error: "Unauthorized" }, 401);
+    // Unknown AND malformed ids both surface as 404 (the query throws only
+    // on deterministic validator failures; transient errors retry inside
+    // Convex before ever reaching this catch).
+    try {
+      const summary = await ctx.runQuery(internal.mobileAuth.petSummary, {
+        tokenHash,
+        petId: petId as Id<"pets">,
+      });
+      if (!summary) return jsonResponse({ error: "Not found" }, 404);
+      return jsonResponse(summary, 200);
+    } catch {
+      return jsonResponse({ error: "Not found" }, 404);
+    }
+  }),
+});
+
+// GET /api/builds/latest?platform=android → 302 to the stored APK (#42).
+http.route({
+  path: "/api/builds/latest",
+  method: "GET",
+  handler: httpAction(async (ctx, req) => {
+    const requested = new URL(req.url).searchParams.get("platform");
+    const platform = requested === "ios" ? "ios" : "android";
+    const build = await ctx.runQuery(internal.apkBuilds.latestForPlatform, {
+      platform,
+    });
+    if (!build) {
+      return jsonResponse(
+        { error: `No ${platform} build available yet` },
+        404,
+      );
+    }
+    return new Response(null, {
+      status: 302,
+      headers: { Location: build.url },
+    });
+  }),
+});
 
 export default http;

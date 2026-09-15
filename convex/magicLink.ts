@@ -54,8 +54,18 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DEFAULT_SITE_URL = "https://petdocs.seridian.dev";
 
 /**
+ * Deep-link scheme of the Android app (#24). When a client passes an origin
+ * with this scheme (e.g. `petdocs://signin`), the emailed link opens the app
+ * instead of the web sign-in page. Allowlisted explicitly — never a free-for-
+ * all scheme.
+ */
+export const APP_LINK_SCHEME = "petdocs:";
+const APP_LINK_FALLBACK = "petdocs://signin";
+
+/**
  * Resolves the base URL for sign-in links against an allowlist:
- * localhost/127.0.0.1, *.seridian.dev, or exact SITE_URL match.
+ * localhost/127.0.0.1, *.seridian.dev, exact SITE_URL match, or the app
+ * deep-link scheme (#24).
  */
 export function resolveBaseUrl(requestedOrigin?: string): string {
   const configuredSiteUrl = (
@@ -68,8 +78,17 @@ export function resolveBaseUrl(requestedOrigin?: string): string {
 
   try {
     const url = new URL(requestedOrigin.trim());
-    if (url.protocol !== "http:" && url.protocol !== "https:") {
+    const isAppScheme = url.protocol === APP_LINK_SCHEME;
+    if (!isAppScheme && url.protocol !== "http:" && url.protocol !== "https:") {
       return configuredSiteUrl;
+    }
+
+    if (isAppScheme) {
+      // `new URL("petdocs://signin")` puts the host part in hostname. Only
+      // the fixed signin host is meaningful today; anything else falls back.
+      return url.hostname === "signin"
+        ? `petdocs://${url.hostname}`
+        : APP_LINK_FALLBACK;
     }
 
     const hostname = url.hostname.toLowerCase();
@@ -143,6 +162,16 @@ export function buildMagicLinkEmail(
   const stamp = `${now.toISOString().slice(0, 10)} ${now.toISOString().slice(11, 16)} UTC`;
   const subject = `Sign in to PetDocs (${stamp})`;
 
+  // #24: app deep links open the mobile app; web links open the site.
+  const isAppLink = loginUrl.startsWith(APP_LINK_SCHEME);
+  const buttonLabel = isAppLink ? "Open PetDocs" : "Sign in";
+  const intro = isAppLink
+    ? "Tap the button below to open the petdocs app. It expires in 15 minutes, one use."
+    : "Use the button below. It expires in 15 minutes, one use.";
+  const fallback = isAppLink
+    ? "If the button doesn't open the app, paste this link into the app's sign-in screen:"
+    : "Or paste this link into your browser:";
+
   // Message-ID domain should be the sending domain when known.
   const fromDomain =
     process.env.RESEND_FROM?.trim().split("@")[1]?.toLowerCase() ||
@@ -176,17 +205,17 @@ If you didn't ask, ignore this.`;
             <tr>
               <td style="padding:8px 32px 0 32px;">
                 <h1 style="margin:0;font-size:20px;line-height:1.4;color:#1C1917;">Sign in to petdocs</h1>
-                <p style="margin:12px 0 0 0;font-size:14px;line-height:1.6;color:#57534E;">Use the button below. It expires in 15 minutes, one use.</p>
+                <p style="margin:12px 0 0 0;font-size:14px;line-height:1.6;color:#57534E;">${intro}</p>
               </td>
             </tr>
             <tr>
               <td style="padding:24px 32px;">
-                <a href="${safeUrl}" style="display:inline-block;background-color:#0D9488;color:#ffffff;font-weight:600;font-size:15px;text-decoration:none;padding:13px 28px;border-radius:999px;">Sign in</a>
+                <a href="${safeUrl}" style="display:inline-block;background-color:#0D9488;color:#ffffff;font-weight:600;font-size:15px;text-decoration:none;padding:13px 28px;border-radius:999px;">${buttonLabel}</a>
               </td>
             </tr>
             <tr>
               <td style="padding:0 32px 32px 32px;">
-                <p style="margin:0;font-size:12px;line-height:1.6;color:#78716C;word-break:break-all;">Or paste this link into your browser:<br/><span style="color:#57534E;">${safeUrl}</span></p>
+                <p style="margin:0;font-size:12px;line-height:1.6;color:#78716C;word-break:break-all;">${fallback}<br/><span style="color:#57534E;">${safeUrl}</span></p>
                 <p style="margin:16px 0 0 0;font-size:12px;line-height:1.6;color:#78716C;">If you didn't ask, ignore this.</p>
               </td>
             </tr>
@@ -264,7 +293,11 @@ export const requestMagicLink = action({
     });
 
     const siteUrl = resolveBaseUrl(args.origin);
-    const loginUrl = `${siteUrl}/sign-in?token=${token}&email=${encodeURIComponent(email)}`;
+    // #24: app-scheme origins deep-link into the mobile app (no /sign-in
+    // path); web origins keep the existing URL shape.
+    const loginUrl = siteUrl.startsWith(APP_LINK_SCHEME)
+      ? `${siteUrl}?token=${token}&email=${encodeURIComponent(email)}`
+      : `${siteUrl}/sign-in?token=${token}&email=${encodeURIComponent(email)}`;
     const { subject, text, html, headers } = buildMagicLinkEmail(loginUrl);
 
     let emailSent = false;

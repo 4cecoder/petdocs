@@ -9,6 +9,7 @@
  */
 
 import type * as admin from "../admin.js";
+import type * as apkBuilds from "../apkBuilds.js";
 import type * as billing from "../billing.js";
 import type * as contact from "../contact.js";
 import type * as crons from "../crons.js";
@@ -20,6 +21,7 @@ import type * as integrations from "../integrations.js";
 import type * as magicLink from "../magicLink.js";
 import type * as mail from "../mail.js";
 import type * as medications from "../medications.js";
+import type * as mobileAuth from "../mobileAuth.js";
 import type * as notifications from "../notifications.js";
 import type * as outboxQuota from "../outboxQuota.js";
 import type * as ownership from "../ownership.js";
@@ -51,6 +53,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
+  apkBuilds: typeof apkBuilds;
   billing: typeof billing;
   contact: typeof contact;
   crons: typeof crons;
@@ -62,6 +65,7 @@ declare const fullApi: ApiFromModules<{
   magicLink: typeof magicLink;
   mail: typeof mail;
   medications: typeof medications;
+  mobileAuth: typeof mobileAuth;
   notifications: typeof notifications;
   outboxQuota: typeof outboxQuota;
   ownership: typeof ownership;
