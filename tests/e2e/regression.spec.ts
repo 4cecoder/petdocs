@@ -135,7 +135,6 @@ test.describe("regression: magic-link negatives", () => {
   test("a used magic link shows an honest error and never grants access", {
     annotation: [{ type: "issue", description: DIRECT_SIGN_IN_BUG }],
   }, async ({ page }) => {
-    test.fail(true, DIRECT_SIGN_IN_BUG);
     const { email, token, ownerId } = await signUpViaUi(page, "regr-reuse");
     expect(ownerId).toMatch(/^[a-z0-9]+$/);
     const firstUse = magicTokenRow(email);
@@ -162,7 +161,6 @@ test.describe("regression: magic-link negatives", () => {
   test("an expired magic link is rejected", {
     annotation: [{ type: "issue", description: DIRECT_SIGN_IN_BUG }],
   }, async ({ page }) => {
-    test.fail(true, DIRECT_SIGN_IN_BUG);
     // Seed a genuinely expired row via the dev CLI (no convex code changed).
     const email = uniqueEmail("regr-expired");
     const token = storeExpiredMagicToken(email);
@@ -181,7 +179,6 @@ test.describe("regression: magic-link negatives", () => {
   test("a magic link is rejected when opened with a different email", {
     annotation: [{ type: "issue", description: DIRECT_SIGN_IN_BUG }],
   }, async ({ page }) => {
-    test.fail(true, DIRECT_SIGN_IN_BUG);
     // Mint a real token for email A, but do NOT click its link.
     const { email, token } = await requestMagicLinkViaUi(
       page,

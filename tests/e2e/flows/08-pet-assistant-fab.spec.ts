@@ -39,6 +39,8 @@ test.describe("Flow 08: Pet Assistant FAB and Drawer", () => {
 
     await assistant.clickQuickChip("Share");
     await assistant.expectResponseContaining("share");
-    await assistant.expectResponseContaining("QR code|link");
+    // Exact bot-answer text: the regex /QR code|link/i also matches the
+    // user's chip echo in the log and trips Playwright strict mode.
+    await assistant.expectResponseContaining("Create a share link");
   });
 });
