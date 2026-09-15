@@ -57,7 +57,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ### Added
 
 - Icons with lucide-react replacing decorative emoji in chrome while PetArt SVG stays as hand-drawn layer
-- Stripe compliance with docs 09 checklist plus Terms Privacy Refunds pages plus footer legal row plus pricing fine print
+- Billing compliance with docs 09 checklist plus Terms Privacy Refunds pages plus footer legal row plus pricing fine print
 - Resend hardened sender with branded magic-link plus reminder templates plus docs 10 setup
 - Superadmin MVP with owners role plus adminAudit plus convex admin with requireRole plus dashboard admin stats owners kill-switch audit
 

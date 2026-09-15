@@ -20,6 +20,14 @@ const resendStatusValidator = v.object({
   from: v.optional(v.string()),
 });
 
+const polarStatusValidator = v.object({
+  accessTokenSet: v.boolean(),
+  webhookSecretSet: v.boolean(),
+  orgIdSet: v.boolean(),
+  productPlusSet: v.boolean(),
+  productFamilySet: v.boolean(),
+});
+
 function testEmailTemplate(): {
   subject: string;
   html: string;
@@ -59,10 +67,7 @@ export const status = query({
   args: { adminEmail: v.string() },
   returns: v.object({
     resend: resendStatusValidator,
-    stripe: v.object({
-      keySet: v.boolean(),
-      webhookSecretSet: v.boolean(),
-    }),
+    polar: polarStatusValidator,
     site: v.object({
       siteUrl: v.string(),
       convexDeployment: v.string(),
@@ -77,10 +82,14 @@ export const status = query({
       fromSet: from !== "",
       from: from || undefined,
     };
-    const stripe = {
-      keySet: (process.env.STRIPE_SECRET_KEY?.trim() || "") !== "",
+    const polar = {
+      accessTokenSet: (process.env.POLAR_ACCESS_TOKEN?.trim() || "") !== "",
       webhookSecretSet:
-        (process.env.STRIPE_WEBHOOK_SECRET?.trim() || "") !== "",
+        (process.env.POLAR_WEBHOOK_SECRET?.trim() || "") !== "",
+      orgIdSet: (process.env.POLAR_ORG_ID?.trim() || "") !== "",
+      productPlusSet: (process.env.POLAR_PRODUCT_ID_PLUS?.trim() || "") !== "",
+      productFamilySet:
+        (process.env.POLAR_PRODUCT_ID_FAMILY?.trim() || "") !== "",
     };
     const siteUrl =
       (process.env.SITE_URL?.trim() || DEFAULT_SITE_URL).replace(/\/+$/, "") ||
@@ -91,7 +100,7 @@ export const status = query({
       : "prod-like";
     return {
       resend,
-      stripe,
+      polar,
       site: { siteUrl, convexDeployment },
       email: { ...resend },
     };

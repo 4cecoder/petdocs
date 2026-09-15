@@ -9,6 +9,7 @@
  */
 
 import type * as admin from "../admin.js";
+import type * as billing from "../billing.js";
 import type * as crons from "../crons.js";
 import type * as docPipeline from "../docPipeline.js";
 import type * as docPipelineAdmin from "../docPipelineAdmin.js";
@@ -26,6 +27,8 @@ import type * as pipeline_fetchSource from "../pipeline/fetchSource.js";
 import type * as pipeline_ocr from "../pipeline/ocr.js";
 import type * as pipeline_textExtract from "../pipeline/textExtract.js";
 import type * as pipeline_types from "../pipeline/types.js";
+import type * as polar from "../polar.js";
+import type * as polarHttp from "../polarHttp.js";
 import type * as privacy from "../privacy.js";
 import type * as reminders from "../reminders.js";
 import type * as resend from "../resend.js";
@@ -43,6 +46,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
+  billing: typeof billing;
   crons: typeof crons;
   docPipeline: typeof docPipeline;
   docPipelineAdmin: typeof docPipelineAdmin;
@@ -60,6 +64,8 @@ declare const fullApi: ApiFromModules<{
   "pipeline/ocr": typeof pipeline_ocr;
   "pipeline/textExtract": typeof pipeline_textExtract;
   "pipeline/types": typeof pipeline_types;
+  polar: typeof polar;
+  polarHttp: typeof polarHttp;
   privacy: typeof privacy;
   reminders: typeof reminders;
   resend: typeof resend;

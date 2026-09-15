@@ -20,7 +20,7 @@ All product and engineering docs. Start with 00, then follow your path below.
 | [06-roadmap.md](06-roadmap.md) | Build order, phases v0.1 to v1.0. |
 | [07-feature-parity.md](07-feature-parity.md) | Web plus Android plus backend parity and pains. |
 | [08-design-system.md](08-design-system.md) | PetArt, tokens, components, accessibility. |
-| [09-stripe-compliance.md](09-stripe-compliance.md) | Billing rules, checkout, refunds, tax. |
+| [09-billing-compliance.md](09-billing-compliance.md) | Billing rules, checkout, refunds, tax (Polar.sh). |
 | [10-resend-setup.md](10-resend-setup.md) | Magic links, reminders, domain setup. |
 | [11-ai-ocr.md](11-ai-ocr.md) | OCR and AI catalog UC-1 to UC-10, parsers. |
 | [12-demo-day.md](12-demo-day.md) | 5 min demo script, seed, objections, ask. |
@@ -46,7 +46,7 @@ Notes: 13 has no doc file today and is held as a reserved number. 18 and CHANGEL
 * `05` (UX) maps to one issue per route and screen (`/onboarding`, `/dashboard/pets`, `/p/[shareToken]`, more).
 * `06` (roadmap) maps to phase checklists (v0.1 must-have vs v0.2 and v1.0) plus definition of done.
 * `07` (parity) maps to per-flow parity issues: each flow-table row gets an issue labeled `scaffolded` or `planned` or `post-MVP`.
-* `08` through `11` map to component and integration issues (design tokens, Stripe, Resend, OCR parsers).
+* `08` through `11` map to component and integration issues (design tokens, Polar billing, Resend, OCR parsers).
 * `12` (demo day) maps to the demo milestone and release-readiness checklist.
 * `14` (deploy) maps to release issues (preview, prod promote, env checks).
 * `15` through `18` map to ops issues (trust, access, inbox, superadmin) with `ops` label.

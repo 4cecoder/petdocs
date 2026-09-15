@@ -65,10 +65,23 @@ export default defineSchema({
         v.literal("superadmin"),
       ),
     ),
+    // Billing block (Polar.sh entitlements, synced only from verified
+    // webhooks in convex/polarHttp.ts — never from client args).
+    // Kept as top-level fields (not a nested `billing` object) so
+    // polarCustomerId can be indexed for O(log n) webhook lookups.
+    // activeTierOf() in convex/billing.ts treats the tier as expired once
+    // currentPeriodEnd is in the past.
+    billingTier: v.optional(
+      v.union(v.literal("free"), v.literal("plus"), v.literal("family")),
+    ),
+    polarCustomerId: v.optional(v.string()),
+    polarSubId: v.optional(v.string()),
+    currentPeriodEnd: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_externalId", ["externalId"])
-    .index("by_email", ["email"]),
+    .index("by_email", ["email"])
+    .index("by_polarCustomerId", ["polarCustomerId"]),
 
   adminAudit: defineTable({
     actorOwnerId: v.id("owners"),

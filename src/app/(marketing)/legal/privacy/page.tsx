@@ -19,8 +19,8 @@ export default function PrivacyPage() {
             <p className="mt-2 text-sm text-ink-soft">
               Your email for sign in, pet profiles you create (name, species,
               breed, photo, microchip), documents you upload, and reminders
-              you set. We also store basic billing status from Stripe. We
-              never see or store full card numbers.
+              you set. We also store basic billing status from Polar, our
+              payment processor. We never see or store full card numbers.
             </p>
           </section>
 
