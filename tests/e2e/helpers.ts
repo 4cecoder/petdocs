@@ -146,6 +146,39 @@ export function storeExpiredMagicToken(email: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Client-error collection (hydration regressions, uncaught exceptions)
+// ---------------------------------------------------------------------------
+
+export interface ClientErrors {
+  /** console.error / console-level error texts, in order. */
+  consoleErrors: string[];
+  /** Uncaught exceptions (window.onerror / unhandled rejections surfaced). */
+  pageErrors: string[];
+}
+
+/**
+ * Attach console + pageerror collectors BEFORE any navigation. Listeners
+ * survive client-side navigations and page.reload(), so first-paint
+ * hydration of every subsequent load is covered. Attach at the very start
+ * of a test — errors that happen before the listeners exist are invisible.
+ */
+export function collectClientErrors(page: Page): ClientErrors {
+  const consoleErrors: string[] = [];
+  const pageErrors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  return { consoleErrors, pageErrors };
+}
+
+/** Assert a collector stayed empty, naming the phase that failed. */
+export function expectNoClientErrors(errors: ClientErrors, phase: string): void {
+  expect(errors.pageErrors, `${phase}: uncaught client exceptions`).toEqual([]);
+  expect(errors.consoleErrors, `${phase}: console errors`).toEqual([]);
+}
+
+// ---------------------------------------------------------------------------
 // Session helpers (mirror src/lib/api.ts localStorage keys)
 // ---------------------------------------------------------------------------
 

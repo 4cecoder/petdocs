@@ -49,13 +49,19 @@ function readOwnerId(): string | null {
 
 export function DashboardAuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const [ownerId, setOwnerId] = useState<string | null>(() => readOwnerId());
-  const [loading, setLoading] = useState<boolean>(false);
+  // The stored session lives in localStorage, which only exists on the
+  // client, so the first render MUST NOT read it: a server render and the
+  // client's first paint have to produce identical DOM or React 19 discards
+  // the server HTML with a hydration mismatch (the lazy useState initializer
+  // here used to read localStorage during that first client render, shifting
+  // every sibling under the root providers). Start in the loading state on
+  // both sides and resolve the session once on mount. No self-heal (#17):
+  // the old directSignIn fallback let an email-only localStorage session
+  // regenerate an ownerId without ever proving mailbox ownership. A session
+  // email without a verified ownerId is signed out — it redirects to sign-in.
+  const [ownerId, setOwnerId] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  // Sync the stored session once on mount. No self-heal (#17): the old
-  // directSignIn fallback let an email-only localStorage session regenerate
-  // an ownerId without ever proving mailbox ownership. A session email
-  // without a verified ownerId is signed out — it redirects to sign-in.
   useEffect(() => {
     setOwnerId(readOwnerId());
     setLoading(false);
