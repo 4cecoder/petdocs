@@ -409,4 +409,32 @@ export default defineSchema({
     exhaustedAt: v.optional(v.number()),
     updatedAt: v.number(),
   }).index("by_day", ["day"]),
+
+  // Mobile app sessions (#24): same hashed-token pattern as magicTokens —
+  // only the SHA-256 of the session token is stored, never the token itself.
+  mobileSessions: defineTable({
+    ownerId: v.id("owners"),
+    tokenHash: v.string(),
+    expiresAt: v.number(),
+    revokedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_tokenHash", ["tokenHash"])
+    .index("by_ownerId", ["ownerId"]),
+
+  // Mobile build hosting (#42): app packages published for the settings
+  // "Mobile apps" panel + GET /api/builds/latest. Upload/finalize are
+  // superadmin-only (convex/admin.ts allowlist); the download redirect is
+  // public.
+  apkBuilds: defineTable({
+    platform: v.union(v.literal("android"), v.literal("ios")),
+    version: v.string(),
+    storageId: v.id("_storage"),
+    sha256: v.string(),
+    notes: v.optional(v.string()),
+    uploadedBy: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_platform_and_createdAt", ["platform", "createdAt"])
+    .index("by_platform", ["platform"]),
 });

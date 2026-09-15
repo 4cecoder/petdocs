@@ -8,15 +8,21 @@ import {
   Check,
   CreditCard,
   Download,
+  Lock,
   Mail,
   Phone,
   Shield,
+  Smartphone,
   Trash2,
   User,
   Users,
 } from "lucide-react";
 import { clearSession, getOwnerId, getSessionEmail } from "@/lib/api";
-import { convexMutation, convexQuery } from "@/lib/convexHttp";
+import {
+  convexMutation,
+  convexQuery,
+  getConvexUrl,
+} from "@/lib/convexHttp";
 import {
   COUNTRY_CODES,
   formatFullPhone,
@@ -32,6 +38,19 @@ interface OwnerProfile {
   phone?: string;
   role?: string;
   createdAt: number;
+}
+
+interface MobileBuild {
+  platform: "android" | "ios";
+  version: string;
+  sha256: string;
+  notes?: string;
+  createdAt: number;
+}
+
+interface LatestMobileBuilds {
+  android: MobileBuild | null;
+  ios: MobileBuild | null;
 }
 
 export default function SettingsPage() {
@@ -59,6 +78,26 @@ export default function SettingsPage() {
   const [confirmEmail, setConfirmEmail] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Mobile app builds (#42): latest published packages per platform.
+  const [mobileBuilds, setMobileBuilds] = useState<LatestMobileBuilds | null>(
+    null,
+  );
+  const [mobileBuildsFailed, setMobileBuildsFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    convexQuery<LatestMobileBuilds>("apkBuilds:latest", {})
+      .then((data) => {
+        if (!cancelled) setMobileBuilds(data);
+      })
+      .catch(() => {
+        if (!cancelled) setMobileBuildsFailed(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!ownerId) return;
@@ -472,7 +511,84 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      {/* 6. Data Export & Privacy */}
+      {/* 6. Mobile apps (#42): latest beta builds per platform. */}
+      <section
+        aria-label="Mobile apps"
+        className="rounded-2xl border border-ink/10 bg-white p-6 shadow-xs"
+      >
+        <div className="flex items-center gap-2">
+          <Smartphone size={18} className="text-brand-600" />
+          <h2 className="font-display text-lg font-bold text-ink">
+            Mobile apps
+          </h2>
+        </div>
+        <p className="mt-1 text-xs text-ink-soft">
+          Take the pet vault on the road. Install the latest beta build on
+          your phone — the download is the newest package published by the
+          team.
+        </p>
+
+        <div className="mt-4 flex flex-col gap-3">
+          {/* Android: live beta build */}
+          <div className="flex items-center justify-between rounded-xl bg-cream p-4">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-ink">
+                PetDocs for Android
+                {mobileBuilds?.android ? (
+                  <span className="ml-2 rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-bold text-brand-800">
+                    v{mobileBuilds.android.version}
+                  </span>
+                ) : null}
+              </p>
+              <p className="mt-0.5 truncate text-xs text-ink-soft">
+                {mobileBuilds === null && !mobileBuildsFailed
+                  ? "Checking for builds…"
+                  : mobileBuilds?.android
+                    ? `Published ${new Date(
+                        mobileBuilds.android.createdAt,
+                      ).toLocaleDateString()} · sha256 ${mobileBuilds.android.sha256.slice(0, 12)}…`
+                    : mobileBuildsFailed
+                      ? "Build info unavailable right now."
+                      : "No build published yet."}
+              </p>
+            </div>
+            {mobileBuilds?.android && getConvexUrl() ? (
+              <a
+                href={`${getConvexUrl()}/api/builds/latest?platform=android`}
+                className="ml-3 inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-xl bg-brand-600 px-4 text-xs font-semibold text-white shadow-xs hover:bg-brand-700"
+                download
+              >
+                <Download size={14} /> Download APK
+              </a>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="ml-3 inline-flex min-h-[40px] shrink-0 cursor-not-allowed items-center gap-1.5 rounded-xl border border-ink/15 bg-white px-4 text-xs font-semibold text-ink-soft opacity-60"
+              >
+                <Download size={14} /> Unavailable
+              </button>
+            )}
+          </div>
+
+          {/* iOS: coming soon */}
+          <div className="flex items-center justify-between rounded-xl bg-cream p-4">
+            <div>
+              <p className="text-sm font-semibold text-ink">
+                PetDocs for iPhone &amp; iPad
+              </p>
+              <p className="mt-0.5 text-xs text-ink-soft">
+                Native iOS app is in development.
+              </p>
+            </div>
+            <span className="ml-3 inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-xl border border-ink/15 bg-white px-4 text-xs font-semibold text-ink-soft opacity-60">
+              <Lock size={14} /> Coming soon
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* 7. Data Export & Privacy */}
       <section
         aria-label="Your Data"
         className="rounded-2xl border border-ink/10 bg-white p-6 shadow-xs"
