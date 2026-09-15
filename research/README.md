@@ -8,6 +8,8 @@ This directory contains competitive teardowns, product benchmarks, authenticated
 |---|---|---|---|
 | [petlita-lovable.md](petlita-lovable.md) | **Petlia Teardown (`petlia.lovable.app` / `petlia.app`)** | Deep-dive product teardown, technical stack analysis (Lovable + Vite + Supabase + Pawla AI), head-to-head feature matrix, and architectural comparison with PetDocs. | Complete |
 | [petlia.md](petlia.md) | **Petlia Live In-App Session Notes** | Live authenticated user session audit (pre-launch waitlist, raw file upload limitations, Google-only auth, broken profile nav). | Complete |
+| [compliance.md](compliance.md) | **US Compliance & Vet-Friendliness** | AAHA record standards, VCPR implications, state board survey (strict states), ESIGN/UETA for manually-signed docs, CCPA/FTC privacy landscape, microchip rules, clinic-adoption checklist, phased roadmap. Closes #40. | Complete |
+| [lander-blueprint.md](lander-blueprint.md) | **Lander Blueprint (petlia.app teardown → petdocs)** | Section-by-section petlia.app lander teardown (live 2026-09-15 capture) and a sprint-scoped petdocs lander blueprint with component mapping. Closes #40. | Complete |
 | [product-direction.md](product-direction.md) | **Product Direction & Strategic Roadmap** | Owner notes from 2026-09-15: Two-sided clinic platform, structured signed documents, enterprise inbound API, and relationship-led pilots. | Active |
 | [screenshots/](screenshots/) | **Competitor UI Screenshots & Extracts** | In-app screen captures (dashboard, records, reminders, settings, pet profile) and scraped DOM text from live competitor audits. | Archive |
 
