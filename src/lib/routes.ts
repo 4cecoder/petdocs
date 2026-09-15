@@ -56,3 +56,60 @@ export function passportHref(token: string): string {
 export function publicShareHref(token: string): string {
   return `/p/${token}`;
 }
+
+/**
+ * Validates and sanitizes a 'next' query parameter to prevent open redirect vulnerabilities
+ * while ensuring internal destination navigation works seamlessly.
+ */
+export function sanitizeNextRoute(rawNext: string | null | undefined, fallback: string = ROUTES.dashboard.root): string {
+  if (!rawNext) return fallback;
+  const trimmed = rawNext.trim();
+  // Must start with a single slash, not protocol-relative '//', and contain no route-group leakage
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//") && !hasRouteGroupLeak(trimmed)) {
+    return trimmed;
+  }
+  return fallback;
+}
+
+/**
+ * Determines whether a given pathname belongs to the protected dashboard zone.
+ */
+export function isDashboardRoute(pathname: string): boolean {
+  return pathname === "/dashboard" || pathname.startsWith("/dashboard/");
+}
+
+/**
+ * Determines whether a given pathname is an auth route (e.g. sign-in, onboarding).
+ */
+export function isAuthRoute(pathname: string): boolean {
+  return pathname === ROUTES.signIn || pathname === ROUTES.onboarding;
+}
+
+/**
+ * Smart router decision: returns the optimal destination path based on authentication status and current route.
+ */
+export function getSmartDestination({
+  isAuthenticated,
+  pathname,
+  isNewUser = false,
+  nextParam,
+}: {
+  isAuthenticated: boolean;
+  pathname: string;
+  isNewUser?: boolean;
+  nextParam?: string | null;
+}): string | null {
+  // If user is not authenticated and trying to access dashboard, redirect to sign-in with next
+  if (!isAuthenticated && isDashboardRoute(pathname)) {
+    return `${ROUTES.signIn}?next=${encodeURIComponent(pathname)}`;
+  }
+
+  // If user is authenticated and lands on sign-in or home, send them to onboarding or their next destination
+  if (isAuthenticated && (isAuthRoute(pathname) || pathname === ROUTES.home)) {
+    if (isNewUser) return ROUTES.onboarding;
+    return sanitizeNextRoute(nextParam, ROUTES.dashboard.root);
+  }
+
+  return null; // No redirect needed
+}
+

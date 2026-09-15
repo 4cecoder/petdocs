@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState, type FormEvent } from "react";
 import { Check, PawPrint } from "lucide-react";
 import { ConvexHttpError, api, setSession } from "@/lib/api";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES, sanitizeNextRoute } from "@/lib/routes";
 
 type VerifyStatus = "idle" | "verifying" | "success" | "error";
 
@@ -20,12 +20,8 @@ function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Only allow internal redirects: never bounce to an external URL.
-  const rawNext = searchParams.get("next");
-  const next =
-    rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//")
-      ? rawNext
-      : ROUTES.dashboard.root;
+  // Smart sanitization: only allow internal redirects; never bounce to an external URL or leaked segment.
+  const next = sanitizeNextRoute(searchParams.get("next"), ROUTES.dashboard.root);
 
   const token = searchParams.get("token");
   const linkEmail = searchParams.get("email");

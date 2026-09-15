@@ -15,7 +15,7 @@ import {
   getSessionEmail,
   setSession,
 } from "@/lib/api";
-import { ROUTES } from "@/lib/routes";
+import { getSmartDestination, ROUTES } from "@/lib/routes";
 
 interface DashboardAuth {
   /** Owner id from the verified magic-link session. Null while signed out. */
@@ -108,8 +108,14 @@ export function DashboardGuard({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !ownerId) {
-      router.replace(`${ROUTES.signIn}?next=${encodeURIComponent(pathname)}`);
+    if (!loading) {
+      const redirect = getSmartDestination({
+        isAuthenticated: !!ownerId,
+        pathname,
+      });
+      if (redirect) {
+        router.replace(redirect);
+      }
     }
   }, [loading, ownerId, router, pathname]);
 
