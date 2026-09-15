@@ -6,6 +6,10 @@ import {
 } from "@seridian/ui-kit";
 import { PetArt } from "@/components/art/PetArt";
 import { PetTimeline, type TimelineEvent } from "@/components/pets/PetTimeline";
+import {
+  vaccinationDueCalendarEvent,
+  vetVisitCalendarEvent,
+} from "@/lib/calendar";
 import { formatDate } from "../fmt";
 import type { Vaccination, VaultDoc, VetVisit } from "@/lib/api";
 
@@ -13,11 +17,26 @@ function buildTimeline(
   vaccines: Vaccination[],
   visits: VetVisit[],
   docs: VaultDoc[],
+  petName: string,
 ): TimelineEvent[] {
   const stamped: Array<{ ts: number; event: TimelineEvent }> = [];
 
   for (const v of vaccines) {
     const ts = v.administeredAt ?? v.dueAt ?? 0;
+    // Only pending due dates get a calendar entry — administered shots are
+    // history, not something to schedule.
+    const calendar =
+      !v.administeredAt && v.dueAt !== undefined
+        ? (vaccinationDueCalendarEvent(
+            {
+              id: v._id,
+              vaccineName: v.vaccineName,
+              dueAt: v.dueAt,
+              provider: v.provider,
+            },
+            petName,
+          ) ?? undefined)
+        : undefined;
     stamped.push({
       ts,
       event: {
@@ -30,6 +49,7 @@ function buildTimeline(
           : v.dueAt
             ? `Due ${formatDate(v.dueAt)}`
             : undefined,
+        calendar,
       },
     });
   }
@@ -46,6 +66,17 @@ function buildTimeline(
           [visit.clinicName, visit.vetName, visit.diagnosis]
             .filter(Boolean)
             .join(" · ") || undefined,
+        calendar: vetVisitCalendarEvent(
+          {
+            id: visit._id,
+            visitedAt: visit.visitedAt,
+            reason: visit.reason,
+            clinicName: visit.clinicName,
+            vetName: visit.vetName,
+            diagnosis: visit.diagnosis,
+          },
+          petName,
+        ),
       },
     });
   }
@@ -71,14 +102,16 @@ export default function TimelinePanel({
   vaccines,
   visits,
   docs,
+  petName,
   onAddDocument,
 }: {
   vaccines: Vaccination[];
   visits: VetVisit[];
   docs: VaultDoc[];
+  petName: string;
   onAddDocument: () => void;
 }) {
-  const timeline = buildTimeline(vaccines, visits, docs);
+  const timeline = buildTimeline(vaccines, visits, docs, petName);
 
   return (
     <section aria-label="Health timeline" className="flex flex-col gap-4">

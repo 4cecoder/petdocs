@@ -12,8 +12,10 @@ import {
   Upload,
 } from "lucide-react";
 import { Progress } from "@seridian/ui-kit";
+import { AddToCalendarButton } from "@/components/calendar/AddToCalendarButton";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
+import type { CalendarEventInput } from "@/lib/calendar";
 import { formatAge, getSpeciesEmoji } from "./fmt";
 import type { Pet } from "@/lib/api";
 
@@ -33,6 +35,7 @@ export function PetHero({
   missingCount,
   upcomingCount,
   nextAppointment,
+  nextVaccineEvent,
   vaccineSummary,
   vaccineCount,
   activeMedCount,
@@ -45,7 +48,12 @@ export function PetHero({
   profileScore: number;
   missingCount: number;
   upcomingCount: number;
-  nextAppointment: { title: string; dueAt: number } | null;
+  nextAppointment: {
+    title: string;
+    dueAt: number;
+    calendar?: CalendarEventInput;
+  } | null;
+  nextVaccineEvent?: CalendarEventInput | null;
   vaccineSummary: VaccineSummary;
   vaccineCount: number;
   activeMedCount: number;
@@ -105,6 +113,12 @@ export function PetHero({
                   Manage
                   <ChevronRight size={12} aria-hidden="true" />
                 </a>
+                {nextAppointment?.calendar ? (
+                  <AddToCalendarButton
+                    variant="menu"
+                    event={nextAppointment.calendar}
+                  />
+                ) : null}
               </div>
 
               <div className="flex items-center gap-2 rounded-xl bg-cream px-3 py-2 text-xs">
@@ -131,6 +145,12 @@ export function PetHero({
                     {vaccineSummary.detail} · {vaccineCount} logged
                   </dd>
                 </div>
+                {nextVaccineEvent ? (
+                  <AddToCalendarButton
+                    variant="menu"
+                    event={nextVaccineEvent}
+                  />
+                ) : null}
               </div>
 
               <div className="flex items-center gap-2 rounded-xl bg-cream px-3 py-2 text-xs">
