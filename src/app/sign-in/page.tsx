@@ -77,32 +77,12 @@ function SignInForm() {
           router.push(next);
           return;
         }
-        // Resilient recovery: if link was already used or expired, sign in directly with the verified email
-        if (linkEmail) {
-          const direct = await api.auth.directSignIn(linkEmail);
-          if (direct.ok) {
-            setSession(linkEmail, direct.ownerId);
-            setVerifyStatus("success");
-            router.push(direct.isNew ? ROUTES.onboarding : next);
-            return;
-          }
-        }
+        // Honest state (#17/#18): invalid/used/expired links surface the
+        // backend error directly. No instant-access fallback — mailbox
+        // ownership is proven only by a valid, unused token.
         setVerifyStatus("error");
         setVerifyError(toVerifyError(result.error));
       } catch (err) {
-        if (linkEmail) {
-          try {
-            const direct = await api.auth.directSignIn(linkEmail);
-            if (direct.ok) {
-              setSession(linkEmail, direct.ownerId);
-              setVerifyStatus("success");
-              router.push(direct.isNew ? ROUTES.onboarding : next);
-              return;
-            }
-          } catch {
-            /* fall through */
-          }
-        }
         if (verifiedKey.current !== key) return;
         setVerifyStatus("error");
         if (err instanceof ConvexHttpError) {
@@ -116,34 +96,6 @@ function SignInForm() {
       }
     })();
   }, [token, linkEmail, next, router]);
-
-  async function handleDirectSignIn(e?: FormEvent) {
-    if (e) e.preventDefault();
-    const cleanEmail = email.trim();
-    if (!cleanEmail || !cleanEmail.includes("@")) {
-      setFormError("Please enter a valid email address.");
-      return;
-    }
-    setFormError(null);
-    setBackendDown(false);
-    setSubmitting(true);
-    try {
-      const res = await api.auth.directSignIn(cleanEmail);
-      if (res.ok) {
-        setSession(cleanEmail, res.ownerId);
-        setVerifyStatus("success");
-        router.push(res.isNew ? ROUTES.onboarding : next);
-      }
-    } catch (err) {
-      if (err instanceof ConvexHttpError) {
-        setBackendDown(true);
-      } else {
-        setFormError("Could not sign in. Please try again.");
-      }
-    } finally {
-      setSubmitting(false);
-    }
-  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -220,17 +172,9 @@ function SignInForm() {
           />
         </label>
         <button
-          type="button"
-          onClick={() => void handleDirectSignIn()}
-          disabled={busy}
-          className="min-h-[48px] rounded-2xl bg-brand-600 px-4 py-3 font-semibold text-white hover:bg-brand-700 disabled:opacity-60 shadow-sm"
-        >
-          {submitting ? "Signing in…" : "Continue to Dashboard (Instant Access)"}
-        </button>
-        <button
           type="submit"
           disabled={busy}
-          className="min-h-[44px] rounded-2xl border border-ink/15 bg-white px-4 py-2 text-sm font-semibold text-ink-soft hover:bg-cream disabled:opacity-60"
+          className="min-h-[48px] rounded-2xl bg-brand-600 px-4 py-3 font-semibold text-white hover:bg-brand-700 disabled:opacity-60 shadow-sm"
         >
           {sent ? "Resend magic link email" : "Email me a magic link instead"}
         </button>

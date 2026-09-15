@@ -154,15 +154,9 @@ export const api = {
         origin ? { email, origin } : { email },
       ),
     verifyMagicLink: (email: string, token: string) =>
-      convexMutation<{ ok: true; ownerId: string } | { ok: false; error: string }>(
-        "magicLink:verifyMagicLink",
-        { email, token },
-      ),
-    directSignIn: (email: string) =>
-      convexMutation<{ ok: boolean; ownerId: string; isNew: boolean }>(
-        "magicLink:directSignIn",
-        { email },
-      ),
+      convexMutation<
+        { ok: true; ownerId: string } | { ok: false; error: string }
+      >("magicLink:verifyMagicLink", { email, token }),
   },
 
   pets: {

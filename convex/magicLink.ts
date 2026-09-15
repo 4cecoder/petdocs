@@ -11,8 +11,14 @@
  *      is invalid or unsent — to avoid account enumeration.
  *   2. verifyMagicLink({ email, token }) — public mutation. Hashes + looks up
  *      the token scoped to the email, rejects unknown/expired/already-used
- *      links, consumes the token (single-use), then find-or-creates the
- *      owners row (externalId = email) and returns its ownerId.
+ *      links (honest state — no instant-access fallback), consumes the token
+ *      (single-use), then find-or-creates the owners row (externalId =
+ *      email) and returns its ownerId. Server-side superadmin allowlist
+ *      (convex/admin.ts) persists the superadmin tier on first sign-in.
+ *
+ * There is deliberately NO direct sign-in mutation (#17): signing in
+ * REQUIRES a valid, unused, unexpired token tied to the email — mailbox
+ * ownership must be proven, never assumed.
  *
  * Table note: tokens live in a `magicTokens` table that does NOT exist in
  * convex/schema.ts yet — see convex/README.md for the exact block to add on
@@ -28,6 +34,8 @@ import {
 } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
+import { isSuperadminAllowlisted } from "./admin";
 
 const TOKEN_TTL_MS = 15 * 60 * 1000; // 15 minutes
 const RESEND_COOLDOWN_MS = 60 * 1000; // 1 request per email per minute
@@ -108,7 +116,36 @@ async function hashToken(token: string): Promise<string> {
     .join("");
 }
 
-function brandedEmail(loginUrl: string): { text: string; html: string } {
+/**
+ * Builds the branded magic-link email (#21). Every send carries:
+ *   - a unique Message-ID (crypto.randomUUID) so Gmail treats each link
+ *     email as its own conversation, and
+ *   - a short request timestamp in the subject for the same reason.
+ * In-Reply-To/References are never set — a sign-in email must never thread
+ * as a reply. convex/resend.ts sanitizeHeaders additionally strips any
+ * threading headers that could ever be passed through.
+ */
+export function buildMagicLinkEmail(
+  loginUrl: string,
+  now: Date = new Date(),
+): {
+  subject: string;
+  text: string;
+  html: string;
+  headers: Record<string, string>;
+} {
+  // Short timestamp: "2026-09-15 14:03 UTC".
+  const stamp = `${now.toISOString().slice(0, 10)} ${now.toISOString().slice(11, 16)} UTC`;
+  const subject = `Sign in to PetDocs (${stamp})`;
+
+  // Message-ID domain should be the sending domain when known.
+  const fromDomain =
+    process.env.RESEND_FROM?.trim().split("@")[1]?.toLowerCase() ||
+    "petdocs.seridian.dev";
+  const headers: Record<string, string> = {
+    "Message-ID": `<${crypto.randomUUID()}@${fromDomain}>`,
+  };
+
   const text = `Hi there,
 
 Sign in to petdocs with this link (15 minutes, one use):
@@ -155,7 +192,7 @@ If you didn't ask, ignore this.`;
   </body>
 </html>`;
 
-  return { text, html };
+  return { subject, text, html, headers };
 }
 
 export const latestTokenForEmail = internalQuery({
@@ -223,7 +260,7 @@ export const requestMagicLink = action({
 
     const siteUrl = resolveBaseUrl(args.origin);
     const loginUrl = `${siteUrl}/sign-in?token=${token}&email=${encodeURIComponent(email)}`;
-    const { text, html } = brandedEmail(loginUrl);
+    const { subject, text, html, headers } = buildMagicLinkEmail(loginUrl);
 
     let emailSent = false;
     try {
@@ -231,9 +268,11 @@ export const requestMagicLink = action({
         internal.resend.sendEmail,
         {
           to: email,
-          subject: "Sign in to PetDocs",
+          subject,
           html,
           text,
+          // Unique Message-ID per send; never In-Reply-To/References (#21).
+          headers,
         },
       );
       if (emailResult && !emailResult.ok) {
@@ -304,57 +343,28 @@ export const verifyMagicLink = mutation({
       .query("owners")
       .withIndex("by_externalId", (q) => q.eq("externalId", email))
       .first();
+
+    let ownerId: Id<"owners">;
     if (existing) {
-      return { ok: true as const, ownerId: existing._id };
+      ownerId = existing._id;
+    } else {
+      const prefix = email.split("@")[0]?.trim();
+      const name = prefix ? prefix : email;
+      ownerId = await ctx.db.insert("owners", {
+        externalId: email,
+        email,
+        name,
+        createdAt: Date.now(),
+      });
     }
 
-    const prefix = email.split("@")[0]?.trim();
-    const name = prefix ? prefix : email;
-    const ownerId = await ctx.db.insert("owners", {
-      externalId: email,
-      email,
-      name,
-      createdAt: Date.now(),
-    });
+    // Server-side superadmin allowlist (#22): the allowlisted email gets
+    // the superadmin tier on first sign-in. The allowlist is derived from
+    // Convex env / a server constant only — never from a client argument.
+    if (existing?.role !== "superadmin" && isSuperadminAllowlisted(email)) {
+      await ctx.db.patch(ownerId, { role: "superadmin" });
+    }
+
     return { ok: true as const, ownerId };
-  },
-});
-
-/**
- * Direct sign-in / instant registration mutation.
- * Creates an account if new or signs in immediately, returning ownerId.
- */
-export const directSignIn = mutation({
-  args: { email: v.string() },
-  returns: v.object({
-    ok: v.boolean(),
-    ownerId: v.id("owners"),
-    isNew: v.boolean(),
-  }),
-  handler: async (ctx, args) => {
-    const email = normalizeEmail(args.email);
-    if (!EMAIL_RE.test(email)) {
-      throw new Error("Please enter a valid email address.");
-    }
-
-    const existing = await ctx.db
-      .query("owners")
-      .withIndex("by_externalId", (q) => q.eq("externalId", email))
-      .first();
-
-    if (existing) {
-      return { ok: true, ownerId: existing._id, isNew: false };
-    }
-
-    const prefix = email.split("@")[0]?.trim();
-    const name = prefix ? prefix : email;
-    const ownerId = await ctx.db.insert("owners", {
-      externalId: email,
-      email,
-      name,
-      createdAt: Date.now(),
-    });
-
-    return { ok: true, ownerId, isNew: true };
   },
 });

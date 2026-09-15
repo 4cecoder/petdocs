@@ -15,6 +15,11 @@
  * Bootstrap: Convex env ADMIN_EMAILS (comma-separated) counts as
  * superadmin even when the owner row role is unset, so developers are
  * never locked out (previously resolved as admin).
+ * Superadmin allowlist (#22): Convex env SUPERADMIN_EMAILS (comma-
+ * separated; falls back to the built-in owner constant) is a purely
+ * server-side allowlist. It resolves superadmin the same way as the
+ * bootstrap list and verifyMagicLink persists the tier on first sign-in.
+ * Client-supplied emails are never trusted as authorization input.
  */
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
@@ -85,11 +90,40 @@ function isBootstrapAdmin(email: string): boolean {
   return bootstrapEmails().includes(normalizeEmail(email));
 }
 
+/**
+ * Built-in superadmin allowlist (#22). Used only when SUPERADMIN_EMAILS
+ * is unset on the deployment. The owner account is the product owner.
+ */
+const DEFAULT_SUPERADMIN_EMAILS = ["itsmedjt@gmail.com"];
+
+/**
+ * Server-side superadmin allowlist (#22): SUPERADMIN_EMAILS env var
+ * (comma-separated) when configured, else the built-in owner constant.
+ * Read from Convex env only — the client can never add itself here.
+ */
+export function superadminEmails(): string[] {
+  const raw = process.env.SUPERADMIN_EMAILS ?? "";
+  const configured = raw
+    .split(",")
+    .map((s) => normalizeEmail(s))
+    .filter((s) => s.length > 0);
+  return configured.length > 0 ? configured : DEFAULT_SUPERADMIN_EMAILS;
+}
+
+/** True when the email is on the server-side superadmin allowlist. */
+export function isSuperadminAllowlisted(email: string): boolean {
+  return superadminEmails().includes(normalizeEmail(email));
+}
+
 function effectiveRole(
   stored: Role | undefined,
   email: string,
 ): Role {
-  if (isBootstrapAdmin(email)) return "superadmin";
+  // Read-time resolution (#22): allowlisted emails are superadmin even if
+  // the stored role has not been patched yet (e.g. pre-allowlist rows).
+  if (isBootstrapAdmin(email) || isSuperadminAllowlisted(email)) {
+    return "superadmin";
+  }
   return stored ?? "owner";
 }
 
@@ -121,7 +155,7 @@ export async function requireRole(ctx: any, email: string, minRole: Role) {
     .withIndex("by_email", (q: any) => q.eq("email", normalized))
     .first();
   if (!owner) throw new Error("Not authorized");
-  if (isBootstrapAdmin(normalized)) {
+  if (isBootstrapAdmin(normalized) || isSuperadminAllowlisted(normalized)) {
     if (RANK["superadmin"] < minRank) throw new Error("Not authorized");
     return { owner, role: "superadmin" as Role };
   }
