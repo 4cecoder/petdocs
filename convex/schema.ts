@@ -266,6 +266,22 @@ export default defineSchema({
     .index("by_petId", ["petId"])
     .index("by_ownerId", ["ownerId"]),
 
+  // #39: one row per passport email send from the dashboard share tool.
+  // Deliberately NOT in the staff mail tables (mailMessages is the team
+  // inbox) — this is the owner-facing share-email history/outbox.
+  shareEmails: defineTable({
+    ownerId: v.id("owners"),
+    petId: v.id("pets"),
+    linkId: v.id("shareLinks"),
+    recipientEmail: v.string(),
+    note: v.optional(v.string()),
+    status: v.union(v.literal("sent"), v.literal("failed")),
+    error: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_ownerId", ["ownerId"])
+    .index("by_petId_and_recipient", ["petId", "recipientEmail"]),
+
   magicTokens: defineTable({
     email: v.string(),
     tokenHash: v.string(),

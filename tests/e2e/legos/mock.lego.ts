@@ -391,7 +391,11 @@ export async function setupConvexMock(page: Page, initialState?: Partial<MockSta
       }
 
       if (path === "documents:generateUploadUrl") {
-        await route.fulfill({ json: { value: "http://localhost:3000/api/mock-upload" } });
+        // Origin-relative: uploadDoc fetches it from the page, so it resolves
+        // against whatever PORT the suite runs on. An absolute
+        // http://localhost:3000 URL made this PUT cross-origin on other
+        // ports, and the preflight failed (no CORS headers on fulfill).
+        await route.fulfill({ json: { value: "/api/mock-upload" } });
         return;
       }
 

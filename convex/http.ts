@@ -195,6 +195,11 @@ http.route({
   }),
 });
 
+// --- #39 BEGIN passport email-share QR route — defined in passportHttp.ts (passport agent owns this block; android agent owns the rest of http.ts) ---
+import { passportRoutes } from "./passportHttp";
+for (const route of passportRoutes) http.route(route);
+// --- #39 END ---
+
 // --- Polar webhook (billing surface): single route, owned by polarHttp.ts.
 http.route({ path: "/polar/webhook", method: "POST", handler: polarWebhook });
 
