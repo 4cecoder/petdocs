@@ -17,4 +17,15 @@ crons.daily(
   {},
 );
 
+/**
+ * Doc pipeline retry sweep (issue #23): re-arm documents stuck in
+ * "failed" and reschedule their processing. Bounded batch of 10 per run.
+ */
+crons.interval(
+  "doc pipeline retry sweep",
+  { hours: 6 },
+  internal.docPipeline.retryFailed,
+  { limit: 10 },
+);
+
 export default crons;
