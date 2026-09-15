@@ -1,0 +1,21 @@
+#!/bin/sh
+# pre-commit: eslint on staged JS/TS files + full typecheck.
+#
+# Install once per clone/worktree:  bun run hooks:install
+# Skippable in emergencies:         git commit --no-verify
+#                                   (CI is the real gate; use sparingly.)
+set -e
+cd "$(git rev-parse --show-toplevel)"
+
+staged_files=$(git diff --cached --name-only --diff-filter=ACMR -- \
+  '*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.cjs')
+
+if [ -n "$staged_files" ]; then
+  echo "pre-commit: eslint on staged files..."
+  printf '%s\n' "$staged_files" | tr '\n' '\0' | xargs -0 bunx eslint
+else
+  echo "pre-commit: no staged JS/TS files, skipping eslint."
+fi
+
+echo "pre-commit: tsc --noEmit..."
+bun run typecheck

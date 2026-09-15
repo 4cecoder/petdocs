@@ -30,6 +30,7 @@ All product and engineering docs. Start with 00, then follow your path below.
 | [16-team-access.md](16-team-access.md) | Team access playbook, roles, invites, offboarding. |
 | [17-company-email.md](17-company-email.md) | Shared team inbox, inbound routing, limits. |
 | [18-operations.md](18-operations.md) | Superadmin operations runbook, incoming, lands in parallel. |
+| [development.md](development.md) | Trunk-based flow, PR gates, git hooks, deploy rules, hotfixes. |
 | [CHANGELOG.md](../CHANGELOG.md) | Release notes per deploy, incoming, lands in parallel. |
 | [../research/README.md](../research/README.md) | Competitive intelligence, benchmarks, and teardowns (Petlia, etc.). |
 
