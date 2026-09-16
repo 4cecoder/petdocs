@@ -57,7 +57,8 @@ function SignInForm() {
 
   useEffect(() => {
     setShowDemoAccess(
-      process.env.NODE_ENV !== "production" &&
+      (process.env.NODE_ENV !== "production" ||
+        process.env.NEXT_PUBLIC_E2E_LOCAL_DEMO === "1") &&
         isLocalDemoHost(window.location.hostname),
     );
   }, []);

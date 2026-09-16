@@ -17,6 +17,15 @@ jobs:
     name: Lint / Typecheck / Unit / Build / Smoke
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      # The role matrix runs against localhost under `next start`, which is
+      # production-mode. Keep the shortcut localhost-only while explicitly
+      # enabling it for this mock-only CI build; deployed production builds
+      # never set this flag.
+      NEXT_PUBLIC_E2E_LOCAL_DEMO: "1"
+      # Keep Convex calls same-origin so Playwright can intercept them. This
+      # is a mock-only CI build and never points at a deployment.
+      NEXT_PUBLIC_CONVEX_URL: "http://localhost:3000"
     steps:
       - uses: actions/checkout@v4
 
