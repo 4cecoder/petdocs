@@ -23,6 +23,7 @@
     "test:regression": "E2E_REAL_BACKEND=1 playwright test tests/e2e/regression.spec.ts",
     "hooks:install": "git config core.hooksPath .githooks",
     "seed": "bunx convex run seed:seedDemo",
+    "seed:repair": "bunx convex run seed:repairDemoRoles",
     "convex:dev": "bunx convex dev",
     "convex:deploy": "bunx convex deploy"
   },

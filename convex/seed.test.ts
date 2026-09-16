@@ -58,4 +58,45 @@ describe("demo seed role coverage", () => {
       t.query(api.admin.stats, { adminEmail: "superadmin@demo.pet" }),
     ).resolves.toMatchObject({ owners: 7 });
   });
+
+  test("repairs staff rows without resetting existing demo owners", async () => {
+    const t = convexTest({ schema, modules });
+    const legacyAuditorId = await t.run(async (ctx) =>
+      ctx.db.insert("owners", {
+        externalId: "legacy-demo-auditor",
+        name: "Legacy Auditor",
+        email: "auditor@demo.pet",
+        createdAt: 123,
+      }),
+    );
+
+    const result = await t.mutation(api.seed.repairDemoRoles, {});
+
+    expect(result).toMatchObject({
+      ownersCreated: 4,
+      staffCreated: 5,
+      staffUpdated: 0,
+      roles: 5,
+    });
+
+    const data = await t.run(async (ctx) => ({
+      owners: await ctx.db.query("owners").collect(),
+      staff: await ctx.db.query("staff").collect(),
+      legacyAuditor: await ctx.db.get(legacyAuditorId),
+    }));
+    expect(data.owners).toHaveLength(5);
+    expect(data.staff).toHaveLength(5);
+    expect(data.legacyAuditor).toMatchObject({
+      name: "Legacy Auditor",
+      email: "auditor@demo.pet",
+      createdAt: 123,
+    });
+
+    await expect(
+      t.query(api.admin.getMe, { email: "auditor@demo.pet" }),
+    ).resolves.toMatchObject({ role: "auditor" });
+    await expect(
+      t.query(api.admin.getMe, { email: "superadmin@demo.pet" }),
+    ).resolves.toMatchObject({ role: "superadmin" });
+  });
 });

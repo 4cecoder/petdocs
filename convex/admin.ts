@@ -180,7 +180,11 @@ async function writeAudit(
   });
 }
 
-/** Owner row or null. Client reads `role` to gate. Bootstrap resolves to superadmin. */
+/**
+ * Owner row or null. Client reads the effective role to gate the UI.
+ * Active staff rows are the source of truth; the legacy owner role and
+ * server-side allowlists remain fallbacks for older accounts.
+ */
 export const getMe = query({
   args: { email: v.string() },
   handler: async (ctx, args) => {
@@ -190,14 +194,19 @@ export const getMe = query({
       .withIndex("by_email", (q) => q.eq("email", normalized))
       .first();
     if (!owner) return null;
+    const staff = await ctx.db
+      .query("staff")
+      .withIndex("by_email", (q) => q.eq("email", normalized))
+      .first();
+    const storedRole =
+      staff?.active
+        ? (staff.role as Role)
+        : ((owner.role as Role | undefined) ?? undefined);
     return {
       _id: owner._id,
       email: owner.email,
       name: owner.name,
-      role: effectiveRole(
-        (owner.role as Role | undefined) ?? undefined,
-        normalized,
-      ),
+      role: effectiveRole(storedRole, normalized),
       createdAt: owner.createdAt,
     };
   },

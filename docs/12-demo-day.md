@@ -2,7 +2,9 @@
 
 Goal: greenlight pricing and wedge. Talk, click, ask. Keep it live, no slides.
 
-Setup: run `seedDemo` with `{reset:true}`, login as `maya@demo.pet`. Second phone logged out for passport view.
+Setup: run `seedDemo` with `{reset:true}`, login as `maya@demo.pet`. Second phone logged out for passport view. If this local deployment
+already has demo owners from an older seed, run `bun run seed:repair` first to
+restore staff roles without deleting demo data.
 
 On localhost, the sign-in page also shows **Local demo access** buttons. They
 request and verify a normal magic link, so no production auth shortcut is

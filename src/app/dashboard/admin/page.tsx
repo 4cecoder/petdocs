@@ -9,6 +9,7 @@ import { ROUTES } from "@/lib/routes";
 import StaffManager from "@/components/staff/StaffManager";
 
 type Role = "owner" | "support" | "admin" | "superadmin";
+type MeRole = Role | "manager" | "auditor";
 
 type StaffRoleName = "owner" | "manager" | "support" | "auditor" | "superadmin";
 
@@ -21,7 +22,7 @@ interface Me {
   _id: string;
   email: string;
   name: string;
-  role: Role;
+  role: MeRole;
   createdAt: number;
 }
 
@@ -272,15 +273,17 @@ export default function AdminPage() {
     );
   }
 
-  const effRole: StaffRoleName | Role | null = staffRole
+  const effRole: StaffRoleName | MeRole | null = staffRole
     ? staffRole.role
     : (me?.role ?? null);
+  // A legacy `owners.role = owner` row is a pet-parent account, not a team
+  // owner. Only an active staff row (including staff owner) or an explicit
+  // legacy support/admin tier can enter this workspace.
   const canViewAdmin =
-    (!!me &&
-      (me.role === "support" ||
-        me.role === "admin" ||
-        me.role === "superadmin")) ||
-    !!staffRole;
+    !!staffRole ||
+    me?.role === "support" ||
+    me?.role === "admin" ||
+    me?.role === "superadmin";
   const isStaffOwner = effRole === "admin" || effRole === "owner";
   const isSuperadmin = effRole === "superadmin";
   const canReadSupportData =
@@ -322,7 +325,12 @@ export default function AdminPage() {
     );
   }
 
-  const isAdmin = me?.role === "admin";
+  // Staff owner/superadmin roles are rank-4+ on the server too. Keep the
+  // legacy owner-role editor separate from pet locking so staff owners do
+  // not lose controls merely because their owner row says `owner`.
+  const canManageOwnerRoles =
+    effRole === "owner" || effRole === "admin" || effRole === "superadmin";
+  const canLockPets = canManageOwnerRoles;
 
   return (
     <div className="flex flex-col gap-4">
@@ -425,7 +433,7 @@ export default function AdminPage() {
                         Joined {formatDate(o.createdAt)}
                       </p>
                     </div>
-                    {isAdmin ? (
+                    {canManageOwnerRoles ? (
                       <select
                         aria-label={`Role for ${o.email}`}
                         value={o.role}
@@ -499,7 +507,7 @@ export default function AdminPage() {
         </>
       ) : null}
 
-      {isAdmin ? (
+      {canLockPets ? (
         <section
           aria-label="Pet lock"
           className="rounded-2xl border border-ink/10 bg-white p-4"
@@ -610,7 +618,7 @@ export default function AdminPage() {
         </section>
       ) : null}
 
-      {me?.role === "superadmin" ? (
+      {isSuperadmin ? (
         <section
           aria-label="Integrations"
           className="flex items-center justify-between gap-3 rounded-2xl border border-ink/10 bg-white p-4"
