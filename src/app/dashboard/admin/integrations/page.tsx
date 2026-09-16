@@ -18,7 +18,20 @@ import { ROUTES } from "@/lib/routes";
 import { humanDuration, msUntilUtcMidnight, utcDayKey } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
 
-type MeRole = "owner" | "support" | "admin" | "superadmin";
+type MeRole =
+  | "owner"
+  | "support"
+  | "admin"
+  | "superadmin"
+  | "manager"
+  | "auditor";
+
+type StaffRoleName = "owner" | "manager" | "support" | "auditor" | "superadmin";
+
+interface StaffRoleInfo {
+  role: StaffRoleName;
+  active: boolean;
+}
 
 interface Me {
   _id: string;
@@ -125,6 +138,7 @@ export default function AdminIntegrationsPage() {
   const toast = useToast();
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
   const [me, setMe] = useState<Me | null>(null);
+  const [staffRole, setStaffRole] = useState<StaffRoleInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<IntegrationsStatus | null>(null);
   const [dataError, setDataError] = useState<string | null>(null);
@@ -143,12 +157,18 @@ export default function AdminIntegrationsPage() {
     let cancelled = false;
     (async () => {
       try {
-        const profile = await convexQuery<Me | null>("admin:getMe", {
-          email,
-        });
+        const [profile, staff] = await Promise.all([
+          convexQuery<Me | null>("admin:getMe", { email }),
+          convexQuery<StaffRoleInfo | null>("staff:myStaffRole", {
+            email,
+          }).catch(() => null),
+        ]);
         if (cancelled) return;
         setMe(profile);
-        if (profile && profile.role === "superadmin") {
+        const activeStaff = staff && staff.active ? staff : null;
+        setStaffRole(activeStaff);
+        const effectiveRole = activeStaff?.role ?? profile?.role;
+        if (profile && effectiveRole === "superadmin") {
           try {
             const s = await convexQuery<IntegrationsStatus>(
               "integrations:status",
@@ -164,7 +184,10 @@ export default function AdminIntegrationsPage() {
           }
         }
       } catch {
-        if (!cancelled) setMe(null);
+        if (!cancelled) {
+          setMe(null);
+          setStaffRole(null);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -190,7 +213,9 @@ export default function AdminIntegrationsPage() {
     );
   }
 
-  if (!me || me.role !== "superadmin") {
+  const effectiveRole = staffRole?.role ?? me?.role;
+
+  if (!me || effectiveRole !== "superadmin") {
     return (
       <div className="flex flex-col gap-4">
         <section

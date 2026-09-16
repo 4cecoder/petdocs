@@ -49,11 +49,14 @@ Backend-auth diagnostics use the dev deployment only when explicitly enabled.
 
 Run the seed against the same non-production Convex deployment used by the
 local app (`bun run seed`; use the existing `seedDemo` reset path when
-refreshing it). On `http://localhost`, `/sign-in` shows buttons for Maya, Sam,
-auditor, support, manager, team owner, and superadmin. The mock-first E2E suite
-exercises every button without calling the real magic-link action. Manual local
-demo use still requests a normal single-use magic link; no demo shortcut is
-rendered in production.
+refreshing it). If an older deployment already has demo owners, but the role
+buttons land on **Internal only**, run `bun run seed:repair`; it upserts only
+the five staff rows and missing staff owner identities, without resetting pets,
+documents, or mail. On `http://localhost`, `/sign-in` shows buttons for Maya,
+Sam, auditor, support, manager, team owner, and superadmin. The mock-first E2E
+suite exercises every button without calling the real magic-link action. Manual
+local demo use still requests a normal single-use magic link; no demo shortcut
+is rendered in production.
 
 Maya and Sam carry the pet fixtures. Staff-role accounts carry the admin
 fixtures. Documents remain a UI upload step because storage blobs cannot be

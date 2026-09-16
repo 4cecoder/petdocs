@@ -8,7 +8,13 @@ import { getSessionEmail } from "@/lib/api";
 import { ROUTES } from "@/lib/routes";
 import { PetArt } from "@/components/art/PetArt";
 
-type Role = "owner" | "support" | "admin" | "superadmin";
+type Role =
+  | "owner"
+  | "support"
+  | "admin"
+  | "superadmin"
+  | "manager"
+  | "auditor";
 type StaffRoleName = "owner" | "manager" | "support" | "auditor" | "superadmin";
 
 interface StaffRoleInfo {
@@ -240,14 +246,17 @@ export default function AdminMailPage() {
     );
   }
 
-  const canViewAdmin =
-    (!!me &&
-      (me.role === "support" ||
-        me.role === "admin" ||
-        me.role === "superadmin")) ||
-    !!staffRole;
+  // Mail operations require support rank or higher on the backend. Auditors
+  // can read totals and audit history, but should not enter a mailbox and
+  // discover a stream of authorization errors after the page loads.
+  const canViewMail =
+    (!!staffRole && staffRole.role !== "auditor") ||
+    (!staffRole &&
+      (me?.role === "support" ||
+        me?.role === "admin" ||
+        me?.role === "superadmin"));
 
-  if (!canViewAdmin) {
+  if (!canViewMail) {
     return (
       <div className="flex flex-col gap-4">
         <section

@@ -20,6 +20,8 @@ const DEMO_EMAILS = [
 
 const DEMO_MAIL_EMAILS = ["support@demo.pet", "hello@demo.pet"] as const;
 
+type DemoRoleAccount = (typeof DEMO_ROLE_ACCOUNTS)[number];
+
 // NOTE on `locked`: the schema defines `locked` ONLY on `owners` and `pets`.
 // vaccinations / medications / vetVisits / reminders / shareLinks have no such
 // field, so passing `locked` there would fail validation. We set it wherever
@@ -72,6 +74,73 @@ async function findDemoMailAccounts(ctx: MutationCtx) {
     if (account) found.push(account);
   }
   return found;
+}
+
+/**
+ * Repair only the role-bearing demo identities. This is intentionally
+ * separate from the full seed reset so a local deployment that already has
+ * demo pets or uploaded documents can gain the current staff rows without
+ * deleting any data.
+ */
+async function ensureDemoRoles(ctx: MutationCtx) {
+  let ownersCreated = 0;
+  let staffCreated = 0;
+  let staffUpdated = 0;
+
+  for (const account of DEMO_ROLE_ACCOUNTS as readonly DemoRoleAccount[]) {
+    const owner = await ctx.db
+      .query("owners")
+      .withIndex("by_email", (q) => q.eq("email", account.email))
+      .first();
+
+    if (!owner) {
+      await ctx.db.insert("owners", {
+        externalId: `demo-${account.role}`,
+        name: account.name,
+        email: account.email,
+        locked: true,
+        ...(account.role === "superadmin"
+          ? { role: "superadmin" as const }
+          : {}),
+        createdAt: Date.now(),
+      });
+      ownersCreated += 1;
+    } else if (account.role === "superadmin" && owner.role !== "superadmin") {
+      // The superadmin tier is the one legacy owner field that matters to
+      // older clients. Staff remains the source of truth for every account.
+      await ctx.db.patch(owner._id, { role: "superadmin" });
+    }
+
+    const staff = await ctx.db
+      .query("staff")
+      .withIndex("by_email", (q) => q.eq("email", account.email))
+      .first();
+    if (staff) {
+      await ctx.db.patch(staff._id, {
+        name: account.name,
+        role: account.role,
+        active: true,
+      });
+      staffUpdated += 1;
+    } else {
+      await ctx.db.insert("staff", {
+        email: account.email,
+        name: account.name,
+        role: account.role,
+        active: true,
+        invitedBy: "demo-repair",
+        createdAt: Date.now(),
+      });
+      staffCreated += 1;
+    }
+  }
+
+  return {
+    ownersCreated,
+    staffCreated,
+    staffUpdated,
+    roles: DEMO_ROLE_ACCOUNTS.length,
+  };
 }
 
 async function wipeMailAccount(
@@ -502,4 +571,14 @@ export const seedDemo = mutation({
       reset: reset === true && existing.length > 0,
     };
   },
+});
+
+/**
+ * Restore the five seeded staff roles without resetting demo-owned data.
+ * This is for local/demo deployments whose owners were created by an older
+ * magic-link flow before the staff table was seeded.
+ */
+export const repairDemoRoles = mutation({
+  args: {},
+  handler: async (ctx) => ensureDemoRoles(ctx),
 });
