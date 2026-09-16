@@ -18,8 +18,8 @@ const appliedKeys = new Set<string>();
 export function useEnrichment() {
   const ws = usePetWorkspace();
   const [, force] = useState(0);
-  const [busyKey, setBusyKey] = useState<string | null>(null);
-  const [errorKey, setErrorKey] = useState<string | null>(null);
+  const [busyKeys, setBusyKeys] = useState<Set<string>>(() => new Set());
+  const [errors, setErrors] = useState<Map<string, string>>(() => new Map());
 
   const suggestions = buildSuggestionsForDocs(ws.docs as VaultDoc[], {
     currentPetName: ws.pet.name,
@@ -27,18 +27,29 @@ export function useEnrichment() {
 
   const apply = useCallback(
     async (s: EnrichmentSuggestion) => {
-      setBusyKey(s.key);
-      setErrorKey(null);
+      setBusyKeys((current) => new Set(current).add(s.key));
+      setErrors((current) => {
+        const next = new Map(current);
+        next.delete(s.key);
+        return next;
+      });
       try {
         await applySuggestion(ws, s);
         appliedKeys.add(s.key);
         force((n) => n + 1);
       } catch (e: unknown) {
-        setErrorKey(
-          e instanceof Error ? `${s.key}:${e.message}` : `${s.key}:failed`,
+        setErrors((current) =>
+          new Map(current).set(
+            s.key,
+            e instanceof Error ? e.message : "Could not apply suggestion.",
+          ),
         );
       } finally {
-        setBusyKey(null);
+        setBusyKeys((current) => {
+          const next = new Set(current);
+          next.delete(s.key);
+          return next;
+        });
       }
     },
     [ws],
@@ -47,10 +58,11 @@ export function useEnrichment() {
   return {
     suggestions,
     apply,
-    busyKey,
+    busyKeys,
+    isBusy: (key: string) => busyKeys.has(key),
     isApplied: (key: string) => appliedKeys.has(key),
-    errorFor: (key: string) =>
-      errorKey?.startsWith(`${key}:`) ? errorKey.slice(key.length + 1) : null,
+    errorFor: (key: string) => errors.get(key) ?? null,
+    petId: ws.petId,
   };
 }
 
@@ -82,6 +94,7 @@ async function applySuggestion(
         petId,
         vaccineName: s.vaccineName ?? "Vaccination",
         provider: s.provider,
+        suggestionKey: s.key,
       });
       if (s.administeredAt) {
         await api.vaccinations.markAdministered({
@@ -94,20 +107,30 @@ async function applySuggestion(
       break;
     }
     case "medication":
+      if (!s.frequency) {
+        throw new Error(
+          "Frequency was not recognized. Open Medications to choose one before saving.",
+        );
+      }
       await api.medications.create({
         ownerId,
         petId,
         name: s.value ?? "Medication",
         dosage: s.dosage ?? "unspecified",
-        frequency: s.frequency ?? "once_daily",
+        frequency: s.frequency,
       });
       await ws.refreshMedications();
       break;
     case "visit":
+      if (s.visitedAt === undefined) {
+        throw new Error(
+          "The document has no visit date. Open Visits to enter one before saving.",
+        );
+      }
       await api.visits.create({
         ownerId,
         petId,
-        visitedAt: s.visitedAt ?? Date.now(),
+        visitedAt: s.visitedAt,
         reason: `Vet visit (from ${s.docName})`,
         clinicName: s.clinicName,
         vetName: s.vetName,

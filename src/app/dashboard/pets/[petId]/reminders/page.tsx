@@ -30,6 +30,7 @@ export default function PetRemindersPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actingId, setActingId] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   const ready = !!title.trim() && dateValueToTs(dueDate) !== undefined;
 
@@ -67,9 +68,16 @@ export default function PetRemindersPage() {
     status: "done" | "dismissed",
   ) {
     setActingId(reminderId);
+    setStatusError(null);
     try {
       await api.reminders.setStatus(ws.ownerId, reminderId, status);
       await ws.refreshReminders();
+    } catch (e: unknown) {
+      setStatusError(
+        e instanceof Error
+          ? `Couldn’t update the reminder: ${e.message}`
+          : "Couldn’t update the reminder. Check your connection and try again.",
+      );
     } finally {
       setActingId(null);
     }
@@ -94,6 +102,12 @@ export default function PetRemindersPage() {
           Add reminder
         </Button>
       </div>
+
+      {statusError ? (
+        <p role="alert" className="text-sm font-medium text-red-600">
+          {statusError}
+        </p>
+      ) : null}
 
       {scheduled.length === 0 && settled.length === 0 ? (
         <div className="flex flex-col items-center rounded-2xl border border-dashed border-ink/20 bg-white p-8 text-center">

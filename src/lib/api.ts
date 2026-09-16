@@ -285,6 +285,7 @@ export const api = {
       ownerId: string;
       petId: string;
       vaccineName: string;
+      suggestionKey?: string;
       dueAt?: number;
       provider?: string;
       notes?: string;

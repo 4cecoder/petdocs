@@ -95,11 +95,17 @@ export function parseLooseDate(raw: string): number | null {
   return null;
 }
 
-function parseWeight(raw: string): number | null {
-  const m = /(\d+(?:[.,]\d+)?)/.exec(raw.replace(",", "."));
+function parseWeight(raw: string): { kg: number; source: string } | null {
+  const m = /^\s*(\d+(?:[.,]\d+)?)\s*(kg|kgs|kilograms?|lb|lbs|pounds?)\b/i.exec(raw);
   if (!m) return null;
-  const n = Number.parseFloat(m[1]);
-  return Number.isFinite(n) && n > 0 && n < 500 ? n : null;
+  const n = Number.parseFloat(m[1].replace(",", "."));
+  if (!Number.isFinite(n) || n <= 0) return null;
+
+  const unit = m[2].toLowerCase();
+  const kg = unit === "lb" || unit === "lbs" || unit.startsWith("pound")
+    ? n * 0.45359237
+    : n;
+  return kg < 500 ? { kg, source: raw.trim() } : null;
 }
 
 const FREQUENCY_MAP: Record<string, EnrichmentSuggestion["frequency"]> = {
@@ -174,8 +180,8 @@ export function buildDocSuggestions(
       kind: "pet_weight",
       docId: doc._id,
       docName: doc.name,
-      label: `Record weight ${weight} kg`,
-      value: String(weight),
+      label: `Record weight ${weight.source} (${weight.kg} kg)`,
+      value: String(weight.kg),
     });
   }
 
@@ -200,15 +206,18 @@ export function buildDocSuggestions(
 
   const medication = get("Medication");
   if (medication) {
+    const frequency = mapFrequency(get("Frequency"));
     suggestions.push({
       key: seed("medication"),
       kind: "medication",
       docId: doc._id,
       docName: doc.name,
-      label: `Add medication: ${medication}`,
+      label: frequency
+        ? `Add medication: ${medication}`
+        : `Review medication: ${medication} (frequency needed)`,
       value: medication,
       dosage: get("Dosage") ?? "unspecified",
-      frequency: mapFrequency(get("Frequency")),
+      frequency,
     });
   }
 
@@ -221,7 +230,7 @@ export function buildDocSuggestions(
         kind: "visit",
         docId: doc._id,
         docName: doc.name,
-        label: "Log vet visit",
+        label: dateTs ? "Log vet visit" : "Review vet visit (date needed)",
         visitedAt: dateTs ?? undefined,
         clinicName: clinic,
         vetName: vet,

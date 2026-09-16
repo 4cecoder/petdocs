@@ -32,6 +32,7 @@ export default function PetVaccinationsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [markingId, setMarkingId] = useState<string | null>(null);
+  const [markError, setMarkError] = useState<string | null>(null);
 
   const nameReady = !!name.trim();
 
@@ -67,9 +68,16 @@ export default function PetVaccinationsPage() {
 
   async function handleMarkGiven(vaccinationId: string) {
     setMarkingId(vaccinationId);
+    setMarkError(null);
     try {
       await api.vaccinations.markAdministered({ ownerId: ws.ownerId, vaccinationId });
       await ws.refreshVaccines();
+    } catch (e: unknown) {
+      setMarkError(
+        e instanceof Error
+          ? `Couldn’t mark the vaccination as administered: ${e.message}`
+          : "Couldn’t mark the vaccination as administered. Check your connection and try again.",
+      );
     } finally {
       setMarkingId(null);
     }
@@ -96,6 +104,12 @@ export default function PetVaccinationsPage() {
           Add vaccination
         </Button>
       </div>
+
+      {markError ? (
+        <p role="alert" className="text-sm font-medium text-red-600">
+          {markError}
+        </p>
+      ) : null}
 
       {sorted.length === 0 ? (
         <div className="flex flex-col items-center rounded-2xl border border-dashed border-ink/20 bg-white p-8 text-center">

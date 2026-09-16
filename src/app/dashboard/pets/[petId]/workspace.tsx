@@ -177,8 +177,13 @@ export function PetWorkspaceProvider({
       if (!ownerId) return;
       try {
         await api.documents.moveToTrash(ownerId, docId);
-      } catch {
-        // optimistic update below regardless
+      } catch (e: unknown) {
+        setDocsError(
+          e instanceof Error
+            ? `Couldn’t move the document to trash: ${e.message}`
+            : "Couldn’t move the document to trash. Check your connection and try again.",
+        );
+        throw e;
       }
       setDocs((prev) => prev.filter((d) => d._id !== docId));
     },

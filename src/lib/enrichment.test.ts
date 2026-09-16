@@ -178,6 +178,48 @@ describe("buildDocSuggestions", () => {
     expect(buildDocSuggestions(junk).some((x) => x.kind === "pet_weight")).toBe(false);
   });
 
+  it("converts recognized pounds to kilograms and rejects unsupported units", () => {
+    const pounds = {
+      _id: "doc9",
+      name: "chart.pdf",
+      metadata: meta("lab", [["Weight", "10 lb"]]),
+    };
+    expect(buildDocSuggestions(pounds).find((x) => x.kind === "pet_weight")).toMatchObject({
+      value: String(10 * 0.45359237),
+    });
+
+    const unsupported = {
+      _id: "doc10",
+      name: "chart.pdf",
+      metadata: meta("lab", [["Weight", "10 stone"]]),
+    };
+    expect(buildDocSuggestions(unsupported).some((x) => x.kind === "pet_weight")).toBe(false);
+  });
+
+  it("does not make direct medication or visit suggestions without required input", () => {
+    const medicationDoc = {
+      _id: "doc11",
+      name: "record.pdf",
+      metadata: meta("vet_visit", [
+        ["Medication", "Apoquel"],
+      ]),
+    };
+    const medicationSuggestions = buildDocSuggestions(medicationDoc);
+    expect(medicationSuggestions.find((x) => x.kind === "medication")).toMatchObject({
+      frequency: undefined,
+    });
+
+    const visitDoc = {
+      _id: "doc12",
+      name: "visit.pdf",
+      metadata: meta("vet_visit", [["Clinic", "Lakeview Vet Hospital"]]),
+    };
+    const visitSuggestions = buildDocSuggestions(visitDoc);
+    expect(visitSuggestions.find((x) => x.kind === "visit")).toMatchObject({
+      visitedAt: undefined,
+    });
+  });
+
   it("skips reminder suggestions whose dates are unparseable prose", () => {
     const doc = {
       _id: "doc8",

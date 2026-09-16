@@ -1,7 +1,9 @@
 "use client";
 
 import { Sparkles, TriangleAlert } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@seridian/ui-kit";
+import { petSubrouteHref } from "@/lib/routes";
 import { useEnrichment } from "./enrichment-apply";
 
 /**
@@ -10,7 +12,7 @@ import { useEnrichment } from "./enrichment-apply";
  * renders nothing when there is nothing to suggest.
  */
 export function EnrichmentSuggestions({ compact = false }: { compact?: boolean }) {
-  const { suggestions, apply, busyKey, errorFor } = useEnrichment();
+  const { suggestions, apply, isBusy, errorFor, petId } = useEnrichment();
 
   if (suggestions.length === 0) return null;
 
@@ -32,20 +34,35 @@ export function EnrichmentSuggestions({ compact = false }: { compact?: boolean }
 
       <ul className="mt-3 flex list-none flex-wrap gap-2">
         {suggestions.map((s) => {
-          const busy = busyKey === s.key;
+          const busy = isBusy(s.key);
           const error = errorFor(s.key);
+          const manualRoute =
+            s.kind === "medication" && !s.frequency
+              ? { href: petSubrouteHref(petId, "medications"), label: "Open Medications to choose a frequency" }
+              : s.kind === "visit" && s.visitedAt === undefined
+                ? { href: petSubrouteHref(petId, "visits"), label: "Open Visits to enter the visit date" }
+                : null;
           return (
             <li key={s.key} className="flex flex-col gap-1">
-              <Button
-                type="button"
-                size="sm"
-                disabled={busy}
-                aria-label={s.label}
-                onClick={() => void apply(s)}
-                className="min-h-[44px] rounded-xl"
-              >
-                {busy ? "Adding…" : s.label}
-              </Button>
+              {manualRoute ? (
+                <Link
+                  href={manualRoute.href}
+                  className="inline-flex min-h-[44px] items-center rounded-xl bg-brand-600 px-3 text-sm font-semibold text-white hover:bg-brand-700"
+                >
+                  {s.label} — {manualRoute.label}
+                </Link>
+              ) : (
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={busy}
+                  aria-label={s.label}
+                  onClick={() => void apply(s)}
+                  className="min-h-[44px] rounded-xl"
+                >
+                  {busy ? "Adding…" : s.label}
+                </Button>
+              )}
               {error ? (
                 <p role="alert" className="flex items-center gap-1 text-xs text-red-600">
                   <TriangleAlert size={12} aria-hidden="true" />

@@ -166,12 +166,18 @@ export default defineSchema({
     administeredAt: v.optional(v.number()),
     provider: v.optional(v.string()),
     documentId: v.optional(v.id("documents")),
+    suggestionKey: v.optional(v.string()),
     notes: v.optional(v.string()),
     createdAt: v.number(),
   })
     .index("by_petId", ["petId"])
     .index("by_ownerId", ["ownerId"])
     .index("by_petId_and_status", ["petId", "status"])
+    .index("by_ownerId_and_petId_and_suggestionKey", [
+      "ownerId",
+      "petId",
+      "suggestionKey",
+    ])
     .index("by_dueAt", ["dueAt"]),
 
   medications: defineTable({

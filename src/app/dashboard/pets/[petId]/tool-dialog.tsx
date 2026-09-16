@@ -223,6 +223,21 @@ export function ToolTextareaField({
 /** "YYYY-MM-DD" → epoch ms, or undefined when empty/invalid. */
 export function dateValueToTs(value: string): number | undefined {
   if (!value) return undefined;
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (dateOnly) {
+    const year = Number(dateOnly[1]);
+    const month = Number(dateOnly[2]);
+    const day = Number(dateOnly[3]);
+    const local = new Date(year, month - 1, day);
+    if (
+      local.getFullYear() !== year ||
+      local.getMonth() !== month - 1 ||
+      local.getDate() !== day
+    ) {
+      return undefined;
+    }
+    return local.getTime();
+  }
   const ts = Date.parse(value);
   return Number.isNaN(ts) ? undefined : ts;
 }
