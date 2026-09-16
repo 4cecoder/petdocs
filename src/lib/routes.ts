@@ -50,6 +50,43 @@ export function petHref(petId: string): string {
   return `${ROUTES.dashboard.pets}/${petId}`;
 }
 
+/** Sub-pages nested under a pet profile hub. */
+export const PET_SUBROUTES = [
+  "vaccinations",
+  "medications",
+  "visits",
+  "documents",
+  "share",
+  "reminders",
+] as const;
+
+export type PetSubroute = (typeof PET_SUBROUTES)[number];
+
+/**
+ * Deep-linkable pet tool pages: /dashboard/pets/{petId}/{subroute}.
+ * The bare petHref stays the overview hub.
+ */
+export function petSubrouteHref(petId: string, subroute: PetSubroute): string {
+  return `${petHref(petId)}/${subroute}`;
+}
+
+/** True when a dashboard path is one of a pet's tool sub-pages. */
+export function isPetSubroutePath(pathname: string): {
+  petId: string;
+  subroute: PetSubroute;
+} | null {
+  const prefix = `${ROUTES.dashboard.pets}/`;
+  if (!pathname.startsWith(prefix)) return null;
+  const rest = pathname.slice(prefix.length);
+  const slash = rest.indexOf("/");
+  if (slash === -1) return null;
+  const petId = rest.slice(0, slash);
+  const subroute = rest.slice(slash + 1);
+  const known = (PET_SUBROUTES as readonly string[]).includes(subroute);
+  if (!petId || !known) return null;
+  return { petId, subroute: subroute as PetSubroute };
+}
+
 export function passportHref(token: string): string {
   return `/p/${token}`;
 }

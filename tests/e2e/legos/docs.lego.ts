@@ -15,7 +15,8 @@ export class DocsLego {
 
   /**
    * Uploads a document via the DocUploader wizard.
-   * Handles both standalone page (with pet pick step) and pet detail page.
+   * Handles the standalone page (with pet pick step) and the pet's
+   * Documents sub-page (routing there first when the pet tool nav exists).
    */
   async uploadDoc(options: {
     fileName: string;
@@ -31,6 +32,12 @@ export class DocsLego {
       category,
       petNameOrId,
     } = options;
+
+    // From the pet hub: the uploader lives on the Documents tool sub-page.
+    const petToolNav = this.page.getByRole("navigation", { name: "Pet tools" });
+    if (await petToolNav.isVisible({ timeout: 1000 }).catch(() => false)) {
+      await petToolNav.getByRole("link", { name: "Documents", exact: true }).click();
+    }
 
     // Check if on pet pick step
     const petSelect = this.page.locator("select").filter({ hasText: /Select a pet/i });
@@ -107,7 +114,8 @@ export class DocsLego {
   }
 
   /**
-   * Clicks the Move to Trash button for a document.
+   * Clicks the Move to Trash button for a document and confirms the
+   * destructive-action dialog.
    */
   async moveToTrash(docName: string): Promise<void> {
     const trashBtn = this.page.getByRole("button", {
@@ -115,6 +123,14 @@ export class DocsLego {
     });
     await expect(trashBtn).toBeVisible();
     await trashBtn.click();
+
+    // DocumentsPanel gates the instant trash behind a confirm dialog.
+    const confirmBtn = this.page
+      .getByRole("alertdialog")
+      .getByRole("button", { name: "Move to trash", exact: true });
+    await expect(confirmBtn).toBeVisible();
+    await confirmBtn.click();
+
     await expect(this.getDocItem(docName)).not.toBeVisible();
   }
 

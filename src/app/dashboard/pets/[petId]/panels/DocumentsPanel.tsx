@@ -47,6 +47,7 @@ export default function DocumentsPanel({
 }) {
   const uploaderRef = useRef<HTMLDivElement>(null);
   const [pendingTrash, setPendingTrash] = useState<VaultDoc | null>(null);
+  const [trashError, setTrashError] = useState<string | null>(null);
 
   function focusUploader() {
     uploaderRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -55,8 +56,17 @@ export default function DocumentsPanel({
 
   async function confirmTrash() {
     if (!pendingTrash) return;
-    await onTrash(pendingTrash._id);
-    setPendingTrash(null);
+    setTrashError(null);
+    try {
+      await onTrash(pendingTrash._id);
+      setPendingTrash(null);
+    } catch (e: unknown) {
+      setTrashError(
+        e instanceof Error
+          ? `Couldn’t move the document to trash: ${e.message}`
+          : "Couldn’t move the document to trash. Check your connection and try again.",
+      );
+    }
   }
 
   return (
@@ -68,6 +78,12 @@ export default function DocumentsPanel({
       {docsError ? (
         <p role="alert" className="text-sm font-medium text-red-600">
           {docsError}
+        </p>
+      ) : null}
+
+      {trashError ? (
+        <p role="alert" className="text-sm font-medium text-red-600">
+          {trashError}
         </p>
       ) : null}
 
@@ -99,9 +115,10 @@ export default function DocumentsPanel({
           </div>
           <DocList
             docs={docs.map(toDocRow)}
-            onTrash={(id) =>
-              setPendingTrash(docs.find((d) => d._id === id) ?? null)
-            }
+            onTrash={(id) => {
+              setTrashError(null);
+              setPendingTrash(docs.find((d) => d._id === id) ?? null);
+            }}
           />
         </>
       )}

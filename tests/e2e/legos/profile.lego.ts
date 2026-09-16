@@ -4,20 +4,22 @@ export class ProfileLego {
   constructor(private page: Page) {}
 
   /**
-   * Navigates directly to a pet's profile page.
+   * Navigates directly to a pet's profile page (overview hub).
    */
   async goto(petId: string): Promise<void> {
     await this.page.goto(`/dashboard/pets/${petId}`);
     await expect(
-      this.page.getByRole("region", { name: /Profile completion/i }),
+      this.page.getByRole("region", { name: /Pet overview/i }),
     ).toBeVisible();
   }
 
   /**
-   * Checks the profile completeness score percentage and returns the number.
+   * Checks the profile completeness score percentage (hero health bar).
    */
   async getProfileScore(): Promise<number> {
-    const scoreElem = this.page.locator("section[aria-label='Profile completion']").getByText(/% Complete/i);
+    const scoreElem = this.page
+      .locator("section[aria-label='Pet overview']")
+      .getByText(/% Complete/i);
     await expect(scoreElem).toBeVisible();
     const text = (await scoreElem.textContent()) || "";
     const match = text.match(/(\d+)%/);
@@ -28,32 +30,30 @@ export class ProfileLego {
    * Asserts the profile completeness score matches or exceeds expected.
    */
   async expectProfileScore(expected: number | RegExp): Promise<void> {
-    const section = this.page.locator("section[aria-label='Profile completion']");
+    const hero = this.page.locator("section[aria-label='Pet overview']");
     if (typeof expected === "number") {
-      await expect(section.getByText(`${expected}% Complete`)).toBeVisible();
+      await expect(hero.getByText(`${expected}% Complete`)).toBeVisible();
     } else {
-      await expect(section.getByText(expected)).toBeVisible();
+      await expect(hero.getByText(expected)).toBeVisible();
     }
   }
 
   /**
-   * Verifies the 3 status summary cards (Appointments, Vaccines, Medications) are present.
+   * Verifies the hero's three status stats (appointments, vaccinations,
+   * medications) are present — condensed into the hero card's stat chips.
    */
   async verifyStatusCards(): Promise<{
     appointmentsVisible: boolean;
     vaccinesVisible: boolean;
     medicationsVisible: boolean;
   }> {
-    const summarySection = this.page.locator("section[aria-label='Status Summary']");
-    await expect(summarySection).toBeVisible();
+    const heroStats = this.page
+      .locator("section[aria-label='Pet overview']")
+      .locator("dl");
 
-    const apptCard = summarySection.getByText("Appointments", { exact: true });
-    const vaxCard = summarySection.getByText("Vaccines", { exact: true });
-    const medsCard = summarySection.getByText("Medications", { exact: true });
-
-    await expect(apptCard).toBeVisible();
-    await expect(vaxCard).toBeVisible();
-    await expect(medsCard).toBeVisible();
+    await expect(heroStats.getByText("Appointments", { exact: true })).toBeVisible();
+    await expect(heroStats.getByText("Vaccinations", { exact: true })).toBeVisible();
+    await expect(heroStats.getByText("Medications", { exact: true })).toBeVisible();
 
     return {
       appointmentsVisible: true,
@@ -64,14 +64,15 @@ export class ProfileLego {
 
   /**
    * Toggles a recommended care checklist item by its title or part of it.
+   * Care items are semantic checkboxes labelled "{title}: {status}".
    */
   async toggleRecommendedCareItem(titleSubstring: string): Promise<void> {
-    const careSection = this.page.locator("section[aria-label='Recommended Care']");
+    const careSection = this.page.locator("section[aria-label='Care checklist']");
     await expect(careSection).toBeVisible();
 
-    const toggleBtn = careSection.getByRole("button", {
-      name: new RegExp(`Toggle .*${titleSubstring}`, "i"),
-    });
+    const toggleBtn = careSection
+      .getByRole("checkbox")
+      .filter({ hasText: new RegExp(titleSubstring, "i") });
     await expect(toggleBtn).toBeVisible();
     await toggleBtn.click();
   }
@@ -79,12 +80,16 @@ export class ProfileLego {
   /**
    * Asserts the status of a recommended care item ("Up to date" or "Recommended").
    */
-  async expectCareItemStatus(titleSubstring: string, status: "Up to date" | "Recommended"): Promise<void> {
-    const careSection = this.page.locator("section[aria-label='Recommended Care']");
-    const toggleBtn = careSection.getByRole("button", { name: new RegExp(`Toggle .*${titleSubstring}`, "i") });
+  async expectCareItemStatus(
+    titleSubstring: string,
+    status: "Up to date" | "Recommended",
+  ): Promise<void> {
+    const careSection = this.page.locator("section[aria-label='Care checklist']");
+    const toggleBtn = careSection
+      .getByRole("checkbox")
+      .filter({ hasText: new RegExp(titleSubstring, "i") });
     await expect(toggleBtn).toBeVisible();
-    const itemCard = toggleBtn.locator("..");
-    await expect(itemCard.getByText(status, { exact: true })).toBeVisible();
+    await expect(toggleBtn.getByText(status, { exact: true })).toBeVisible();
   }
 
   /**

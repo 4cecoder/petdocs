@@ -54,13 +54,27 @@ export const create = mutation({
     ownerId: v.id("owners"),
     petId: v.id("pets"),
     vaccineName: v.string(),
+    suggestionKey: v.optional(v.string()),
     dueAt: v.optional(v.number()),
     provider: v.optional(v.string()),
     notes: v.optional(v.string()),
   },
+  returns: v.id("vaccinations"),
   handler: async (ctx, args) => {
     const pet = await ctx.db.get(args.petId);
     if (!pet || pet.ownerId !== args.ownerId) throw new Error("Pet not found");
+    if (args.suggestionKey) {
+      const existing = await ctx.db
+        .query("vaccinations")
+        .withIndex("by_ownerId_and_petId_and_suggestionKey", (q) =>
+          q
+            .eq("ownerId", args.ownerId)
+            .eq("petId", args.petId)
+            .eq("suggestionKey", args.suggestionKey!),
+        )
+        .first();
+      if (existing) return existing._id;
+    }
     return await ctx.db.insert("vaccinations", {
       ownerId: args.ownerId,
       petId: args.petId,
@@ -69,6 +83,7 @@ export const create = mutation({
       dueAt: args.dueAt,
       provider: args.provider,
       notes: args.notes,
+      suggestionKey: args.suggestionKey,
       createdAt: Date.now(),
     });
   },
@@ -81,6 +96,7 @@ export const markAdministered = mutation({
     administeredAt: v.optional(v.number()),
     documentId: v.optional(v.id("documents")),
   },
+  returns: v.id("vaccinations"),
   handler: async (ctx, args) => {
     const vac = await ctx.db.get(args.vaccinationId);
     if (!vac || vac.ownerId !== args.ownerId) throw new Error("Vaccination not found");
