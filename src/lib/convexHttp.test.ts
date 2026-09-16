@@ -4,6 +4,7 @@ import {
   convexAction,
   convexMutation,
   convexQuery,
+  getConvexSiteUrl,
   getConvexUrl,
 } from "./convexHttp";
 
@@ -15,11 +16,14 @@ function jsonResponse(body: unknown, ok = true, status = 200): Response {
 
 describe("convexHttp", () => {
   let savedUrl: string | undefined;
+  let savedSiteUrl: string | undefined;
   let fetchMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     savedUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+    savedSiteUrl = process.env.NEXT_PUBLIC_CONVEX_SITE_URL;
     process.env.NEXT_PUBLIC_CONVEX_URL = TEST_URL;
+    delete process.env.NEXT_PUBLIC_CONVEX_SITE_URL;
     fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
   });
@@ -29,6 +33,11 @@ describe("convexHttp", () => {
       delete process.env.NEXT_PUBLIC_CONVEX_URL;
     } else {
       process.env.NEXT_PUBLIC_CONVEX_URL = savedUrl;
+    }
+    if (savedSiteUrl === undefined) {
+      delete process.env.NEXT_PUBLIC_CONVEX_SITE_URL;
+    } else {
+      process.env.NEXT_PUBLIC_CONVEX_SITE_URL = savedSiteUrl;
     }
     vi.unstubAllGlobals();
   });
@@ -43,6 +52,14 @@ describe("convexHttp", () => {
     expect(getConvexUrl()).toBeNull();
     process.env.NEXT_PUBLIC_CONVEX_URL = TEST_URL;
     expect(getConvexUrl()).toBe(TEST_URL);
+  });
+
+  it("getConvexSiteUrl prefers the site env and derives it from the cloud URL", () => {
+    expect(getConvexSiteUrl()).toBe("https://happy-animal-123.convex.site");
+
+    process.env.NEXT_PUBLIC_CONVEX_SITE_URL =
+      "https://custom-site.convex.site/";
+    expect(getConvexSiteUrl()).toBe("https://custom-site.convex.site");
   });
 
   it("convexQuery posts to /api/query with path args and format json and unwraps value", async () => {

@@ -16,6 +16,12 @@ export class ConvexHttpError extends Error {
 }
 
 const PROD_FALLBACK_URL = "https://hallowed-falcon-806.convex.cloud";
+const PROD_FALLBACK_SITE_URL = "https://hallowed-falcon-806.convex.site";
+
+function normalizeHttpUrl(url: string | null | undefined): string | null {
+  if (!url || !url.startsWith("http")) return null;
+  return url.replace(/\/+$/, "");
+}
 
 /** Deployment URL or null when unconfigured (renders demo/empty states). */
 export function getConvexUrl(): string | null {
@@ -25,7 +31,23 @@ export function getConvexUrl(): string | null {
     (isBrowser && window.location.hostname.includes("seridian.dev")
       ? PROD_FALLBACK_URL
       : null);
-  return url && url.startsWith("http") ? url : null;
+  return normalizeHttpUrl(url);
+}
+
+/** Convex custom HTTP endpoints, including storage redirects, use .site. */
+export function getConvexSiteUrl(): string | null {
+  const isBrowser = typeof window !== "undefined";
+  const configured =
+    process.env.NEXT_PUBLIC_CONVEX_SITE_URL ||
+    (isBrowser && window.location.hostname.includes("seridian.dev")
+      ? PROD_FALLBACK_SITE_URL
+      : null);
+  const siteUrl = normalizeHttpUrl(configured);
+  if (siteUrl) return siteUrl;
+
+  const cloudUrl = getConvexUrl();
+  if (!cloudUrl) return null;
+  return cloudUrl.replace(/\.convex\.cloud(?=\/|$)/, ".convex.site");
 }
 
 async function callConvex<T>(

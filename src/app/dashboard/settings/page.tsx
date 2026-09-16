@@ -21,7 +21,7 @@ import { clearSession, getOwnerId, getSessionEmail } from "@/lib/api";
 import {
   convexMutation,
   convexQuery,
-  getConvexUrl,
+  getConvexSiteUrl,
 } from "@/lib/convexHttp";
 import {
   COUNTRY_CODES,
@@ -58,6 +58,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const ownerId = getOwnerId();
   const sessionEmail = getSessionEmail() || "";
+  const convexSiteUrl = getConvexSiteUrl();
 
   const [nameInput, setNameInput] = useState("");
   const [countryCode, setCountryCode] = useState("+1");
@@ -565,9 +566,9 @@ export default function SettingsPage() {
                       : "No build published yet."}
               </p>
             </div>
-            {mobileBuilds?.android && getConvexUrl() ? (
+            {mobileBuilds?.android && convexSiteUrl ? (
               <a
-                href={`${getConvexUrl()}/api/builds/latest?platform=android`}
+                href={`${convexSiteUrl}/api/builds/latest?platform=android`}
                 className="ml-3 inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-xl bg-brand-600 px-4 text-xs font-semibold text-white shadow-xs hover:bg-brand-700"
                 download
               >
