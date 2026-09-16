@@ -23,15 +23,25 @@ export class ShareLego {
     expiry?: "24h" | "7d" | "30d";
   }): Promise<{ token: string; shareUrl: string }> {
     const { recipient = "Boarder", expiry = "7d" } = options ?? {};
+    const recipientInput = this.page.locator("#share-recipient");
 
     // From the pet hub: the wizard is one hop away on the Share tool page.
-    const petToolNav = this.page.getByRole("navigation", { name: "Pet tools" });
-    if (await petToolNav.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await petToolNav.getByRole("link", { name: "Share", exact: true }).click();
+    // The configured backend renders the wizard on the nested Share tool
+    // route; the no-backend demo renders the same wizard directly on the hub.
+    // Wait for either surface instead of using a short visibility probe.
+    if (!this.page.url().match(/\/share(?:\?.*)?$/)) {
+      const petToolNav = this.page.getByRole("navigation", { name: "Pet tools" });
+      const surface = await Promise.any([
+        expect(petToolNav).toBeVisible().then(() => "nested" as const),
+        expect(recipientInput).toBeVisible().then(() => "demo" as const),
+      ]);
+      if (surface === "nested") {
+        await petToolNav.getByRole("link", { name: "Share", exact: true }).click();
+        await expect(this.page).toHaveURL(/\/dashboard\/pets\/[^/]+\/share(?:\?.*)?$/);
+      }
     }
 
     // Step 0: Who
-    const recipientInput = this.page.locator("#share-recipient");
     await expect(recipientInput).toBeVisible();
     await recipientInput.fill(recipient);
 
@@ -91,6 +101,10 @@ export class ShareLego {
     const revokeBtn = linkRow.getByRole("button", { name: /Revoke/i });
     await expect(revokeBtn).toBeVisible();
     await revokeBtn.click();
+
+    const dialog = this.page.getByRole("alertdialog");
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole("button", { name: "Revoke link", exact: true }).click();
 
     await expect(linkRow).not.toBeVisible();
   }

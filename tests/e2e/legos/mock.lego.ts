@@ -259,6 +259,14 @@ export async function setupConvexMock(page: Page, initialState?: Partial<MockSta
         return;
       }
 
+      if (path === "reminders:listByPet") {
+        const rems = state.reminders.filter(
+          (r) => r.ownerId === args.ownerId && r.petId === args.petId,
+        );
+        await route.fulfill({ json: { value: rems } });
+        return;
+      }
+
       if (path === "shareLinks:listByPet") {
         const links = state.shareLinks.filter((l) => l.petId === args.petId && l.isActive);
         await route.fulfill({ json: { value: links } });
