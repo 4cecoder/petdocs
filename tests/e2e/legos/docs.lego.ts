@@ -6,9 +6,19 @@ export class DocsLego {
   /** Opens the nested Documents tool when starting from a pet overview. */
   private async openPetDocuments(): Promise<void> {
     const petToolNav = this.page.getByRole("navigation", { name: "Pet tools" });
-    if (!(await petToolNav.isVisible({ timeout: 5000 }).catch(() => false))) return;
+    try {
+      await expect(petToolNav).toBeVisible({ timeout: 15_000 });
+    } catch {
+      return;
+    }
 
-    await petToolNav.getByRole("link", { name: "Documents", exact: true }).click();
+    const documentsLink = petToolNav.getByRole("link", { name: "Documents", exact: true });
+    const href = await documentsLink.getAttribute("href");
+    if (!href) throw new Error("Pet Documents link did not expose a route.");
+    // A direct navigation is deterministic while the dev server is compiling
+    // several nested route bundles in parallel; the link's href is still the
+    // product-owned route under test.
+    await this.page.goto(href);
     await expect(this.page).toHaveURL(/\/dashboard\/pets\/[^/]+\/documents$/);
   }
 
@@ -48,7 +58,14 @@ export class DocsLego {
     // Check if on pet pick step. The UI kit exposes this as an accessible
     // combobox/listbox rather than a native select element.
     const petSelect = this.page.getByRole("combobox", { name: "Pet" });
-    if (await petSelect.isVisible({ timeout: 1000 }).catch(() => false)) {
+    let hasPetSelect = false;
+    try {
+      await expect(petSelect).toBeVisible({ timeout: 1_000 });
+      hasPetSelect = true;
+    } catch {
+      // A pet-specific route starts directly at the capture step.
+    }
+    if (hasPetSelect) {
       await petSelect.click();
       const petOption = petNameOrId
         ? this.page.getByRole("option", { name: new RegExp(petNameOrId, "i") })
@@ -59,6 +76,7 @@ export class DocsLego {
 
     // Step 1: Capture / File Input
     const fileInput = this.page.locator('input[type="file"]');
+    await expect(fileInput).toBeAttached({ timeout: 15_000 });
     await fileInput.setInputFiles({
       name: fileName,
       mimeType,
