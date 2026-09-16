@@ -9,6 +9,14 @@ test.describe("Flow 04: Vault Documents Lifecycle", () => {
 
     await auth.directLogin("owner@petdocs.test", "owner-e2e-123", "/dashboard/docs");
     await docs.expectDocVisible("Rabies-Certificate-2026.pdf");
+    await docs.expectDocVisible("Miso-portrait.svg");
+    await page
+      .getByRole("button", { name: /Open .*Miso-portrait\.svg preview/ })
+      .click();
+    await expect(
+      page.getByRole("dialog", { name: /Preview .*Miso-portrait\.svg/ }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Close file preview" }).click();
 
     // Filter by pet tab
     await docs.filterByPet("Miso");

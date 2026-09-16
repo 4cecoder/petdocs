@@ -5,6 +5,7 @@ import { Suspense, useEffect, useRef, useState, type FormEvent } from "react";
 import { Check, Clock, PawPrint } from "lucide-react";
 import { ConvexHttpError, api, setSession } from "@/lib/api";
 import { ROUTES } from "@/lib/routes";
+import { DEMO_ACCOUNTS, isLocalDemoHost, type DemoAccount } from "@/lib/demoAccounts";
 import { MadeBySeridian } from "@/components/brand/MadeBySeridian";
 
 type VerifyStatus = "idle" | "verifying" | "success" | "error";
@@ -43,6 +44,9 @@ function SignInForm() {
   const [directLink, setDirectLink] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [backendDown, setBackendDown] = useState(false);
+  const [showDemoAccess, setShowDemoAccess] = useState(false);
+  const [demoBusy, setDemoBusy] = useState<string | null>(null);
+  const [demoError, setDemoError] = useState<string | null>(null);
   const [verifyStatus, setVerifyStatus] = useState<VerifyStatus>(
     token ? "verifying" : "idle",
   );
@@ -50,6 +54,13 @@ function SignInForm() {
   // Guard against React StrictMode double-invoking the effect in dev:
   // verify tokens are single-use, so each link must be verified exactly once.
   const verifiedKey = useRef<string | null>(null);
+
+  useEffect(() => {
+    setShowDemoAccess(
+      process.env.NODE_ENV !== "production" &&
+        isLocalDemoHost(window.location.hostname),
+    );
+  }, []);
 
   useEffect(() => {
     if (!token) return;
@@ -136,6 +147,33 @@ function SignInForm() {
       }
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleDemoLogin(account: DemoAccount) {
+    if (demoBusy) return;
+    setDemoBusy(account.email);
+    setDemoError(null);
+    try {
+      const preview = await api.auth.requestMagicLink(
+        account.email,
+        window.location.origin,
+      );
+      if (!preview.previewUrl) {
+        setDemoError(
+          "That demo link is still cooling down. Use the email form after the 60-second resend window.",
+        );
+        return;
+      }
+      const previewUrl = new URL(preview.previewUrl, window.location.origin);
+      previewUrl.searchParams.set("next", account.next);
+      window.location.assign(previewUrl.toString());
+    } catch {
+      setDemoError(
+        "The demo backend is not connected. Start Convex and seed the demo deployment first.",
+      );
+    } finally {
+      setDemoBusy(null);
     }
   }
 
@@ -247,6 +285,46 @@ function SignInForm() {
           </div>
         )}
       </form>
+      {showDemoAccess ? (
+        <section
+          aria-labelledby="demo-access-heading"
+          className="mt-8 rounded-2xl border border-brand-200 bg-brand-50/60 p-4"
+        >
+          <h2
+            id="demo-access-heading"
+            className="text-sm font-bold text-brand-800"
+          >
+            Local demo access
+          </h2>
+          <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+            Seeded roles use the same magic-link flow and are hidden outside
+            localhost. Seed Convex first, then choose a workspace.
+          </p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {DEMO_ACCOUNTS.map((account) => (
+              <button
+                key={account.email}
+                type="button"
+                onClick={() => void handleDemoLogin(account)}
+                disabled={busy || demoBusy !== null}
+                className="min-h-[58px] rounded-xl border border-brand-200 bg-white px-3 py-2 text-left transition hover:border-brand-400 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <span className="block text-sm font-semibold text-ink">
+                  {account.label}
+                </span>
+                <span className="mt-0.5 block text-xs text-ink-soft">
+                  {demoBusy === account.email ? "Opening sign-in…" : account.description}
+                </span>
+              </button>
+            ))}
+          </div>
+          {demoError ? (
+            <p role="alert" className="mt-3 text-xs font-medium text-amber-800">
+              {demoError}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
       <div className="mt-10 flex justify-center">
         <MadeBySeridian />
       </div>

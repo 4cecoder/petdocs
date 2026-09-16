@@ -377,9 +377,13 @@ export const verifyMagicLink = mutation({
     // Single-use: consume the token exactly once inside this transaction.
     await ctx.db.patch(row._id, { usedAt: Date.now() });
 
+    // Email is the identity proven by this token. Seeded/demo owners use a
+    // stable externalId (for example `demo-maya-chen`), so looking up only
+    // externalId here would create a duplicate owner and hide their seeded
+    // pets after sign-in.
     const existing = await ctx.db
       .query("owners")
-      .withIndex("by_externalId", (q) => q.eq("externalId", email))
+      .withIndex("by_email", (q) => q.eq("email", email))
       .first();
 
     let ownerId: Id<"owners">;

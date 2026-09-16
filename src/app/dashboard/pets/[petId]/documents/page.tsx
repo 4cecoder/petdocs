@@ -18,6 +18,7 @@ export default function PetDocumentsPage() {
       <DocumentsPanel
         petId={ws.petId}
         petName={ws.pet.name}
+        ownerId={ws.ownerId}
         docs={ws.docs}
         docsError={ws.docsError}
         onUploadComplete={() => void ws.refreshDocs()}

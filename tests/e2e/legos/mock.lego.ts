@@ -86,6 +86,9 @@ export interface MockState {
   shareLinks: MockShareLink[];
 }
 
+const DEMO_IMAGE_URL =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240'%3E%3Crect width='320' height='240' fill='%230d9488'/%3E%3Ccircle cx='160' cy='108' r='54' fill='%23fef3c7'/%3E%3C/svg%3E";
+
 export function createDefaultMockState(ownerId = "owner-e2e-123", email = "test@petdocs.test"): MockState {
   return {
     ownerId,
@@ -113,6 +116,17 @@ export function createDefaultMockState(ownerId = "owner-e2e-123", email = "test@
         size: 142000,
         category: "vaccine_record",
         createdAt: Date.now() - 86400000 * 10,
+        isTrash: false,
+      },
+      {
+        _id: "doc-miso-photo-1",
+        ownerId,
+        petId: "pet-miso",
+        name: "Miso-portrait.svg",
+        mime: "image/svg+xml",
+        size: 42000,
+        category: "photo",
+        createdAt: Date.now() - 86400000 * 4,
         isTrash: false,
       },
     ],
@@ -230,6 +244,16 @@ export async function setupConvexMock(page: Page, initialState?: Partial<MockSta
           (d) => d.petId === args.petId && !d.isTrash && (!args.category || d.category === args.category),
         );
         await route.fulfill({ json: { value: docs } });
+        return;
+      }
+
+      if (path === "documents:getUrl") {
+        const doc = state.documents.find((d) => d._id === args.documentId);
+        await route.fulfill({
+          json: {
+            value: doc?.mime.startsWith("image/") ? DEMO_IMAGE_URL : null,
+          },
+        });
         return;
       }
 

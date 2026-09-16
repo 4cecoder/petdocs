@@ -22,7 +22,9 @@ import type { VaultDoc } from "@/lib/api";
 function toDocRow(doc: VaultDoc): VaultDocRow {
   return {
     id: doc._id,
+    documentId: doc._id,
     name: doc.name,
+    mime: doc.mime,
     category: doc.category ?? "other",
     date: formatDate(doc.createdAt),
     sizeLabel: formatBytes(doc.size),
@@ -33,6 +35,7 @@ function toDocRow(doc: VaultDoc): VaultDocRow {
 export default function DocumentsPanel({
   petId,
   petName,
+  ownerId,
   docs,
   docsError,
   onUploadComplete,
@@ -40,6 +43,7 @@ export default function DocumentsPanel({
 }: {
   petId: string;
   petName: string;
+  ownerId: string;
   docs: VaultDoc[];
   docsError: string | null;
   onUploadComplete: () => void;
@@ -115,6 +119,7 @@ export default function DocumentsPanel({
           </div>
           <DocList
             docs={docs.map(toDocRow)}
+            ownerId={ownerId}
             onTrash={(id) => {
               setTrashError(null);
               setPendingTrash(docs.find((d) => d._id === id) ?? null);

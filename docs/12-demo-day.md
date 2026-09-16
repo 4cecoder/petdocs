@@ -4,6 +4,23 @@ Goal: greenlight pricing and wedge. Talk, click, ask. Keep it live, no slides.
 
 Setup: run `seedDemo` with `{reset:true}`, login as `maya@demo.pet`. Second phone logged out for passport view.
 
+On localhost, the sign-in page also shows **Local demo access** buttons. They
+request and verify a normal magic link, so no production auth shortcut is
+introduced. The seeded role accounts are:
+
+| Button | Seeded coverage |
+|---|---|
+| Maya / Sam | Pet-parent vaults: Mochi + Udon / Pickle |
+| Auditor | Read-only operations view |
+| Support | Inbox, owners, and link support |
+| Manager | Owner role and claim review |
+| Team owner | Staff access management |
+| Superadmin | Integrations and all controls |
+
+Role emails use `@demo.pet`; the seed must be run on the same Convex
+deployment used by the local app. The seed remains demo-only and should not be
+run against production.
+
 ## 1. The 5 minute script
 
 | Time | Say (talk track) | Click | Route + seed |

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   formatFullPhone,
+  formatNationalPhone,
   parseStoredPhone,
   PhoneInputSchema,
   ProfileFormSchema,
@@ -46,6 +47,16 @@ describe("phoneValidation", () => {
     expect(formatFullPhone("+1", "(555) 234-5678")).toBe("+15552345678");
     expect(formatFullPhone("+44", " 7911-123456 ")).toBe("+447911123456");
     expect(formatFullPhone("+1", "")).toBe("");
+  });
+
+  it("formats phone input as it is entered", () => {
+    expect(formatNationalPhone("+1", "5552345678")).toBe("(555) 234-5678");
+    expect(formatNationalPhone("+1", "15552345678")).toBe("(555) 234-5678");
+    expect(formatNationalPhone("+1", "+1 (555) 234-5678")).toBe(
+      "(555) 234-5678",
+    );
+    expect(formatNationalPhone("+44", "7911123456")).toBe("7911 123456");
+    expect(formatNationalPhone("+1", "5552")).toBe("(555) 2");
   });
 
   it("parses stored phone number back to country code and national number", () => {

@@ -14,6 +14,24 @@
  */
 @import "@seridian/ui-kit/styles.css" layer(seridian-uikit);
 
+/*
+ * petdocs uses a warm light canvas. The kit's Astryx tokens use `light-dark`
+ * and its form controls include dark-mode utilities, so inheriting the
+ * browser's color preference would make a single modal switch to a near-
+ * black, high-contrast surface while the rest of the dashboard stays light.
+ */
+:root {
+  color-scheme: light;
+}
+
+/* Keep kit form controls readable when the browser advertises dark mode. */
+[data-slot="input"],
+[data-slot="textarea"],
+[data-slot="select-trigger"] {
+  background-color: transparent;
+  color: var(--color-ink);
+}
+
 body {
   background-color: var(--color-cream);
   color: var(--color-ink);

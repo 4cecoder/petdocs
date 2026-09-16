@@ -4,7 +4,19 @@ import type { Id } from "./_generated/dataModel";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-const DEMO_EMAILS = ["maya@demo.pet", "sam@demo.pet"] as const;
+const DEMO_ROLE_ACCOUNTS = [
+  { email: "auditor@demo.pet", name: "Demo Auditor", role: "auditor" },
+  { email: "support@demo.pet", name: "Demo Support", role: "support" },
+  { email: "manager@demo.pet", name: "Demo Manager", role: "manager" },
+  { email: "owner@demo.pet", name: "Demo Owner", role: "owner" },
+  { email: "superadmin@demo.pet", name: "Demo Superadmin", role: "superadmin" },
+] as const;
+
+const DEMO_EMAILS = [
+  "maya@demo.pet",
+  "sam@demo.pet",
+  ...DEMO_ROLE_ACCOUNTS.map((account) => account.email),
+] as const;
 
 const DEMO_MAIL_EMAILS = ["support@demo.pet", "hello@demo.pet"] as const;
 
@@ -34,6 +46,18 @@ async function findDemoOwners(ctx: MutationCtx) {
       .withIndex("by_email", (q) => q.eq("email", email))
       .unique();
     if (owner) found.push(owner);
+  }
+  return found;
+}
+
+async function findDemoStaff(ctx: MutationCtx) {
+  const found = [];
+  for (const account of DEMO_ROLE_ACCOUNTS) {
+    const staff = await ctx.db
+      .query("staff")
+      .withIndex("by_email", (q) => q.eq("email", account.email))
+      .first();
+    if (staff) found.push(staff);
   }
   return found;
 }
@@ -177,6 +201,9 @@ export const seedDemo = mutation({
     for (const owner of existing) {
       await wipeOwner(ctx, owner._id);
     }
+    for (const staff of await findDemoStaff(ctx)) {
+      await ctx.db.delete(staff._id);
+    }
     // Reset path for demo inbox (mail tables have no locked field and are
     // not owner-scoped, so they need their own wipe). Also cleans orphans
     // on a fresh seed if mail accounts linger without demo owners.
@@ -203,6 +230,27 @@ export const seedDemo = mutation({
       locked: true,
       createdAt: now,
     });
+    for (const account of DEMO_ROLE_ACCOUNTS) {
+      await ctx.db.insert("owners", {
+        externalId: `demo-${account.role}`,
+        name: account.name,
+        email: account.email,
+        locked: true,
+        ...(account.role === "superadmin" ? { role: "superadmin" as const } : {}),
+        createdAt: now,
+      });
+      // Staff is intentionally separate from owners. The owner row gives the
+      // demo account a valid magic-link identity; this row supplies the role
+      // that server-side admin authorization checks.
+      await ctx.db.insert("staff", {
+        email: account.email,
+        name: account.name,
+        role: account.role,
+        active: true,
+        invitedBy: "demo-seed",
+        createdAt: now,
+      });
+    }
 
     // ---- Pets ----
     const mochiId = await ctx.db.insert("pets", {
@@ -259,7 +307,7 @@ export const seedDemo = mutation({
       vaccineName: "DHPP",
       status: "due",
       dueAt: dhppDueAt,
-      notes: "Booster due — drives the reminder demo",
+      notes: "Booster due, drives the reminder demo",
       createdAt: now,
     });
     await ctx.db.insert("vaccinations", {
@@ -404,7 +452,7 @@ export const seedDemo = mutation({
       from: "maya@demo.pet",
       to: ["support@demo.pet"],
       subject: "Vet records question",
-      text: "Hi team — how do I attach my vet's vaccination PDF to Mochi's passport?",
+      text: "Hi team, how do I attach my vet's vaccination PDF to Mochi's passport?",
       labels: ["inbox"],
       receivedAt: now - 60 * 60 * 1000,
     });
@@ -414,7 +462,7 @@ export const seedDemo = mutation({
       from: "maya@demo.pet",
       to: ["support@demo.pet"],
       subject: "Vet records question",
-      text: "Follow-up: the PDF is 4MB — is that small enough to upload?",
+      text: "Follow-up: the PDF is 4MB, is that small enough to upload?",
       labels: ["inbox"],
       receivedAt: now,
     });
@@ -438,7 +486,8 @@ export const seedDemo = mutation({
     });
 
     return {
-      owners: 2,
+      owners: 2 + DEMO_ROLE_ACCOUNTS.length,
+      staff: DEMO_ROLE_ACCOUNTS.length,
       pets: 3,
       vaccinations: 4,
       medications: 1,

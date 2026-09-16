@@ -113,6 +113,7 @@ export default function AdminPage() {
         if (cancelled) return;
         setMe(profile);
         setStaffRole(staff && staff.active ? staff : null);
+        const effectiveRole = staff && staff.active ? staff.role : profile?.role;
         const staffOk =
           !!staff &&
           !!staff.active &&
@@ -121,22 +122,14 @@ export default function AdminPage() {
             staff.role === "support" ||
             staff.role === "auditor" ||
             staff.role === "superadmin");
-        if (
-          (profile &&
-            (profile.role === "support" || profile.role === "admin")) ||
-          staffOk
-        ) {
+        if (staffOk || profile?.role === "support" || profile?.role === "admin") {
+          // Auditor is intentionally allowed to load stats and audit history,
+          // but not support-only owner/link queries. Keep those requests
+          // separate so one expected authorization rejection cannot blank the
+          // auditor's allowed data.
           try {
-            const [s, o, l, a, m] = await Promise.all([
+            const [s, a, m] = await Promise.all([
               convexQuery<Stats>("admin:stats", { adminEmail: email }),
-              convexQuery<OwnerRow[]>("admin:recentOwners", {
-                adminEmail: email,
-                limit: 20,
-              }),
-              convexQuery<AdminLink[]>("admin:listLinks", {
-                adminEmail: email,
-                limit: 20,
-              }),
               convexQuery<AuditRow[]>("admin:auditLog", {
                 adminEmail: email,
                 limit: 20,
@@ -145,12 +138,36 @@ export default function AdminPage() {
             ]);
             if (cancelled) return;
             setStats(s);
-            setOwners(o);
-            setLinks(l);
             setAudit(a);
             setMail(m);
           } catch {
-            /* keep prior lists, staff section still renders */
+            /* keep any allowed data already loaded */
+          }
+
+          const canReadSupportData =
+            effectiveRole === "support" ||
+            effectiveRole === "manager" ||
+            effectiveRole === "owner" ||
+            effectiveRole === "admin" ||
+            effectiveRole === "superadmin";
+          if (canReadSupportData) {
+            try {
+              const [o, l] = await Promise.all([
+                convexQuery<OwnerRow[]>("admin:recentOwners", {
+                  adminEmail: email,
+                  limit: 20,
+                }),
+                convexQuery<AdminLink[]>("admin:listLinks", {
+                  adminEmail: email,
+                  limit: 20,
+                }),
+              ]);
+              if (cancelled) return;
+              setOwners(o);
+              setLinks(l);
+            } catch {
+              /* keep prior lists, staff section still renders */
+            }
           }
         }
       } catch {
@@ -266,6 +283,12 @@ export default function AdminPage() {
     !!staffRole;
   const isStaffOwner = effRole === "admin" || effRole === "owner";
   const isSuperadmin = effRole === "superadmin";
+  const canReadSupportData =
+    effRole === "support" ||
+    effRole === "manager" ||
+    effRole === "owner" ||
+    effRole === "admin" ||
+    effRole === "superadmin";
   const showStaffSection =
     effRole === "admin" ||
     effRole === "owner" ||
@@ -559,28 +582,30 @@ export default function AdminPage() {
         </section>
       ) : null}
 
-      <section
-        aria-label="Team inbox"
-        className="flex items-center justify-between gap-3 rounded-2xl border border-ink/10 bg-white p-4"
-      >
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-cream">
-            <Inbox className="h-5 w-5 text-ink" aria-hidden="true" />
-          </span>
-          <div className="min-w-0">
-            <h2 className="font-display font-bold">Team inbox</h2>
-            <p className="mt-0.5 text-sm text-ink-soft">
-              Customer mail for support and admins.
-            </p>
-          </div>
-        </div>
-        <Link
-          href="/dashboard/admin/mail"
-          className="inline-flex min-h-[48px] shrink-0 items-center rounded-xl bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700"
+      {canReadSupportData ? (
+        <section
+          aria-label="Team inbox"
+          className="flex items-center justify-between gap-3 rounded-2xl border border-ink/10 bg-white p-4"
         >
-          Open inbox
-        </Link>
-      </section>
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-cream">
+              <Inbox className="h-5 w-5 text-ink" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="font-display font-bold">Team inbox</h2>
+              <p className="mt-0.5 text-sm text-ink-soft">
+                Customer mail for support and admins.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/dashboard/admin/mail"
+            className="inline-flex min-h-[48px] shrink-0 items-center rounded-xl bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700"
+          >
+            Open inbox
+          </Link>
+        </section>
+      ) : null}
 
       {me?.role === "superadmin" ? (
         <section

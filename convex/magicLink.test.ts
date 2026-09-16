@@ -115,6 +115,38 @@ describe("magicLink database flows", () => {
     }
   });
 
+  test("verifyMagicLink reuses a seeded owner by email", async () => {
+    const email = "maya@demo.pet";
+    const rawToken = "d".repeat(64);
+    const tokenHash = await sha256Hex(rawToken);
+    const seededOwnerId = await t.run(async (ctx) =>
+      ctx.db.insert("owners", {
+        externalId: "demo-maya-chen",
+        name: "Maya Chen",
+        email,
+        createdAt: Date.now(),
+      }),
+    );
+
+    await t.mutation(internal.magicLink.storeToken, {
+      email,
+      tokenHash,
+      expiresAt: Date.now() + 15 * 60 * 1000,
+    });
+
+    const result = await t.mutation(api.magicLink.verifyMagicLink, {
+      email,
+      token: rawToken,
+    });
+
+    expect(result).toMatchObject({ ok: true, ownerId: seededOwnerId });
+    const ownerCount = await t.run(async (ctx) =>
+      (await ctx.db.query("owners").collect()).filter((owner) => owner.email === email)
+        .length,
+    );
+    expect(ownerCount).toBe(1);
+  });
+
   test("verifyMagicLink rejects wrong token or wrong email", async () => {
     const result = await t.mutation(api.magicLink.verifyMagicLink, {
       email: "unknown@example.com",

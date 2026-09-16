@@ -26,6 +26,7 @@ import {
 import {
   COUNTRY_CODES,
   formatFullPhone,
+  formatNationalPhone,
   parseStoredPhone,
   ProfileFormSchema,
 } from "@/lib/phoneValidation";
@@ -107,7 +108,9 @@ export default function SettingsPage() {
           setNameInput(data.name || "");
           const parsed = parseStoredPhone(data.phone);
           setCountryCode(parsed.countryCode);
-          setNationalNumber(parsed.nationalNumber);
+          setNationalNumber(
+            formatNationalPhone(parsed.countryCode, parsed.nationalNumber),
+          );
         }
       })
       .catch(() => {
@@ -305,7 +308,13 @@ export default function SettingsPage() {
                 <select
                   aria-label="Country Code"
                   value={countryCode}
-                  onChange={(e) => setCountryCode(e.target.value)}
+                  onChange={(e) => {
+                    const nextCountryCode = e.target.value;
+                    setCountryCode(nextCountryCode);
+                    setNationalNumber(
+                      formatNationalPhone(nextCountryCode, nationalNumber),
+                    );
+                  }}
                   className="rounded-lg bg-transparent py-1.5 pl-1.5 pr-1 text-xs font-medium text-ink focus:outline-none cursor-pointer"
                 >
                   {COUNTRY_CODES.map((c) => (
@@ -319,7 +328,11 @@ export default function SettingsPage() {
                 <input
                   type="tel"
                   value={nationalNumber}
-                  onChange={(e) => setNationalNumber(e.target.value)}
+                  onChange={(e) =>
+                    setNationalNumber(
+                      formatNationalPhone(countryCode, e.target.value),
+                    )
+                  }
                   placeholder="(555) 000-0000"
                   className="w-full bg-transparent px-1 text-sm focus:outline-none"
                 />

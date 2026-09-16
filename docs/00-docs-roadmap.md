@@ -17,7 +17,7 @@ Where docs stand, what is missing, and what may retire. Read this before adding 
 | 09-billing-compliance.md | Billing rules, checkout, tax, refunds (Polar.sh) | current, webhook guide in docs/billing.md |
 | 10-resend-setup.md | Magic links, reminders, domain DNS | current |
 | 11-ai-ocr.md | OCR catalog UC-1 to UC-10, parsers | current |
-| 12-demo-day.md | 5 min script, seed, objections | needs-refresh if seed changes |
+| 12-demo-day.md | 5 min script, seed, objections | current |
 | 14-deploy-netlify-vercel.md | Netlify and Vercel deploy, envs | current |
 | 15-trust.md | KYC, AI disclosure, retention, incidents | needs-refresh with incident detail |
 | 16-team-access.md | Staff roles, invites, offboarding | current |

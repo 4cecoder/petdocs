@@ -31,6 +31,7 @@ function formatBytes(size: number): string {
 function toRow(docId: string, doc: {
   _id: string;
   name: string;
+  mime: string;
   category?: string;
   createdAt: number;
   size: number;
@@ -40,7 +41,9 @@ function toRow(docId: string, doc: {
 }): VaultDocRow {
   return {
     id: docId,
+    documentId: doc._id,
     name: doc.name,
+    mime: doc.mime,
     category: doc.category ?? "other",
     // Pinned locale: render output must not depend on server vs browser
     // locale, or a future SSR of this tree becomes a hydration mismatch.
@@ -82,10 +85,11 @@ export default function DocsPage() {
           return docs.map((doc) => ({
             petId: pet._id,
             sortKey: doc.createdAt,
-            row: {
-              ...toRow(`${pet._id}:${doc._id}`, doc),
-              name: `${pet.name}: ${doc.name}`,
-            } satisfies VaultDocRow,
+              row: {
+                ...toRow(`${pet._id}:${doc._id}`, doc),
+                name: `${pet.name}: ${doc.name}`,
+                petName: pet.name,
+              } satisfies VaultDocRow,
           }));
         }),
       );
@@ -265,7 +269,12 @@ export default function DocsPage() {
             </p>
           </div>
         ) : (
-          <DocList docs={filtered} onTrash={handleTrash} onReview={handleReview} />
+          <DocList
+            docs={filtered}
+            ownerId={ownerId}
+            onTrash={handleTrash}
+            onReview={handleReview}
+          />
         )
       ) : null}
       {reviewTarget ? (

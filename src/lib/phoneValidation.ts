@@ -53,6 +53,45 @@ export const ProfileFormSchema = z.object({
 });
 
 /**
+ * Formats the national part of a phone number for the profile input.
+ *
+ * US/Canada numbers use the familiar `(555) 234-5678` shape. Other country
+ * codes use readable three-digit groups without changing the value that is
+ * ultimately stored by `formatFullPhone`.
+ */
+export function formatNationalPhone(
+  countryCode: string,
+  nationalNumber: string,
+): string {
+  let digits = nationalNumber.replace(/\D/g, "");
+  const countryDigits = countryCode.replace(/\D/g, "");
+
+  // Make pasting a full international number into the national field do the
+  // unsurprising thing, while leaving ordinary local input untouched.
+  if (nationalNumber.trim().startsWith("+") && digits.startsWith(countryDigits)) {
+    digits = digits.slice(countryDigits.length);
+  }
+  if (countryCode === "+1" && digits.length === 11 && digits.startsWith("1")) {
+    digits = digits.slice(1);
+  }
+
+  digits = digits.slice(0, 15);
+  if (!digits) return "";
+
+  if (countryCode === "+1") {
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+
+  if (countryCode === "+44") {
+    return [digits.slice(0, 4), digits.slice(4)].filter(Boolean).join(" ");
+  }
+
+  return digits.match(/.{1,3}/g)?.join(" ") ?? "";
+}
+
+/**
  * Formats full E.164 phone number from country code + national number.
  */
 export function formatFullPhone(countryCode: string, nationalNumber: string): string {

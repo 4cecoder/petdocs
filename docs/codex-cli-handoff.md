@@ -5,8 +5,8 @@ Updated 2026-09-16. This is the handoff for the next Codex CLI session in
 
 ## Release state
 
-`origin/main` was stable at `776dd60` before this release-verification pass.
-The local release candidate adds these reviewed commits:
+`origin/main` was stable at `0929b25` before this follow-up pass. The local
+release candidate also includes the previously reviewed commits:
 
 - `e87652f` — close the pet profile editor after a successful save and keep
   the optimistic rename from being overwritten by a stale refetch.
@@ -18,12 +18,14 @@ The local release candidate adds these reviewed commits:
   relying on non-waiting `isVisible({ timeout })` probes.
 
 PRs #51, #54, and #56 are merged. The prior release PRs are merged as well;
-`gh pr list --state open` was empty at the last check. Do not recreate those
-PRs or re-enable Netlify workflows as part of this handoff.
+`gh pr list --state open` is empty. This pass adds the local demo-role login
+shortcuts, seeded staff-role fixtures, the seeded-owner magic-link fix, a
+gallery/preview document surface, phone input formatting, and the light-mode
+dashboard form fix.
 
-Netlify build jobs intentionally remain disabled until the owner enables them
-after the pushed `main` tip is confirmed below. No production Convex deploy
-was run; production deploys remain human-run from `main` only.
+The local checks are green, so Netlify build jobs are ready to be enabled once
+this release candidate is pushed to `main`. No production Convex deploy was
+run; production deploys remain human-run from `main` only.
 
 ## Verification evidence
 
@@ -31,16 +33,28 @@ Run from the release candidate, serially where noted:
 
 - `bun run lint` — passed.
 - `bun run typecheck` — passed after the production build completed.
-- `bun run test` — 29 files, 298 tests passed.
+- `bun run test` — 31 files, 303 tests passed.
 - `bun run build` — passed; all current App Router routes compiled.
-- Focused regression flows — 11/11 passed.
-- Full Playwright suite — 61 passed, 1 skipped out of 62. The skip is the
+- Focused regression flows — demo-role and gallery assertions passed.
+- Full Playwright suite — 62 passed, 1 skipped out of 63. The skip is the
   Gmail/threading integration case that requires its external mail environment.
 
 The full E2E suite uses the dev Convex deployment and local route mocks where
 specified. It does not exercise production data. Magic-link tests may report
 the honest dev Resend quota state while still validating the minted preview
 link.
+
+## Local demo role setup
+
+Run the seed against the same non-production Convex deployment used by the
+local app (`bun run seed`; use the existing `seedDemo` reset path when
+refreshing it). On `http://localhost`, `/sign-in` shows buttons for Maya, Sam,
+auditor, support, manager, team owner, and superadmin. Each button requests a
+normal single-use magic link; no demo shortcut is rendered in production.
+
+Maya and Sam carry the pet fixtures. Staff-role accounts carry the admin
+fixtures. Documents remain a UI upload step because storage blobs cannot be
+fabricated in a database seed.
 
 ## Next-session start
 

@@ -175,9 +175,17 @@ export default defineSchema({
 5. `locked` seed rows reject non-admin writes (mirror portal `convex/lib/immutable.ts`).
 
 ## Demo seed
-Maya Chen → Mochi (Shiba, F, 2021): Rabies PDF, blood panel, Apoquel Rx; Udon (cat, M, 2023):
-FVRCP PDF, microchip PDF. Sam Reyes → Pickle (Corgi, M, 2020): USDA travel cert.
-+ 3 vaccinations (1 due in 20d → reminder demo), 1 medication, 2 visits, 2 reminders, 2 shareLinks. Mark `locked:true`.
+Maya Chen (`maya@demo.pet`) → Mochi (Shiba, F, 2021) and Udon (cat, M,
+2023). Sam Reyes (`sam@demo.pet`) → Pickle (Corgi, M, 2020). The seed also
+creates five locked owner identities with active staff roles:
+`auditor@demo.pet`, `support@demo.pet`, `manager@demo.pet`, `owner@demo.pet`,
+and `superadmin@demo.pet`.
+
+Care data: 4 vaccinations (1 due in 20d → reminder demo), 1 medication, 2
+visits, 2 reminders, 2 shareLinks, 2 mail accounts, and 2 unread Maya
+notifications. Documents are intentionally **not** seeded because Convex
+storage IDs must come from a real upload; add them through the UI after
+seeding.
 
 ## Post-MVP migrations
 OCR (`ocrStatus` + search index, no rewrite) → households/co-owners → `policies` table +
