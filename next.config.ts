@@ -28,6 +28,12 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Playwright can isolate its dev server from an owner's running `next dev`
+  // process by setting NEXT_DIST_DIR. Normal builds keep the standard .next
+  // directory.
+  ...(process.env.NEXT_DIST_DIR
+    ? { distDir: process.env.NEXT_DIST_DIR }
+    : {}),
   headers: async () => [
     {
       source: "/(.*)",

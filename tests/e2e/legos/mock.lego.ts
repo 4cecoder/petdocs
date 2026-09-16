@@ -86,6 +86,37 @@ export interface MockState {
   shareLinks: MockShareLink[];
 }
 
+type MockStaffRole = "owner" | "manager" | "support" | "auditor" | "superadmin";
+
+const DEMO_STAFF_ROLES: Record<string, MockStaffRole> = {
+  "auditor@demo.pet": "auditor",
+  "support@demo.pet": "support",
+  "manager@demo.pet": "manager",
+  "owner@demo.pet": "owner",
+  "superadmin@demo.pet": "superadmin",
+};
+
+function mockStaffRole(email: unknown): MockStaffRole | null {
+  if (typeof email !== "string") return null;
+  return DEMO_STAFF_ROLES[email.trim().toLowerCase()] ?? null;
+}
+
+function mockAdminMe(email: string, role: MockStaffRole) {
+  return {
+    _id: `owner-${email.replace(/[^a-z0-9]+/gi, "-")}`,
+    email,
+    name: email.split("@")[0],
+    // The legacy owner role is only used for the old owner/admin controls;
+    // the staff role below remains the source of truth for the demo matrix.
+    role: role === "superadmin" ? "superadmin" : role === "owner" ? "owner" : "support",
+    createdAt: Date.now(),
+  };
+}
+
+function mockError(message = "Not authorized") {
+  return { error: "App Error", errorMessage: message };
+}
+
 const DEMO_IMAGE_URL =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240'%3E%3Crect width='320' height='240' fill='%230d9488'/%3E%3Ccircle cx='160' cy='108' r='54' fill='%23fef3c7'/%3E%3C/svg%3E";
 
@@ -227,6 +258,160 @@ export async function setupConvexMock(page: Page, initialState?: Partial<MockSta
       const body = request.postDataJSON() as { path: string; args: Record<string, any> };
       const { path, args } = body;
 
+      const requestedEmail = args.email ?? args.adminEmail;
+      const role = mockStaffRole(requestedEmail);
+
+      if (path === "admin:getMe") {
+        await route.fulfill({
+          json: {
+            value: role ? mockAdminMe(String(args.email), role) : null,
+          },
+        });
+        return;
+      }
+
+      if (path === "staff:myStaffRole") {
+        await route.fulfill({
+          json: { value: role ? { role, active: true } : null },
+        });
+        return;
+      }
+
+      if (path === "admin:stats") {
+        await route.fulfill({
+          json: role ? {
+            value: {
+              owners: 3,
+              pets: state.pets.length,
+              documents: state.documents.length,
+              activeLinks: state.shareLinks.filter((link) => link.isActive).length,
+              remindersScheduled: state.reminders.filter((reminder) => reminder.status === "scheduled").length,
+            },
+          } : mockError(),
+        });
+        return;
+      }
+
+      if (path === "admin:auditLog") {
+        await route.fulfill({
+          json: {
+            value: role
+              ? [
+                  {
+                    _id: "audit-demo-1",
+                    actorOwnerId: "owner-demo",
+                    actorEmail: String(requestedEmail),
+                    action: "demo access check",
+                    target: "seed",
+                    createdAt: Date.now(),
+                  },
+                ]
+              : mockError(),
+          },
+        });
+        return;
+      }
+
+      if (path === "resend:status") {
+        await route.fulfill({
+          json: {
+            value: {
+              keySet: true,
+              fromSet: true,
+              from: "no-reply@demo.pet",
+            },
+          },
+        });
+        return;
+      }
+
+      if (path === "admin:recentOwners") {
+        const canRead = role === "support" || role === "manager" || role === "owner" || role === "superadmin";
+        await route.fulfill({
+          json: canRead
+            ? {
+                value: [
+                  {
+                    _id: "owner-maya",
+                    email: "maya@demo.pet",
+                    name: "Maya Chen",
+                    role: "owner",
+                    createdAt: Date.now(),
+                  },
+                ],
+              }
+            : mockError(),
+        });
+        return;
+      }
+
+      if (path === "admin:listLinks") {
+        const canRead = role === "support" || role === "manager" || role === "owner" || role === "superadmin";
+        await route.fulfill({
+          json: canRead
+            ? {
+                value: state.shareLinks.slice(0, 3).map((link) => ({
+                  _id: link._id,
+                  petId: link.petId,
+                  ownerId: link.ownerId,
+                  scope: link.scope,
+                  label: link.label,
+                  isActive: link.isActive,
+                  viewCount: link.viewCount,
+                  createdAt: Date.now(),
+                  expiresAt: link.expiresAt,
+                  ownerEmail: "maya@demo.pet",
+                  petName: state.pets.find((pet) => pet._id === link.petId)?.name ?? null,
+                })),
+              }
+            : mockError(),
+        });
+        return;
+      }
+
+      if (path === "staff:listStaff") {
+        const canRead = role === "manager" || role === "owner" || role === "superadmin";
+        await route.fulfill({
+          json: canRead
+            ? {
+                value: Object.entries(DEMO_STAFF_ROLES).map(([email, staffRole]) => ({
+                  email,
+                  name: email.split("@")[0],
+                  role: staffRole,
+                  active: true,
+                  createdAt: Date.now(),
+                })),
+              }
+            : mockError(),
+        });
+        return;
+      }
+
+      if (path === "integrations:status") {
+        await route.fulfill({
+          json: role === "superadmin"
+            ? {
+                value: {
+                  resend: { keySet: true, fromSet: true, from: "no-reply@demo.pet" },
+                  email: { keySet: true, fromSet: true, from: "no-reply@demo.pet" },
+                  polar: {
+                    accessTokenSet: false,
+                    webhookSecretSet: false,
+                    orgIdSet: false,
+                    productPlusSet: false,
+                    productFamilySet: false,
+                  },
+                  site: {
+                    siteUrl: "http://localhost:3000",
+                    convexDeployment: "mock-e2e",
+                  },
+                },
+              }
+            : mockError(),
+        });
+        return;
+      }
+
       if (path === "pets:listByOwner") {
         const result = state.pets.filter((p) => p.ownerId === args.ownerId);
         await route.fulfill({ json: { value: result } });
@@ -351,11 +536,14 @@ export async function setupConvexMock(page: Page, initialState?: Partial<MockSta
       const { path, args } = body;
 
       if (path === "magicLink:requestMagicLink" || path === "auth:requestMagicLink") {
-        const directUrl = `http://localhost:3000/sign-in?email=${encodeURIComponent(
-          args.email,
-        )}&token=mock-magic-token-xyz`;
+        // This stays entirely inside Playwright's route mock. No Resend call,
+        // Convex action, or email resource is used by mocked E2E flows.
+        const appOrigin = new URL(request.url()).origin;
+        const directUrl = new URL("/sign-in", appOrigin);
+        directUrl.searchParams.set("email", args.email);
+        directUrl.searchParams.set("token", "mock-magic-token-xyz");
         await route.fulfill({
-          json: { value: { ok: true, previewUrl: directUrl } },
+          json: { value: { ok: true, previewUrl: directUrl.toString() } },
         });
         return;
       }

@@ -25,18 +25,6 @@ test.describe("Flow 01: Auth and Session Management", () => {
     }
   });
 
-  test("local demo role shortcut uses the normal magic-link flow", async ({ page }) => {
-    await setupConvexMock(page);
-
-    await page.goto("/sign-in");
-    await expect(
-      page.getByRole("heading", { name: "Local demo access" }),
-    ).toBeVisible();
-    await page.getByRole("button", { name: "Support" }).click();
-
-    await expect(page).toHaveURL(/\/dashboard\/admin$/);
-  });
-
   test("direct login establishes session and enables access to dashboard", async ({ page }) => {
     await setupConvexMock(page);
     const auth = createAuthLego(page);

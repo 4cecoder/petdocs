@@ -9,7 +9,8 @@
 - `bun run lint` — `eslint src/` (no `next lint` — removed in Next 16)
 - `bun run typecheck` — `tsc --noEmit`
 - `bun run test` — vitest unit + convex
-- `bun run test:e2e` / `test:e2e:smoke` — playwright (`BASE_URL=` for prod smoke)
+- `bun run test:e2e` / `test:e2e:smoke` — mock-first Playwright UI tests (`BASE_URL=` for prod smoke)
+- `bun run test:e2e:backend` — explicit dev-backend diagnostics; may use Convex/Resend resources
 - `bun run build` — `next build`
 
 ## Architecture

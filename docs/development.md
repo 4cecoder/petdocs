@@ -29,7 +29,8 @@ Rules:
 | Types | `bun run typecheck` | `tsc --noEmit` |
 | Lint | `bun run lint` | eslint on `src/` |
 | Unit + convex | `bun run test` | vitest, both projects |
-| Full e2e | `PORT=3111 bunx playwright test` | own server, dev deployment |
+| Full e2e | `PORT=3111 bun run test:e2e` | mock-first UI suite; no Resend or Convex resources |
+| Backend e2e diagnostics | `E2E_REAL_BACKEND=1 PORT=3111 bunx playwright test` | explicit local-only pass; may use dev Convex/Resend |
 
 PRs merge by **squash merge** (`gh pr merge --squash`) so `main` stays a
 clean, revertable line of single-purpose commits. Delete the branch after.
@@ -88,11 +89,15 @@ CI from a skipped hook is on the author to fix immediately.
 
 ## Dev environment rules for e2e
 
-* The dev Convex deployment is `necessary-cod-965` (from `.env.local`,
-  `CONVEX_DEPLOYMENT=dev:...`). e2e helpers hard-refuse any non-`dev:`
-  target; nothing test-driven may ever touch prod.
-* `bunx convex dev` runs in the owner terminal only; tests call one-shot
-  `bunx convex run` (CLI) or the public HTTP API, never their own dev.
+* The default browser suite is mock-first. `setupConvexMock` intercepts the
+  Convex HTTP query/mutation/action and upload boundaries, so normal E2E and
+  CI do not spend Resend quota or mutate any Convex deployment.
+* The backend diagnostic pass uses the dev Convex deployment
+  `necessary-cod-965` (from `.env.local`, `CONVEX_DEPLOYMENT=dev:...`). Its
+  helpers hard-refuse any non-`dev:` target; nothing test-driven may ever touch
+  prod. Run it only when backend behavior itself is the subject.
+* `bunx convex dev` runs in the owner terminal only; backend diagnostics call
+  one-shot `bunx convex run` (CLI) or the public HTTP API, never their own dev.
 * e2e uses `PORT=3111` so it never collides with the owner's dev server
   on :3000. Playwright boots its own Next server when none is listening.
 * `.env.local` is gitignored; symlink it into worktrees (see above).

@@ -293,7 +293,6 @@ export default function AdminPage() {
     effRole === "admin" ||
     effRole === "owner" ||
     effRole === "manager" ||
-    effRole === "support" ||
     effRole === "superadmin";
 
   if (!canViewAdmin) {
@@ -404,97 +403,101 @@ export default function AdminPage() {
         )}
       </section>
 
-      <section
-        aria-label="Owners"
-        className="rounded-2xl border border-ink/10 bg-white p-4"
-      >
-        <h2 className="font-display font-bold">Recent owners</h2>
-        {owners.length === 0 ? (
-          <p className="mt-1 text-sm text-ink-soft">No owners yet.</p>
-        ) : (
-          <ul className="mt-2 flex flex-col gap-2">
-            {owners.map((o) => (
-              <li
-                key={o._id}
-                className="flex items-center justify-between gap-3 rounded-xl bg-cream px-3 py-2.5 text-sm"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-semibold">{o.email}</p>
-                  <p className="text-xs text-ink-soft">
-                    Joined {formatDate(o.createdAt)}
-                  </p>
-                </div>
-                {isAdmin ? (
-                  <select
-                    aria-label={`Role for ${o.email}`}
-                    value={o.role}
-                    disabled={busyId === o._id}
-                    onChange={(e) =>
-                      handleRoleChange(o._id, e.target.value as Role)
-                    }
-                    className="min-h-[48px] shrink-0 rounded-xl border border-ink/15 bg-white px-3 text-sm font-semibold"
+      {canReadSupportData ? (
+        <>
+          <section
+            aria-label="Owners"
+            className="rounded-2xl border border-ink/10 bg-white p-4"
+          >
+            <h2 className="font-display font-bold">Recent owners</h2>
+            {owners.length === 0 ? (
+              <p className="mt-1 text-sm text-ink-soft">No owners yet.</p>
+            ) : (
+              <ul className="mt-2 flex flex-col gap-2">
+                {owners.map((o) => (
+                  <li
+                    key={o._id}
+                    className="flex items-center justify-between gap-3 rounded-xl bg-cream px-3 py-2.5 text-sm"
                   >
-                    <option value="owner">owner</option>
-                    <option value="support">support</option>
-                    <option value="admin">admin</option>
-                  </select>
-                ) : (
-                  <span className="shrink-0 rounded-full border border-ink/15 bg-white px-3 py-1 text-xs font-semibold">
-                    {o.role}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold">{o.email}</p>
+                      <p className="text-xs text-ink-soft">
+                        Joined {formatDate(o.createdAt)}
+                      </p>
+                    </div>
+                    {isAdmin ? (
+                      <select
+                        aria-label={`Role for ${o.email}`}
+                        value={o.role}
+                        disabled={busyId === o._id}
+                        onChange={(e) =>
+                          handleRoleChange(o._id, e.target.value as Role)
+                        }
+                        className="min-h-[48px] shrink-0 rounded-xl border border-ink/15 bg-white px-3 text-sm font-semibold"
+                      >
+                        <option value="owner">owner</option>
+                        <option value="support">support</option>
+                        <option value="admin">admin</option>
+                      </select>
+                    ) : (
+                      <span className="shrink-0 rounded-full border border-ink/15 bg-white px-3 py-1 text-xs font-semibold">
+                        {o.role}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
 
-      <section
-        aria-label="Share link safety"
-        className="rounded-2xl border border-ink/10 bg-white p-4"
-      >
-        <h2 className="font-display font-bold">Share link safety</h2>
-        <p className="mt-1 text-sm text-ink-soft">
-          Active links first. Revoke any link that looks wrong.
-        </p>
-        {links.length === 0 ? (
-          <p className="mt-2 text-sm text-ink-soft">No links to review.</p>
-        ) : (
-          <ul className="mt-2 flex flex-col gap-2">
-            {links.map((l) => (
-              <li
-                key={l._id}
-                className="flex items-center justify-between gap-3 rounded-xl bg-cream px-3 py-2.5 text-sm"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-semibold">
-                    {l.petName ?? "Pet"} · {l.scope}
-                  </p>
-                  <p className="truncate text-xs text-ink-soft">
-                    {l.ownerEmail ?? "Unknown owner"} · {l.viewCount}{" "}
-                    {l.viewCount === 1 ? "view" : "views"} ·{" "}
-                    {l.isActive ? "Active" : "Revoked"}
-                  </p>
-                </div>
-                {l.isActive ? (
-                  <button
-                    type="button"
-                    onClick={() => handleRevoke(l._id)}
-                    disabled={busyId === l._id}
-                    className="min-h-[48px] shrink-0 rounded-xl border border-ink/15 bg-white px-4 text-sm font-semibold hover:bg-cream-dark disabled:opacity-60"
+          <section
+            aria-label="Share link safety"
+            className="rounded-2xl border border-ink/10 bg-white p-4"
+          >
+            <h2 className="font-display font-bold">Share link safety</h2>
+            <p className="mt-1 text-sm text-ink-soft">
+              Active links first. Revoke any link that looks wrong.
+            </p>
+            {links.length === 0 ? (
+              <p className="mt-2 text-sm text-ink-soft">No links to review.</p>
+            ) : (
+              <ul className="mt-2 flex flex-col gap-2">
+                {links.map((l) => (
+                  <li
+                    key={l._id}
+                    className="flex items-center justify-between gap-3 rounded-xl bg-cream px-3 py-2.5 text-sm"
                   >
-                    {busyId === l._id ? "Revoking..." : "Revoke"}
-                  </button>
-                ) : (
-                  <span className="shrink-0 text-xs font-semibold text-ink-soft">
-                    Done
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold">
+                        {l.petName ?? "Pet"} · {l.scope}
+                      </p>
+                      <p className="truncate text-xs text-ink-soft">
+                        {l.ownerEmail ?? "Unknown owner"} · {l.viewCount}{" "}
+                        {l.viewCount === 1 ? "view" : "views"} ·{" "}
+                        {l.isActive ? "Active" : "Revoked"}
+                      </p>
+                    </div>
+                    {l.isActive ? (
+                      <button
+                        type="button"
+                        onClick={() => handleRevoke(l._id)}
+                        disabled={busyId === l._id}
+                        className="min-h-[48px] shrink-0 rounded-xl border border-ink/15 bg-white px-4 text-sm font-semibold hover:bg-cream-dark disabled:opacity-60"
+                      >
+                        {busyId === l._id ? "Revoking..." : "Revoke"}
+                      </button>
+                    ) : (
+                      <span className="shrink-0 text-xs font-semibold text-ink-soft">
+                        Done
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </>
+      ) : null}
 
       {isAdmin ? (
         <section

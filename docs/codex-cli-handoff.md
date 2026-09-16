@@ -36,21 +36,24 @@ Run from the release candidate, serially where noted:
 - `bun run test` — 31 files, 303 tests passed.
 - `bun run build` — passed; all current App Router routes compiled.
 - Focused regression flows — demo-role and gallery assertions passed.
-- Full Playwright suite — 62 passed, 1 skipped out of 63. The skip is the
-  Gmail/threading integration case that requires its external mail environment.
+- The mock-first Playwright suite now covers 49 browser tests, including all
+  seven local demo buttons. It does not call Resend or mutate Convex.
+- Backend-auth diagnostics remain opt-in via `bun run test:e2e:backend`; that
+  pass is the only browser command allowed to spend dev Convex/Resend resources.
 
-The full E2E suite uses the dev Convex deployment and local route mocks where
-specified. It does not exercise production data. Magic-link tests may report
-the honest dev Resend quota state while still validating the minted preview
-link.
+The default E2E suite uses local route mocks at the Convex HTTP boundary. It
+does not exercise production or dev data and does not spend Resend quota.
+Backend-auth diagnostics use the dev deployment only when explicitly enabled.
 
 ## Local demo role setup
 
 Run the seed against the same non-production Convex deployment used by the
 local app (`bun run seed`; use the existing `seedDemo` reset path when
 refreshing it). On `http://localhost`, `/sign-in` shows buttons for Maya, Sam,
-auditor, support, manager, team owner, and superadmin. Each button requests a
-normal single-use magic link; no demo shortcut is rendered in production.
+auditor, support, manager, team owner, and superadmin. The mock-first E2E suite
+exercises every button without calling the real magic-link action. Manual local
+demo use still requests a normal single-use magic link; no demo shortcut is
+rendered in production.
 
 Maya and Sam carry the pet fixtures. Staff-role accounts carry the admin
 fixtures. Documents remain a UI upload step because storage blobs cannot be
