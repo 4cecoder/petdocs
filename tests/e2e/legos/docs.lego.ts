@@ -3,6 +3,15 @@ import { expect, type Locator, type Page } from "@playwright/test";
 export class DocsLego {
   constructor(private page: Page) {}
 
+  /** Opens the nested Documents tool when starting from a pet overview. */
+  private async openPetDocuments(): Promise<void> {
+    const petToolNav = this.page.getByRole("navigation", { name: "Pet tools" });
+    if (!(await petToolNav.isVisible({ timeout: 5000 }).catch(() => false))) return;
+
+    await petToolNav.getByRole("link", { name: "Documents", exact: true }).click();
+    await expect(this.page).toHaveURL(/\/dashboard\/pets\/[^/]+\/documents$/);
+  }
+
   /**
    * Navigates to the global documents dashboard page.
    */
@@ -34,24 +43,20 @@ export class DocsLego {
     } = options;
 
     // From the pet hub: the uploader lives on the Documents tool sub-page.
-    const petToolNav = this.page.getByRole("navigation", { name: "Pet tools" });
-    if (await petToolNav.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await petToolNav.getByRole("link", { name: "Documents", exact: true }).click();
-    }
+    await this.openPetDocuments();
 
-    // Check if on pet pick step
-    const petSelect = this.page.locator("select").filter({ hasText: /Select a pet/i });
+    // Check if on pet pick step. The UI kit exposes this as an accessible
+    // combobox/listbox rather than a native select element.
+    const petSelect = this.page.getByRole("combobox", { name: "Pet" });
     if (await petSelect.isVisible({ timeout: 1000 }).catch(() => false)) {
-      if (petNameOrId) {
-        await petSelect.selectOption({ label: petNameOrId });
-      } else {
-        // pick first available pet
-        await petSelect.selectOption({ index: 1 });
-      }
+      await petSelect.click();
+      const petOption = petNameOrId
+        ? this.page.getByRole("option", { name: new RegExp(petNameOrId, "i") })
+        : this.page.getByRole("option").first();
+      await petOption.click();
       await this.page.getByRole("button", { name: "Continue" }).click();
     }
 
-    // Step 1: Capture / File Input
     // Step 1: Capture / File Input
     const fileInput = this.page.locator('input[type="file"]');
     await fileInput.setInputFiles({
@@ -78,8 +83,13 @@ export class DocsLego {
       : this.page;
 
     if (category) {
-      const categorySelect = detailsScope.locator("select").first();
-      await categorySelect.selectOption(category);
+      const categorySelect = detailsScope.getByRole("combobox", {
+        name: "Document type",
+      });
+      await categorySelect.click();
+      await this.page
+        .getByRole("option", { name: category.replace(/_/g, " "), exact: true })
+        .click();
     }
 
     const saveBtn = detailsScope.getByRole("button", { name: /Save to vault/i });
@@ -118,6 +128,10 @@ export class DocsLego {
    * destructive-action dialog.
    */
   async moveToTrash(docName: string): Promise<void> {
+    // The overview shows documents in the timeline, but trash controls live
+    // on the nested Documents tool page.
+    await this.openPetDocuments();
+
     const trashBtn = this.page.getByRole("button", {
       name: new RegExp(`Move .*${docName}.* to trash`, "i"),
     });
