@@ -159,7 +159,7 @@ function PetHubChrome({
         onOpenChange={onEditOpenChange}
         onSaved={(updated) => {
           ws.patchPet(updated);
-          void ws.refreshPet();
+          onEditOpenChange(false);
         }}
       />
     </div>
